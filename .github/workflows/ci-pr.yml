@@ -8,6 +8,9 @@ on:
 jobs:
   build-test:
     runs-on: ubuntu-latest
+    # Prisma schema uses env("DATABASE_URL"); L0 does not connect to a real DB.
+    env:
+      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/ci_placeholder
     steps:
       - uses: actions/checkout@v4
 
