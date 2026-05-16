@@ -1,0 +1,10 @@
+{
+  "description": "人工抽检用例：赛后报告 fact-check 与发布前核对",
+  "samples": [
+    {
+      "matchId": "REPLACE_WITH_FINISHED_MATCH_ID",
+      "expectedScore": "2-1",
+      "notes": "核对 freeSummary 比分与 MatchFacts 一致"
+    }
+  ]
+}

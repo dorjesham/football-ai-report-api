@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <% var f = locals.form || {}; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main" style="max-width:960px;">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <p class="admin-page-sub">将本地 <code>Match</code> 与 football-data.org 对照（开球 UTC、比分、状态）。需配置 <code>FOOTBALL_DATA_API_KEY</code>。<strong>API-Football</strong> 写入的场次（<code>externalId</code> 为 <code>af-f-*</code>）请用 <a href="<%= avBase %>/data-ingest#api-football">数据入库</a> 或近窗刷新，本页不对账 api-sports。<strong>StatsBomb</strong> 写入多为 <code>sb-m-*</code> / <code>statsbombMatchId</code>，请在 <a href="<%= avBase %>/data-ingest">数据入库</a> 查看 SB 任务与 <code>MatchFacts</code>。</p>
+      <p><a class="admin-back" href="<%= avBase %>">← Dashboard</a></p>
+
+      <% if (locals.flashErr) { %>
+        <p class="admin-flash-err"><%= locals.flashErr %></p>
+      <% } %>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">参数</h2>
+        <form method="post" action="<%= avBase %>/schedule-audit/run" style="display:flex;flex-direction:column;gap:0.75rem;">
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:8rem;">模式</span>
+            <select name="mode" style="flex:1;min-width:200px;padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);">
+              <option value="wc-pairs" <%= f.mode === 'fd-external-id' ? '' : 'selected' %>>世界杯国家码对位（wc26-* vs FD /competitions/{code}/matches）</option>
+              <option value="fd-external-id" <%= f.mode === 'fd-external-id' ? 'selected' : '' %>>FD 比赛 id（<code>externalId</code> 为数字时逐场 GET /matches/:id）</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:8rem;">赛事实例 ID</span>
+            <input name="competitionId" type="text" value="<%= f.competitionId || 'seed-comp-wc' %>" style="flex:1;min-width:200px;padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:8rem;">FD 赛事 code</span>
+            <input name="fdCode" type="text" value="<%= f.fdCode || 'WC' %>" style="flex:1;min-width:200px;padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            <span class="admin-muted" style="font-size:0.8rem;">仅 wc-pairs 模式使用</span>
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;">
+            <label style="display:flex;align-items:center;gap:0.5rem;">
+              <span style="min-width:5rem;">dateFrom</span>
+              <input name="dateFrom" type="text" value="<%= f.dateFrom || '2026-06-01' %>" style="padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;align-items:center;gap:0.5rem;">
+              <span>dateTo</span>
+              <input name="dateTo" type="text" value="<%= f.dateTo || '2026-07-31' %>" style="padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <span class="admin-muted" style="font-size:0.8rem;">wc-pairs 调 FD 窗口</span>
+          </div>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:8rem;">开球容差（分钟）</span>
+            <input name="kickoffToleranceMin" type="number" min="0" step="1" value="<%= f.kickoffToleranceMin || '3' %>" style="width:5rem;padding:0.35rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <button type="submit" class="admin-btn" style="align-self:flex-start;">执行审计</button>
+        </form>
+        <p class="admin-muted" style="margin:0.85rem 0 0;font-size:0.8rem;">
+          CLI：<code>npm run audit:schedule</code> — 见仓库 <code>scripts/audit-schedule-scores.ts</code> 注释。
+        </p>
+      </section>
+
+      <% if (locals.lastReport && locals.lastReport.summary) { %>
+        <% var s = locals.lastReport.summary; %>
+        <section class="admin-card" style="margin-top:1rem;">
+          <h2 class="admin-card-title">摘要</h2>
+          <table class="admin-table" style="font-size:0.85rem;">
+            <tbody>
+              <% Object.keys(s).forEach(function(k) { %>
+                <tr>
+                  <td style="white-space:nowrap;color:var(--admin-muted);"><%= k %></td>
+                  <td><code><%= JSON.stringify(s[k]) %></code></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </section>
+      <% } %>
+
+      <% if (locals.lastReportJson) { %>
+        <section class="admin-card" style="margin-top:1rem;">
+          <h2 class="admin-card-title">完整 JSON</h2>
+          <pre style="margin:0;max-height:65vh;overflow:auto;padding:0.75rem;border-radius:8px;background:#18181b;color:#e4e4e7;font-size:0.72rem;line-height:1.45;white-space:pre;"><%= lastReportJson %></pre>
+        </section>
+      <% } %>
+    </main>
+  </div>
+</body>
+</html>

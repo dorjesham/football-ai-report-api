@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main" style="max-width:960px;">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <p class="admin-page-sub">球队列表</p>
+      <p><a class="admin-back" href="<%= avBase %>/competitions">← 杯赛列表</a></p>
+      <% if (comp.code === 'WC' || (comp.tournament && comp.tournament.code === 'FIFA_WC')) { %>
+        <p style="margin:0 0 1rem;"><a href="<%= avBase %>/competitions/<%= comp.id %>/worldcup2026-teams">世界杯2026 · 48强 种子数据</a></p>
+      <% } %>
+      <% if (typeof flashMsg !== 'undefined' && flashMsg) { %>
+        <p class="admin-card" style="padding:0.75rem 1rem;background:rgba(34,197,94,0.12);border-radius:8px;"><%= flashMsg %></p>
+      <% } %>
+      <% if (typeof flashErr !== 'undefined' && flashErr) { %>
+        <p class="admin-card" style="padding:0.75rem 1rem;background:rgba(239,68,68,0.12);border-radius:8px;"><%= flashErr %></p>
+      <% } %>
+
+      <section class="admin-card">
+        <p style="margin:0 0 0.5rem;"><strong>实例 ID</strong> <code style="font-size:0.8rem;"><%= comp.id %></code></p>
+        <p class="admin-muted" style="margin:0;">code <strong><%= comp.code || '—' %></strong> · 赛季 <strong><%= comp.season ? comp.season.code : '—' %></strong></p>
+        <form method="get" action="<%= avBase %>/competitions/<%= comp.id %>/tools" class="admin-form-row" style="margin-top:1rem;">
+          <div>
+            <label>可选 seasonId</label>
+            <input name="seasonId" value="<%= seasonId %>" placeholder="留空则包含所有赛季" style="min-width:240px;" />
+          </div>
+          <div><button type="submit" class="admin-btn">刷新</button></div>
+        </form>
+        <p class="admin-muted" style="margin:0.75rem 0 0.25rem;"><%= tool.hint %></p>
+        <p style="margin:0.5rem 0 0;">球队数 <strong><%= tool.teamCount %></strong></p>
+        <% if (comp.code === 'WC' || (comp.tournament && comp.tournament.code === 'FIFA_WC')) { %>
+        <section style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--admin-border);">
+          <h2 style="font-size:1rem;margin:0 0 0.5rem;">API-Football 一键入库（世界杯）</h2>
+          <p class="admin-muted" style="margin:0 0 0.75rem;font-size:0.85rem;">
+            需配置 <code>API_FOOTBALL_API_KEY</code> 并开通可访问世界杯数据的套餐。将依次：同步 WC 赛程（league=1）→ 全队列球员 → <strong>各队 <code>wc2026Profile</code>（<code>/teams/statistics</code> + 自动「历史底蕴」中文摘要，及 <code>/teams?id=</code> 卡片）</strong>→ 写入每场 lineups / 场地 / 主教练 / 主裁到 <code>MatchFacts</code> 与 <code>Team.coachProfile</code>。
+            赛季年一般为 <strong>2026</strong>（以 api-sports 控制台为准）。
+          </p>
+          <form method="post" action="<%= avBase %>/competitions/<%= comp.id %>/actions/worldcup-api-football-bundle" class="admin-form-row" style="flex-wrap:wrap;gap:0.75rem;">
+            <div>
+              <label>season</label>
+              <input name="season" type="number" value="2026" min="2000" max="2100" style="width:100px;" />
+            </div>
+            <div>
+              <label>请求间隔 ms</label>
+              <input name="delayBetweenRequestsMs" type="number" value="1500" min="0" max="15000" style="width:110px;" />
+            </div>
+            <div>
+              <label>enrich 场数上限</label>
+              <input name="maxMatchesForEnrich" type="number" value="56" min="1" max="128" style="width:90px;" />
+            </div>
+            <div>
+              <label>国家队 profile 数上限</label>
+              <input name="maxTeamsForWcProfiles" type="number" value="56" min="1" max="64" style="width:90px;" />
+            </div>
+            <div style="display:flex;flex-direction:column;gap:0.25rem;font-size:0.85rem;">
+              <label><input type="checkbox" name="skipFixtures" value="1" /> 跳过赛程同步</label>
+              <label><input type="checkbox" name="skipSquads" value="1" /> 跳过阵容同步</label>
+              <label><input type="checkbox" name="skipWcProfiles" value="1" /> 跳过 wc2026Profile/统计摘要</label>
+              <label><input type="checkbox" name="skipEnrich" value="1" /> 仅跳过单场 enrich</label>
+            </div>
+            <div style="align-self:flex-end;"><button type="submit" class="admin-btn admin-btn-primary">一键导入</button></div>
+          </form>
+        </section>
+        <% } %>
+        <table class="admin-table">
+          <thead>
+            <tr><th>nameEn</th><th>nameCn</th><th>shortName</th><th>id</th></tr>
+          </thead>
+          <tbody>
+            <% (tool.teams || []).forEach(function (t) { %>
+              <tr>
+                <td><%= t.nameEn %></td>
+                <td><%= t.nameCn %></td>
+                <td><%= t.shortName || '—' %></td>
+                <td><small class="admin-muted"><%= t.id %></small></td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

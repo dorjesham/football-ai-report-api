@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <% var st = locals.stats || {}; %>
+  <% var eh = locals.envHints || {}; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main" style="max-width:920px;">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <p class="admin-page-sub">
+        <strong>主数据源</strong>：<strong>API-Football</strong>（api-sports.io）写入五大联赛与欧战的赛程、球队与球员（<code>dataSource=API_FOOTBALL</code>）；赛季参数以 API 与套餐为准。<strong>Football-Data</strong> 作<strong>辅助</strong>（已完赛窗口回填、近窗比分轮询、squad/coach 等）。另支持 OpenFootball <strong>football.json</strong>、<strong>StatsBomb Open Data</strong>（<code>MatchFacts.rawStatsbomb</code>，须遵守许可）与 DeepSeek <strong>结构化预览</strong>（不落库）。需遵守各上游配额与版权说明。
+      </p>
+      <p><a class="admin-back" href="<%= avBase %>">← Dashboard</a>
+        · <a href="<%= avBase %>/player-data">球员数据 · 多源与审计</a>
+        · <a href="<%= avBase %>/schedule-audit">赛程审计（FD 对账）</a>
+        · <a href="<%= avBase %>/api-logs">ApiLog</a>
+        · <a href="#statsbomb-open-data">SB 单场</a>
+        · <a href="#statsbomb-batch">SB 多季批量</a></p>
+
+      <% if (locals.flashMsg) { %><p class="admin-flash-ok"><%= locals.flashMsg %></p><% } %>
+      <% if (locals.flashErr) { %><p class="admin-flash-err"><%= locals.flashErr %></p><% } %>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">环境 · 配额提示</h2>
+        <p style="margin:0 0 0.65rem;line-height:1.65;font-size:0.875rem;">
+          <span class="admin-pill <%= eh.hasApiFootballKey ? 'on' : 'off' %>">API-Football Key</span>
+          <span class="admin-pill <%= eh.hasFootballDataKey ? 'on' : 'off' %>">FD API Key</span>
+          <span class="admin-pill <%= eh.hasDeepseekKey ? 'on' : 'off' %>">DeepSeek Key</span>
+          <span class="admin-pill <%= eh.enableMockDeepseek ? 'on' : 'off' %>">DeepSeek <%= eh.enableMockDeepseek ? 'Mock' : '真实' %></span>
+        </p>
+        <p class="admin-muted" style="margin:0 0 0.65rem;font-size:0.78rem;line-height:1.6;">
+          本进程请求的 API 基地址：<code><%= eh.apiFootballBaseUrl || 'https://v3.football.api-sports.io' %></code>（可用 <code>API_FOOTBALL_BASE_URL</code> 覆盖）。用量与 Key 在 <a href="https://dashboard.api-football.com/" target="_blank" rel="noopener noreferrer">dashboard.api-football.com</a> 查看；<code>v3.football.api-sports.io</code> 仅为 REST 主机，一般没有可登录的「网站后台」。
+        </p>
+        <p class="admin-muted" style="margin:0 0 0.65rem;font-size:0.78rem;line-height:1.6;">
+          StatsBomb Open Data 根路径（可 <code>STATS_BOMB_OPEN_DATA_BASE_URL</code> 覆盖）：<code><%= eh.statsBombOpenDataBaseUrl || 'https://raw.githubusercontent.com/statsbomb/open-data/master/data' %></code> — 许可见 <a href="https://github.com/statsbomb/open-data" target="_blank" rel="noopener noreferrer">statsbomb/open-data</a>。
+        </p>
+        <ul class="admin-muted" style="margin:0;padding-left:1.15rem;font-size:0.82rem;line-height:1.65;">
+          <li><strong>API-Football（免费版）</strong>：每日请求有硬上限；<strong>赛季</strong>可能被限制在 <strong>2022–2024</strong>（接口报错会写在 <code>teamApiErrors</code> / <code>fixtureApiErrorsText</code>）。付费档才可用更新赛季。建议间隔 ≥1200ms，先单联赛试跑；结果见下方 <strong>IngestJobRun</strong> 与 <a href="<%= avBase %>/api-logs">ApiLog</a>。赛季数字一般为该赛季起始年（如 2024-25 → 填 <strong>2024</strong>）。</li>
+          <li><strong>FD 已完赛回填</strong>：按日期窗口多次请求 <code>/competitions/{code}/matches?status=FINISHED</code>，受 football-data.org <strong>每日调用次数</strong>限制；窗口过大可能失败或部分成功。</li>
+          <li><strong>FD 球员 squad</strong>：对每队请求 <code>/teams/{id}</code>，将 <code>squad[]</code> 写入 <code>Player</code>，并写 <code>Team.coachProfile</code>（教练与可选阵型摘录，见表单说明）；球员可选再拉 <code>/persons/{id}</code> 与 <code>/persons/{id}/matches</code> 写入 <code>profile.fdPerson</code> / <code>fdPersonMatches</code>（<strong>配额与耗时会成倍增加</strong>）。</li>
+          <li><strong>OpenFootball</strong>：拉取 GitHub raw JSON，<strong>无 Key</strong>；仅写入<strong>已有全场比分</strong>的场次；球队会按 <code>of-{league}-slug</code> upsert。</li>
+          <li><strong>StatsBomb Open Data</strong>：README 下 <code>competitions.json</code> 为目录；单场见 <strong>③-b</strong>；多季<strong>一键批量 / dryRun 审计</strong>见 <strong>③-c</strong>（<code>STATSBOMB_OPEN_DATA_BATCH</code>）。按 <code>matches/{competition_id}/{season_id}.json</code> 与每场 <code>lineups</code>、<code>events</code> 拉取；合并或新建 <code>Match</code>；大 JSON 入 <code>MatchFacts.rawStatsbomb</code>；<strong>须署名并遵守数据集条款</strong>。</li>
+          <li><strong>结构化预览</strong>：需关闭 Mock 且配置 <code>DEEPSEEK_API_KEY</code>；结果<strong>不写入</strong> <code>MatchFacts</code>，用于校验爬虫/剪贴板文本。</li>
+        </ul>
+      </section>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">库内概览（只读统计）</h2>
+        <div class="admin-grid-stats" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr));">
+          <div class="admin-stat"><small>完赛 Match</small><span><%= st.finishedMatchCount != null ? st.finishedMatchCount : '—' %></span></div>
+          <div class="admin-stat"><small>MatchFacts 行</small><span><%= st.matchFactsCount != null ? st.matchFactsCount : '—' %></span></div>
+          <div class="admin-stat"><small>入库任务累计</small><span><%= st.ingestJobCount != null ? st.ingestJobCount : '—' %></span></div>
+          <div class="admin-stat"><small>Player 行</small><span><%= st.playerCount != null ? st.playerCount : '—' %></span></div>
+        </div>
+        <p class="admin-muted" style="margin:0.75rem 0 0;font-size:0.78rem;">
+          <code>MatchFacts</code> 含半场/加时/点球、<code>rawFdMatch</code>、<code>teamStats</code> 等 JSON；与 Dashboard「FD 全量基础同步」及 API-Football 赛程互补。
+        </p>
+      </section>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">近窗比分与状态（FD + API-Football，立即刷新）</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          对开球前约 30 分钟至过去约 20 小时内、库中仍为 <strong>SCHEDULED / LIVE</strong> 的场次：<strong>Football-Data</strong> 源（有 FD <code>externalId</code>）走 FD 单场接口；<strong>API-Football</strong> 源（<code>externalId</code> 为 <code>af-f-*</code>）走 <code>GET /fixtures?id=</code>。与 Cron「近窗轮询」同源。用于开球后仍显示「未开赛」时<strong>立刻修库</strong>，不依赖 <code>ENABLE_CRON_SYNC</code>。未配置 AF Key 时 AF 侧处理场数为 0。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/poll-recent-fd-match-status">
+          <button type="submit" class="admin-btn">执行近窗比分/状态刷新（FD + AF）</button>
+        </form>
+        <p class="admin-muted" style="margin:0.75rem 0 0;font-size:0.75rem;">REST（Admin JWT）：<code>POST /football-data/sync/poll-recent-match-status</code>，响应体含 <code>footballData</code> 与 <code>apiFootball</code> 各字段 <code>attempted</code> / <code>succeeded</code> / <code>failed</code> / <code>skipped</code>；可选 JSON 体 <code>lookbackHours</code>、<code>lookaheadMinutes</code>、<code>maxMatches</code>、<code>delayBetweenMs</code>。</p>
+      </section>
+
+      <section class="admin-card" id="api-football">
+        <h2 class="admin-card-title">API-Football（主）· 赛程与球员名单</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          配置环境变量 <code>API_FOOTBALL_API_KEY</code>（勿提交 git）。赛程写入 <code>Match.externalId=af-f-…</code>、<code>Team.externalId=af-t-…</code>；球员写入 <code>Player.externalId=af-p-…</code> 与 <code>profile.apiFootball</code>。<strong>建议先跑赛程</strong>以写入比赛与球队；若暂无赛程，名单同步会按 <code>/teams</code> 自动补建 <code>af-t-*</code> 后再拉球员。
+        </p>
+        <% if (!eh.hasApiFootballKey) { %>
+        <p class="admin-flash-err" style="margin:0 0 1rem;line-height:1.65;">
+          当前服务进程<strong>未读取到</strong> <code>API_FOOTBALL_API_KEY</code>，提交会失败。请在<strong>项目根目录 <code>.env</code></strong> 增加一行 <code>API_FOOTBALL_API_KEY=你的密钥</code>（变量名须与文档一致，不要用引号包住整行除非值内含空格），或在 <strong>Docker / Sealos / K8s</strong> 的环境变量里配置同名项，然后<strong>重启本应用</strong>。改完后刷新本页，上方「API-Football Key」应为<strong>绿色</strong>。
+        </p>
+        <% } %>
+        <h3 style="font-size:0.85rem;margin:0 0 0.65rem;color:var(--admin-muted);text-transform:uppercase;letter-spacing:0.04em;">赛程 / 比分</h3>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/api-football-fixtures" style="display:flex;flex-direction:column;gap:0.85rem;margin-bottom:1.35rem;<%= eh.hasApiFootballKey ? '' : 'opacity:0.55' %>">
+          <fieldset style="border:1px solid var(--admin-border);border-radius:8px;padding:0.75rem 1rem;margin:0;">
+            <legend style="font-size:0.75rem;color:var(--admin-muted);padding:0 0.35rem;">选择联赛（不选则默认五大联赛 + 欧冠/欧联/欧协）</legend>
+            <div style="display:flex;flex-wrap:wrap;gap:0.65rem 1.25rem;margin-top:0.35rem;font-size:0.875rem;">
+              <% [['PL','英超'],['PD','西甲'],['SA','意甲'],['BL1','德甲'],['FL1','法甲'],['CL','欧冠'],['EL','欧联'],['UECL','欧协联']].forEach(function(pair) { var code=pair[0],label=pair[1]; %>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;">
+                  <input type="checkbox" name="codes" value="<%= code %>" />
+                  <span><%= code %> <%= label %></span>
+                </label>
+              <% }); %>
+            </div>
+          </fieldset>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">season（如 2024-25 → 填 2024；免费版勿填 2025）</span>
+              <input name="season" type="number" min="2020" max="2035" value="2024" required style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">请求间隔 ms（默认 1350）</span>
+              <input name="delayBetweenRequestsMs" type="number" min="0" max="10000" value="1350" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">每联赛最大分页数（默认 40）</span>
+              <input name="maxPagesPerLeague" type="number" min="1" max="100" value="40" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <button type="submit" class="admin-btn" <% if (!eh.hasApiFootballKey) { %>disabled aria-disabled="true"<% } %>>执行 API-Football 赛程同步</button>
+          </div>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/api-football/fixtures</code>（Admin JWT）。</p>
+        </form>
+        <h3 style="font-size:0.85rem;margin:0 0 0.65rem;color:var(--admin-muted);text-transform:uppercase;letter-spacing:0.04em;">球员名单</h3>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/api-football-squads" style="display:flex;flex-direction:column;gap:0.85rem;<%= eh.hasApiFootballKey ? '' : 'opacity:0.55' %>">
+          <fieldset style="border:1px solid var(--admin-border);border-radius:8px;padding:0.75rem 1rem;margin:0;">
+            <legend style="font-size:0.75rem;color:var(--admin-muted);padding:0 0.35rem;">选择联赛（与赛程一致）</legend>
+            <div style="display:flex;flex-wrap:wrap;gap:0.65rem 1.25rem;margin-top:0.35rem;font-size:0.875rem;">
+              <% [['PL','英超'],['PD','西甲'],['SA','意甲'],['BL1','德甲'],['FL1','法甲'],['CL','欧冠'],['EL','欧联'],['UECL','欧协联']].forEach(function(pair) { var code=pair[0],label=pair[1]; %>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;">
+                  <input type="checkbox" name="codes" value="<%= code %>" />
+                  <span><%= code %> <%= label %></span>
+                </label>
+              <% }); %>
+            </div>
+          </fieldset>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">season（免费版常用 2024）</span>
+              <input name="season" type="number" min="2020" max="2035" value="2024" required style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">请求间隔 ms（免费版易 429，建议 ≥2200）</span>
+              <input name="delayBetweenRequestsMs" type="number" min="0" max="10000" value="2200" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">每联赛最多球队数（默认 24，控配额）</span>
+              <input name="maxTeamsPerLeague" type="number" min="1" max="50" value="24" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <button type="submit" class="admin-btn" <% if (!eh.hasApiFootballKey) { %>disabled aria-disabled="true"<% } %>>执行 API-Football 球员名单同步</button>
+          </div>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/api-football/squads</code>（Admin JWT）。</p>
+        </form>
+      </section>
+
+      <!-- 1. FD 已完赛 -->
+      <section class="admin-card">
+        <h2 class="admin-card-title">① Football-Data（辅）· 已完赛回填</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          对所选联赛在 <code>dateFrom</code>～<code>dateTo</code> 内拉取 <strong>FINISHED</strong> 场次，upsert <code>Match</code>（比分、状态、球队）并写入 <code>MatchFacts</code>（含 FD 原始 JSON）。本地须已有对应 <code>Competition.code</code>（种子含 PL / PD / SA / BL1 / FL1 / CL / EL / UECL 等）。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/fd-finished" style="display:flex;flex-direction:column;gap:0.85rem;">
+          <fieldset style="border:1px solid var(--admin-border);border-radius:8px;padding:0.75rem 1rem;margin:0;">
+            <legend style="font-size:0.75rem;color:var(--admin-muted);padding:0 0.35rem;">选择联赛（可多选；不选则默认五大联赛 + 欧冠）</legend>
+            <div style="display:flex;flex-wrap:wrap;gap:0.65rem 1.25rem;margin-top:0.35rem;font-size:0.875rem;">
+              <% [['PL','英超'],['PD','西甲'],['SA','意甲'],['BL1','德甲'],['FL1','法甲'],['CL','欧冠'],['WC','世界杯']].forEach(function(pair) { var code=pair[0],label=pair[1]; %>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;">
+                  <input type="checkbox" name="codes" value="<%= code %>" />
+                  <span><%= code %> <%= label %></span>
+                </label>
+              <% }); %>
+            </div>
+          </fieldset>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">dateFrom（YYYY-MM-DD）</span>
+              <input name="dateFrom" type="date" required style="padding:0.4rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">dateTo</span>
+              <input name="dateTo" type="date" required style="padding:0.4rem 0.5rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <button type="submit" class="admin-btn">执行 FD 已完赛回填</button>
+          </div>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">建议先小范围试跑（如一周），确认 ApiLog 无 403 后再扩大窗口。</p>
+        </form>
+      </section>
+
+      <!-- 2. FD 球员 -->
+      <section class="admin-card" id="fd-player-squads">
+        <h2 class="admin-card-title">② Football-Data（辅）· 球员 squad 入库</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          对所选联赛执行 <code>GET /competitions/{code}/teams</code>，再对<strong>每支球队</strong>请求 <code>GET /teams/{id}</code>：将 <code>squad</code> upsert 到 <code>Player</code>；同时将 <code>coach</code> 与联赛上下文写入 <code>Team.coachProfile</code>（默认再拉 <code>/persons/{教练id}</code>、<code>/persons/.../matches</code>，并对近期若干场请求 <code>/matches/{id}</code> 摘录<strong>阵型、lineup 规模、裁判/教练席</strong>等）。<strong>战术理念长文本</strong> FD 不提供，JSON 内 <code>tacticalSemantics</code> 说明了数据边界；可事后把叙述写入 <code>coachProfile.manual</code>。球员 Person 增强仍易触发 429，请适度调间隔。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/fd-player-squads" style="display:flex;flex-direction:column;gap:0.85rem;">
+          <fieldset style="border:1px solid var(--admin-border);border-radius:8px;padding:0.75rem 1rem;margin:0;">
+            <legend style="font-size:0.75rem;color:var(--admin-muted);padding:0 0.35rem;">选择联赛（可多选；不选则默认五大联赛 + 欧冠）</legend>
+            <div style="display:flex;flex-wrap:wrap;gap:0.65rem 1.25rem;margin-top:0.35rem;font-size:0.875rem;">
+              <% [['PL','英超'],['PD','西甲'],['SA','意甲'],['BL1','德甲'],['FL1','法甲'],['CL','欧冠'],['WC','世界杯']].forEach(function(pair) { var code=pair[0],label=pair[1]; %>
+                <label style="display:inline-flex;align-items:center;gap:0.35rem;cursor:pointer;">
+                  <input type="checkbox" name="codes" value="<%= code %>" />
+                  <span><%= code %> <%= label %></span>
+                </label>
+              <% }); %>
+            </div>
+          </fieldset>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">球队请求间隔 ms（默认 900）</span>
+              <input name="delayBetweenTeamMs" type="number" min="0" max="60000" value="900" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">Person 请求间隔 ms（默认 350）</span>
+              <input name="delayBetweenPersonMs" type="number" min="0" max="60000" value="350" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+              <input type="checkbox" name="enrichPerson" value="1" />
+              <span>拉取 Person 详情 + 近期比赛摘要（<strong>高配额</strong>）</span>
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">教练单场阵型样本数（0～12，默认 5；每场多 1 次 GET /matches）</span>
+              <input name="coachMatchDetailSample" type="number" min="0" max="12" value="5" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+              <input type="checkbox" name="skipCoachEnrich" value="1" />
+              <span>勾选则<strong>跳过</strong>教练 Person / 执教比赛 / 单场阵型（仅保留 <code>/teams</code> 内 coach 摘要）</span>
+            </label>
+            <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+              <input type="checkbox" name="skipTeamMeta" value="1" />
+              <span>勾选则<strong>不</strong>写回球队 venue / website / founded</span>
+            </label>
+            <button type="submit" class="admin-btn">执行球员 squad 入库</button>
+          </div>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/fd-player-squads</code>（Admin JWT，body 与 DTO 一致）。</p>
+        </form>
+      </section>
+
+      <!-- 3. OpenFootball -->
+      <section class="admin-card" id="openfootball-league">
+        <h2 class="admin-card-title">③ OpenFootball · football.json（赛程/比分，非大名单）</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          从 GitHub <code>openfootball/football.json</code> 拉取一届联赛文件；仅导入<strong>带全场比分</strong>的场次，并 upsert <strong>球队</strong>（<code>of-{league}-slug</code>）。<strong>不含球员大名单</strong>；球员请用 <a href="<%= avBase %>/player-data">球员数据页</a> 的 FD squad 或规划中的 FBref/CSV 等。默认 URL：<code>https://raw.githubusercontent.com/openfootball/football.json/master/{赛季}/{leagueKey}.json</code>（如 <code>2024-25/en.1.json</code>）。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/openfootball" style="display:flex;flex-direction:column;gap:0.75rem;">
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:7rem;font-size:0.85rem;">leagueKey</span>
+            <select name="leagueKey" required style="flex:1;min-width:220px;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);">
+              <option value="en.1">en.1 — 英超</option>
+              <option value="es.1">es.1 — 西甲</option>
+              <option value="de.1">de.1 — 德甲</option>
+              <option value="it.1">it.1 — 意甲</option>
+              <option value="fr.1">fr.1 — 法甲</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:7rem;font-size:0.85rem;">competitionCode</span>
+            <input name="competitionCode" type="text" required placeholder="如 PL（须与库内 Competition.code 一致）" style="flex:1;min-width:220px;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:7rem;font-size:0.85rem;">seasonFolder</span>
+            <input name="seasonFolder" type="text" placeholder="默认 2024-25" style="flex:1;min-width:220px;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">自定义 URL（可选，覆盖默认 raw）</span>
+            <input name="url" type="url" placeholder="https://raw.githubusercontent.com/..." style="padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <button type="submit" class="admin-btn" style="align-self:flex-start;">导入 OpenFootball 联赛 JSON</button>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/openfootball/league</code>（Admin JWT）。</p>
+        </form>
+      </section>
+
+      <!-- 3b StatsBomb -->
+      <section class="admin-card" id="statsbomb-open-data">
+        <h2 class="admin-card-title">③-b StatsBomb Open Data · lineups / events → MatchFacts</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          从 <code>statsbomb/open-data</code> 拉取<strong>公开样本数据</strong>（默认 GitHub raw，可用 <code>STATS_BOMB_OPEN_DATA_BASE_URL</code> 指向镜像）。<strong>默认行为</strong>：能关联到已有 <code>Match</code> 则<strong>合并更新</strong>（补空比分/状态/matchday、刷新 <code>MatchFacts.rawStatsbomb</code>、合并 <code>lineups</code> / <code>externalRefs</code>，不覆盖已有非空比分）；关联不到则<strong>新建</strong> <code>Team</code>（<code>sb-t-*</code>）与 <code>Match</code>（<code>sb-m-*</code>）再入库。勾选下方「仅关联」可关闭新建（旧逻辑）。建议仍先跑 <strong>API-Football 赛程</strong> 以便对齐主键。每场约 2 次 HTTP（lineups + events），请用 <code>maxMatches</code> / <code>delayMs</code> 控制频率。<code>maxEventsStored=0</code> 时可跳过 events 以减小 JSON。
+        </p>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.78rem;line-height:1.65;">
+          路径示例：西甲可填 <code>sbCompetitionId=11</code>、<code>sbSeasonId=90</code>（以仓库内实际 <code>data/matches/11/90.json</code> 为准）。完整编号请在 <a href="https://github.com/statsbomb/open-data/tree/master/data/matches" target="_blank" rel="noopener noreferrer">open-data/data/matches</a> 核对。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/statsbomb-open-data" style="display:flex;flex-direction:column;gap:0.75rem;">
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">sbCompetitionId</span>
+            <input name="sbCompetitionId" type="number" min="1" required placeholder="如 11" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">sbSeasonId</span>
+            <input name="sbSeasonId" type="number" min="1" required placeholder="如 90" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">competitionCode</span>
+            <input name="competitionCode" type="text" required placeholder="库内 Competition.code，如 PD" style="flex:1;min-width:200px;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">maxMatches</span>
+            <input name="maxMatches" type="number" min="1" max="500" value="35" style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">delayMs</span>
+            <input name="delayMs" type="number" min="0" max="30000" value="400" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-wrap:wrap;align-items:center;gap:0.5rem;">
+            <span style="min-width:10rem;font-size:0.85rem;">maxEventsStored</span>
+            <input name="maxEventsStored" type="number" min="0" max="50000" value="4000" style="width:8rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">baseUrl（可选，覆盖默认 data 根路径）</span>
+            <input name="baseUrl" type="url" placeholder="https://raw.githubusercontent.com/statsbomb/open-data/master/data" style="padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" name="skipCreateMatch" value="1" />
+            <span>仅关联已有 <code>Match</code>，<strong>不</strong>自动新建球队/比赛（找不到则跳过）</span>
+          </label>
+          <button type="submit" class="admin-btn" style="align-self:flex-start;">执行 StatsBomb 入库</button>
+          <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/statsbomb/open-data</code>（Admin JWT）。任务 kind：<code>STATSBOMB_OPEN_DATA</code>。</p>
+        </form>
+      </section>
+
+      <!-- 3c StatsBomb 批量（README：competitions.json → 多季 matches） -->
+      <section class="admin-card" id="statsbomb-batch">
+        <h2 class="admin-card-title">③-c StatsBomb · 目录批量 / 审计（一键多季）</h2>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.84rem;line-height:1.65;">
+          对齐 GitHub <a href="https://github.com/statsbomb/open-data#readme" target="_blank" rel="noopener noreferrer">README</a>：<strong><code>data/competitions.json</code></strong> 中每一行是一对 <code>(competition_id, season_id)</code>；每场数据在 <code>matches/</code>、<code>lineups/</code>、<code>events/</code>。可选 <strong>preset 一键内置映射</strong>（五大+欧冠+欧联等，无需逐行填 id）；或<strong>手动映射</strong>多行目录后按批执行（每季一次与 ③-b 相同的入库逻辑）。目录中映射到本地库<strong>尚无</strong> <code>Competition.code</code> 的季会被跳过。请先用 <strong>审计(dryRun)</strong> 看计划与可选场次数探测，再加大 <code>maxPairs</code> 正式跑；遵守 StatsBomb 许可与请求频率。
+        </p>
+        <p class="admin-muted" style="margin:0 0 1rem;font-size:0.78rem;line-height:1.65;">
+          <strong>只读目录</strong>（Admin JWT）：<code>GET /admin/data-ingest/statsbomb/catalog</code>；可加 <code>?probe=1&amp;probeLimit=15&amp;delayMs=300</code> 抽样探测各季 <code>matches/*.json</code> 数组长度。<strong>批量</strong>：<code>POST /admin/data-ingest/statsbomb/batch</code>，Body 见 Swagger；任务 kind：<code>STATSBOMB_OPEN_DATA_BATCH</code>。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/statsbomb-batch" style="display:flex;flex-direction:column;gap:0.75rem;">
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">内置映射 <code>preset</code>（选中后下方手动映射可不填；与 REST <code>POST …/statsbomb/batch</code> 的 <code>preset</code> 一致）</span>
+            <select name="preset" style="max-width:32rem;padding:0.45rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);font-size:0.85rem;">
+              <option value="">— 使用下方手动映射 / JSON —</option>
+              <option value="BIG5_EURO" selected>一键：五大 + 欧冠 + 欧联（<code>BIG5_EURO</code>）</option>
+              <option value="ALL_MAPPED">一键：内置全部 SB id（<code>ALL_MAPPED</code>；本地无对应 <code>Competition</code> 的季会跳过）</option>
+            </select>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">手动映射（仅当上方 preset 为「手动」时必填；每行 <code>StatsBomb_competition_id=本地code</code>，或 JSON 填下框）</span>
+            <textarea name="mappingsLines" rows="5" placeholder="11=PD&#10;2=PL&#10;43=CL" style="width:100%;box-sizing:border-box;padding:0.5rem;border-radius:8px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);font-family:ui-monospace,monospace;font-size:0.82rem;"></textarea>
+          </label>
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">或 mappings-json（覆盖上方多行；同样仅在未选 preset 时生效）</span>
+            <textarea name="mappingsJson" rows="3" placeholder='[{"sbCompetitionId":11,"competitionCode":"PD"}]' style="width:100%;box-sizing:border-box;padding:0.5rem;border-radius:8px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);font-family:ui-monospace,monospace;font-size:0.78rem;"></textarea>
+          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:1rem;align-items:flex-end;">
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">maxPairs（本任务最多处理多少<strong>季</strong>）</span>
+              <input name="maxPairs" type="number" min="1" max="200" value="25" style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">每季 maxMatches</span>
+              <input name="maxMatchesPerPair" type="number" min="1" max="500" value="40" style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">delayMs（场内）</span>
+              <input name="delayMs" type="number" min="0" max="30000" value="400" style="width:6rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">季间 delay ms</span>
+              <input name="delayBetweenPairsMs" type="number" min="0" max="120000" value="800" style="width:7rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+            <label style="display:flex;flex-direction:column;gap:0.25rem;">
+              <span class="admin-muted" style="font-size:0.72rem;">maxEventsStored</span>
+              <input name="maxEventsStored" type="number" min="0" max="50000" value="4000" style="width:7rem;padding:0.4rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+            </label>
+          </div>
+          <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" name="dryRun" value="1" checked />
+            <span><strong>仅审计 (dryRun)</strong>：不写库，只返回计划行（可先勾选跑一次再看 IngestJobRun）</span>
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" name="includeMatchCountsInDryRun" value="1" />
+            <span>dryRun 时对计划内前几季探测 <code>matches/*.json</code> 场次数（增加请求）</span>
+          </label>
+          <label style="display:inline-flex;align-items:center;gap:0.45rem;font-size:0.85rem;cursor:pointer;">
+            <input type="checkbox" name="skipCreateMatch" value="1" />
+            <span>仅关联已有 Match（与 ③-b 相同）</span>
+          </label>
+          <button type="submit" class="admin-btn" style="align-self:flex-start;">执行 StatsBomb 批量 / 审计</button>
+        </form>
+      </section>
+
+      <!-- 4. DeepSeek 预览 -->
+      <section class="admin-card">
+        <h2 class="admin-card-title">④ DeepSeek · 原始文本结构化（预览）</h2>
+        <p class="admin-muted" style="margin:0 0 0.75rem;font-size:0.84rem;line-height:1.65;">
+          将爬虫/剪贴板正文交给 DeepSeek，输出经 Zod 校验的 <code>MatchFacts</code> 子集 JSON（<code>teamStats</code> / <code>lineups</code> / <code>events</code> 等）。<strong>不会写入数据库</strong>；校验失败会重试后报错。
+        </p>
+        <form method="post" action="<%= avBase %>/data-ingest/actions/structure-preview" style="display:flex;flex-direction:column;gap:0.65rem;">
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">辅助 hint（联赛、场次名等）</span>
+            <input name="hint" type="text" placeholder="例如：西甲第12轮 皇马 vs 巴萨 赛后技术统计" style="padding:0.45rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;">
+            <span style="min-width:7rem;">maxAttempts</span>
+            <input name="maxAttempts" type="number" min="1" max="5" value="2" style="width:4rem;padding:0.35rem;border-radius:6px;border:1px solid var(--admin-border);background:var(--admin-surface);color:var(--admin-text);" />
+          </label>
+          <label style="display:flex;flex-direction:column;gap:0.25rem;">
+            <span class="admin-muted" style="font-size:0.72rem;">rawText（粘贴原始表格或网页文本）</span>
+            <textarea name="rawText" rows="10" placeholder="粘贴内容…" style="width:100%;box-sizing:border-box;padding:0.55rem;border-radius:8px;border:1px solid var(--admin-border);background:#0c0c0e;color:var(--admin-text);font-family:ui-monospace,monospace;font-size:0.78rem;line-height:1.45;"></textarea>
+          </label>
+          <button type="submit" class="admin-btn" style="align-self:flex-start;">运行结构化预览</button>
+        </form>
+        <% if (locals.structurePreviewJson) { %>
+          <h3 style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--admin-muted);margin:1rem 0 0.5rem;">输出 JSON</h3>
+          <pre style="margin:0;max-height:48vh;overflow:auto;padding:0.75rem;border-radius:8px;background:#0c0c0e;border:1px solid var(--admin-border);color:#e4e4e7;font-size:0.72rem;line-height:1.45;white-space:pre-wrap;"><%= structurePreviewJson %></pre>
+        <% } %>
+      </section>
+
+      <!-- 任务表 -->
+      <section class="admin-card">
+        <h2 class="admin-card-title">最近入库任务（IngestJobRun）</h2>
+        <p class="admin-muted" style="margin:0 0 0.65rem;font-size:0.78rem;line-height:1.55;">
+          kind 含 <code>STATSBOMB_OPEN_DATA</code>（单场季）、<code>STATSBOMB_OPEN_DATA_BATCH</code>（目录多季）时，摘要列可展开 JSON 查看 <code>pairResults</code> / <code>totals</code> 或 <code>planned</code>（dryRun）。
+        </p>
+        <% var jobs = locals.recentJobs || []; %>
+        <% if (!jobs.length) { %>
+          <p class="admin-muted" style="margin:0;">暂无记录。执行上方任务后会在此出现审计行。</p>
+        <% } else { %>
+          <div style="overflow-x:auto;">
+            <table class="admin-table" style="font-size:0.8rem;">
+              <thead>
+                <tr>
+                  <th>开始时间</th>
+                  <th>类型</th>
+                  <th>状态</th>
+                  <th>摘要 / 错误</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% jobs.forEach(function(j) { %>
+                  <tr>
+                    <td style="white-space:nowrap;"><%= j.startedAt ? new Date(j.startedAt).toISOString().slice(0,19).replace('T',' ') : '—' %></td>
+                    <td><code><%= j.kind %></code></td>
+                    <td><%= j.status %></td>
+                    <td style="max-width:360px;word-break:break-word;">
+                      <% if (j.errorMessage) { %>
+                        <span style="color:var(--admin-danger);"><%= j.errorMessage.slice(0, 400) %></span>
+                      <% } else if (j.resultSummary) { %>
+                        <code style="font-size:0.7rem;"><%= JSON.stringify(j.resultSummary).slice(0, 320) %><%= JSON.stringify(j.resultSummary).length > 320 ? '…' : '' %></code>
+                      <% } else { %>—<% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">REST 等价（自动化 / CI）</h2>
+        <p class="admin-muted" style="margin:0;font-size:0.8rem;line-height:1.65;">
+          管理员 JWT：<code>POST /admin/data-ingest/api-football/fixtures</code>、<code>POST /admin/data-ingest/api-football/squads</code>、<code>POST /admin/data-ingest/fd-finished</code>、<code>POST /admin/data-ingest/fd-player-squads</code>、<code>POST /admin/data-ingest/openfootball/league</code>、<code>POST /admin/data-ingest/statsbomb/open-data</code>、<code>GET /admin/data-ingest/statsbomb/catalog</code>、<code>POST /admin/data-ingest/statsbomb/batch</code>、<code>POST /admin/data-ingest/structure-raw</code>、<code>GET /admin/data-ingest/jobs/recent</code> — 详见 Swagger <code>/docs</code>。
+        </p>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

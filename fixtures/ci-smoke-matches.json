@@ -1,0 +1,6 @@
+{
+  "scheduledMatchId": null,
+  "liveMatchId": null,
+  "finishedMatchId": null,
+  "_comment": "填入 staging 稳定 matchId；null 时 match-phase:smoke 按状态 findFirst"
+}

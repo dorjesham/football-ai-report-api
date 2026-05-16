@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <p class="admin-page-sub">数据表</p>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <% columns.forEach(function (c) { %>
+              <th><%= c %></th>
+            <% }) %>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (row) { %>
+            <tr>
+              <% columns.forEach(function (c) { %>
+                <td><%= row[c] != null ? row[c] : '' %></td>
+              <% }) %>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </main>
+  </div>
+</body>
+</html>

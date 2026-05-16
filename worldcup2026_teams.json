@@ -1,0 +1,6164 @@
+{
+    "meta": {
+      "tournament": "2026 FIFA World Cup",
+    "edition": 2026,
+    "hosts": [
+      "Canada",
+      "Mexico",
+      "United States"
+    ],
+      "teams": 48,
+      "groups": 12,
+    "format": "12 groups of 4; top 2 each group + 8 best third-placed → Round of 32",
+    "drawDate": "2025-12-05",
+    "sourceNote": "抽签分组参考维基/FIFA 小组赛表。FIFA 名次为 2026-04-01 周期公开报道次序；积分数维基已公布的队伍用官方值，其余按名次锚点插值，正式用途请以 fifa.com 为准。Elo 为世界足球等级分（eloratings）。比赛为 FIFA 公开日历接口内、窗口期内、双方 IdCountry 不同的男足成年队场次（不含俱乐部联赛）；可能仍有遗漏赛事。",
+    "generated": "2026-05-03",
+    "fifaRankingAsOf": "2026-04-01",
+    "internationalWindow": {
+      "from": "2025-11-03",
+      "to": "2026-05-03"
+    }
+    },
+    "teams": [
+      {
+      "code": "MEX",
+      "nameCn": "墨西哥",
+      "nameEn": "Mexico",
+        "group": "A",
+      "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/mx.png",
+      "fifaRanking": {
+        "worldRank": 15,
+        "points": 1681.03,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 20,
+        "rating": 1858,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 11,
+          "wins": 3,
+          "draws": 4,
+          "losses": 4,
+          "goalsFor": 12,
+          "goalsAgainst": 15
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "BEL",
+              "nameEn": "Belgium"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "9a9u67p5s0748bbrjkapp6710"
+          },
+          {
+            "date": "2026-03-29",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "99s7co647ap41voq1mxihffo4"
+          },
+          {
+            "date": "2026-02-26",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ISL",
+              "nameEn": "Iceland"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "9gm9tba9uxrawa8qr5ikld6ac"
+          },
+          {
+            "date": "2026-01-23",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "PAN",
+              "nameEn": "Panama"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "7380nzri8gwn521uqbic8wk5w"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "PAR",
+              "nameEn": "Paraguay"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "2kgbw3ppsstmwpas3d1eoeluc"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 5
+            },
+            "fifaMatchId": "400020219"
+          },
+          {
+            "date": "2025-11-16",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "URU",
+              "nameEn": "Uruguay"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "b3zsi60bcs6u83n30bxlabjmc"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ARG",
+              "nameEn": "Argentina"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400020235"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 1,
+              "against": 3
+            },
+            "fifaMatchId": "400020179"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "CIV",
+              "nameEn": "Côte d'Ivoire"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020177"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "400020175"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "RSA",
+      "nameCn": "南非",
+      "nameEn": "South Africa",
+        "group": "A",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/za.png",
+      "fifaRanking": {
+        "worldRank": 60,
+        "points": 1338.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 79,
+        "rating": 1524,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 4,
+          "draws": 2,
+          "losses": 3,
+          "goalsFor": 14,
+          "goalsAgainst": 13
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "PAN",
+              "nameEn": "Panama"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "ec0sbf7yknz58qdojafa0rztg"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "PAN",
+              "nameEn": "Panama"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "ebganqs8gof4e7ayi163q6uj8"
+          },
+          {
+            "date": "2025-12-29",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "ZIM",
+              "nameEn": "Zimbabwe"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "4feup61zbkreoi5lydkx9lqfo"
+          },
+          {
+            "date": "2025-12-26",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "4e3aup1ecz7tgc4txt48i15w4"
+          },
+          {
+            "date": "2025-12-22",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "ANG",
+              "nameEn": "Angola"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "4dgq3uvyg6h2v9yz06rprga38"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ZAM",
+              "nameEn": "Zambia"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "dh587mqyvg2kwyax7bzzlh5as"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "JPN",
+              "nameEn": "Japan"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "400020247"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "QAT",
+              "nameEn": "Qatar"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020147"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BOL",
+              "nameEn": "Bolivia"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020146"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "KOR",
+      "nameCn": "韩国",
+      "nameEn": "South Korea",
+        "group": "A",
+      "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/kr.png",
+      "fifaRanking": {
+        "worldRank": 25,
+        "points": 1585.34,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 32,
+        "rating": 1752,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 4,
+          "draws": 1,
+          "losses": 2,
+          "goalsFor": 8,
+          "goalsAgainst": 8
+        },
+        "matches": [
+          {
+            "date": "2026-03-28",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CIV",
+              "nameEn": "Côte d'Ivoire"
+            },
+            "score": {
+              "for": 0,
+              "against": 4
+            },
+            "fifaMatchId": "amgffhak5skhfc865tkqut5as"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GHA",
+              "nameEn": "Ghana"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "4k76ztfj15zday6vifbqhmgic"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ENG",
+              "nameEn": "England"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020246"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "BOL",
+              "nameEn": "Bolivia"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "dva2oswuoc78hziuyxl3qfd3o"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "CIV",
+              "nameEn": "Côte d'Ivoire"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020180"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020178"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+        "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020175"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CZE",
+      "nameCn": "捷克",
+      "nameEn": "Czech Republic",
+      "group": "A",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/cz.png",
+      "fifaRanking": {
+        "worldRank": 41,
+        "points": 1471.84,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 40,
+        "rating": 1726,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 3,
+          "draws": 1,
+          "losses": 2,
+          "goalsFor": 15,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2026-03-26",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400021431"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "GIB",
+              "nameEn": "Gibraltar"
+            },
+            "score": {
+              "for": 6,
+              "against": 0
+            },
+            "fifaMatchId": "400019396"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ITA",
+              "nameEn": "Italy"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020233"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "SMR",
+              "nameEn": "San Marino"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "5abm65kxssy0l8t5tp0hgj28k"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "USA",
+              "nameEn": "USA"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020197"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "TJK",
+              "nameEn": "Tajikistan"
+            },
+            "score": {
+              "for": 6,
+              "against": 1
+            },
+            "fifaMatchId": "400020194"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CAN",
+      "nameCn": "加拿大",
+      "nameEn": "Canada",
+        "group": "B",
+        "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/ca.png",
+      "fifaRanking": {
+        "worldRank": 30,
+        "points": 1549.87,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 25,
+        "rating": 1784,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 3,
+          "draws": 3,
+          "losses": 1,
+          "goalsFor": 7,
+          "goalsAgainst": 4
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "TUN",
+              "nameEn": "Tunisia"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "b8ixwpcwlq5onweu5pvsdvkes"
+          },
+          {
+            "date": "2026-01-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GUA",
+              "nameEn": "Guatemala"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "3wbiby0v6r34fqtdjke612044"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "bb3c0ml41cs71xyojzah84vtg"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+        "code": "ECU",
+              "nameEn": "Ecuador"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "2cj5xkjgmdgjbrl2p5a59wcus"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020243"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "CHI",
+              "nameEn": "Chile"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "400020210"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UGA",
+              "nameEn": "Uganda"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020206"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "BIH",
+      "nameCn": "波黑",
+      "nameEn": "Bosnia and Herzegovina",
+        "group": "B",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/ba.png",
+      "fifaRanking": {
+        "worldRank": 65,
+        "points": 1303.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 66,
+        "rating": 1594,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 2,
+          "wins": 0,
+          "draws": 2,
+          "losses": 0,
+          "goalsFor": 2,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-26",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "WAL",
+              "nameEn": "Wales"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400021422"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019328"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "QAT",
+      "nameCn": "卡塔尔",
+      "nameEn": "Qatar",
+        "group": "B",
+      "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/qa.png",
+      "fifaRanking": {
+        "worldRank": 55,
+        "points": 1373.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 95,
+        "rating": 1425,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 5,
+          "wins": 0,
+          "draws": 2,
+          "losses": 3,
+          "goalsFor": 3,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2025-12-04",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SYR",
+              "nameEn": "Syria"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020115"
+          },
+          {
+            "date": "2025-12-01",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "PLE",
+              "nameEn": "Palestine"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020114"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ZIM",
+              "nameEn": "Zimbabwe"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "4ae7ma69sde7l3dil7pti97v8"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "RSA",
+              "nameEn": "South Africa"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020147"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ITA",
+              "nameEn": "Italy"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020145"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "SUI",
+      "nameCn": "瑞士",
+      "nameEn": "Switzerland",
+        "group": "B",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/ch.png",
+      "fifaRanking": {
+        "worldRank": 19,
+        "points": 1649.4,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 16,
+        "rating": 1889,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 4,
+          "draws": 3,
+          "losses": 2,
+          "goalsFor": 17,
+          "goalsAgainst": 11
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "NOR",
+              "nameEn": "Norway"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "5q46yotr4lplgjphwtii1y1p0"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GER",
+              "nameEn": "Germany"
+            },
+            "score": {
+              "for": 3,
+              "against": 4
+            },
+            "fifaMatchId": "e89xkn6u6ty72wxun7wg7llas"
+          },
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020226"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020224"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "KOS",
+              "nameEn": "Kosovo"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019256"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020240"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020179"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020178"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "CIV",
+              "nameEn": "Côte d'Ivoire"
+            },
+            "score": {
+              "for": 4,
+              "against": 1
+            },
+            "fifaMatchId": "400020176"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "BRA",
+      "nameCn": "巴西",
+      "nameEn": "Brazil",
+        "group": "C",
+        "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/br.png",
+      "fifaRanking": {
+        "worldRank": 6,
+        "points": 1761.16,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 5,
+        "rating": 1984,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 11,
+          "wins": 4,
+          "draws": 6,
+          "losses": 1,
+          "goalsFor": 20,
+          "goalsAgainst": 7
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CRO",
+              "nameEn": "Croatia"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "77api02043k38olppgeoexbf8"
+          },
+          {
+            "date": "2026-03-26",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "FRA",
+              "nameEn": "France"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "czt1ct8yt0dlnxhfsjbvzep78"
+          },
+          {
+            "date": "2025-11-27",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ITA",
+              "nameEn": "Italy"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020231"
+          },
+          {
+            "date": "2025-11-24",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020229"
+          },
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020228"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "FRA",
+              "nameEn": "France"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020218"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "TUN",
+              "nameEn": "Tunisia"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "1jac92u8wkk64ozx7u6b7bv9w"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "PAR",
+              "nameEn": "Paraguay"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020234"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ZAM",
+              "nameEn": "Zambia"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020191"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+        "code": "IDN",
+              "nameEn": "Indonesia"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "400020189"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "HON",
+              "nameEn": "Honduras"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "400020187"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "MAR",
+      "nameCn": "摩洛哥",
+      "nameEn": "Morocco",
+        "group": "C",
+      "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/ma.png",
+      "fifaRanking": {
+        "worldRank": 8,
+        "points": 1755.87,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 24,
+        "rating": 1821,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 16,
+          "wins": 11,
+          "draws": 2,
+          "losses": 3,
+          "goalsFor": 28,
+          "goalsAgainst": 17
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "PAR",
+              "nameEn": "Paraguay"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "77hzffnp3jua5x9isndy8g0es"
+          },
+          {
+            "date": "2026-01-09",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "CMR",
+              "nameEn": "Cameroon"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "1ey8l4hkeiie5e5b1083l30gk"
+          },
+          {
+            "date": "2025-12-29",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "ZAM",
+              "nameEn": "Zambia"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "11nsq1e2p99po1r8qc6rgcp3o"
+          },
+          {
+            "date": "2025-12-18",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "JOR",
+              "nameEn": "Jordan"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "400020119"
+          },
+          {
+            "date": "2025-12-15",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020117"
+          },
+          {
+            "date": "2025-12-11",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "SYR",
+              "nameEn": "Syria"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020141"
+          },
+          {
+            "date": "2025-12-08",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020126"
+          },
+          {
+            "date": "2025-12-05",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "OMA",
+              "nameEn": "Oman"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020124"
+          },
+          {
+            "date": "2025-12-02",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "COM",
+              "nameEn": "Comoros"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020122"
+          },
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+        "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "400020228"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MLI",
+              "nameEn": "Mali"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "400020221"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "UGA",
+              "nameEn": "Uganda"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "8l7jo6ne62aw6hzadden7byfo"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "USA",
+              "nameEn": "USA"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020237"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "MOZ",
+              "nameEn": "Mozambique"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "8kk1qo9wy235epjk053c4a0pg"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 6
+            },
+            "fifaMatchId": "400020154"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "JPN",
+              "nameEn": "Japan"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020151"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "HAI",
+      "nameCn": "海地",
+      "nameEn": "Haiti",
+      "group": "C",
+      "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/ht.png",
+      "fifaRanking": {
+        "worldRank": 83,
+        "points": 1177.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 77,
+        "rating": 1532,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 2,
+          "draws": 1,
+          "losses": 4,
+          "goalsFor": 8,
+          "goalsAgainst": 18
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ISL",
+              "nameEn": "Iceland"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "b88ffsfyj3z39sglh5583bims"
+          },
+          {
+            "date": "2026-03-29",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "TUN",
+              "nameEn": "Tunisia"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "b7ruevwmwzsdan4u6eq1zz40k"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "NCA",
+              "nameEn": "Nicaragua"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020606"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "CRC",
+              "nameEn": "Costa Rica"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020604"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 2,
+              "against": 4
+            },
+            "fifaMatchId": "400020174"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ENG",
+              "nameEn": "England"
+            },
+            "score": {
+              "for": 1,
+              "against": 8
+            },
+            "fifaMatchId": "400020171"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 1,
+              "against": 4
+            },
+            "fifaMatchId": "400020170"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "SCO",
+      "nameCn": "苏格兰",
+      "nameEn": "Scotland",
+      "group": "C",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/gb-sct.png",
+      "fifaRanking": {
+        "worldRank": 43,
+        "points": 1457.66,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 202,
+        "rating": 853,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 1,
+          "wins": 1,
+          "draws": 0,
+          "losses": 0,
+          "goalsFor": 4,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "DEN",
+              "nameEn": "Denmark"
+            },
+            "score": {
+              "for": 4,
+              "against": 2
+            },
+            "fifaMatchId": "400019266"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "USA",
+      "nameCn": "美国",
+      "nameEn": "United States",
+        "group": "D",
+        "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/us.png",
+      "fifaRanking": {
+        "worldRank": 16,
+        "points": 1673.13,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 41,
+        "rating": 1721,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 3,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 8,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "URU",
+              "nameEn": "Uruguay"
+            },
+            "score": {
+              "for": 5,
+              "against": 1
+            },
+            "fifaMatchId": "2r3eh28rzo0hwcs0c61h4umms"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020237"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "CZE",
+              "nameEn": "Czechia"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020197"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BFA",
+              "nameEn": "Burkina Faso"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020193"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "PAR",
+      "nameCn": "巴拉圭",
+      "nameEn": "Paraguay",
+        "group": "D",
+      "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/py.png",
+      "fifaRanking": {
+        "worldRank": 40,
+        "points": 1478.94,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 22,
+        "rating": 1833,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 2,
+          "draws": 2,
+          "losses": 2,
+          "goalsFor": 5,
+          "goalsAgainst": 5
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "77hzffnp3jua5x9isndy8g0es"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "GRE",
+              "nameEn": "Greece"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "b6ei52ke816c70yw7sikms3dg"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "2kgbw3ppsstmwpas3d1eoeluc"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020234"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020203"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UZB",
+              "nameEn": "Uzbekistan"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "400020199"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "AUS",
+      "nameCn": "澳大利亚",
+      "nameEn": "Australia",
+      "group": "D",
+        "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/au.png",
+      "fifaRanking": {
+        "worldRank": 27,
+        "points": 1571.15,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 26,
+        "rating": 1783,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 2,
+          "draws": 0,
+          "losses": 2,
+          "goalsFor": 6,
+          "goalsAgainst": 5
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "CUW",
+              "nameEn": "Curaçao"
+            },
+            "score": {
+              "for": 5,
+              "against": 1
+            },
+            "fifaMatchId": "400021845"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "CMR",
+              "nameEn": "Cameroon"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400021843"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "COL",
+              "nameEn": "Colombia"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "4jdya8op1y9kowtps5sur27mc"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "1gw0mukw0hm3pk9rtxqro6bys"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "TUR",
+      "nameCn": "土耳其",
+      "nameEn": "Turkey",
+      "group": "D",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/tr.png",
+      "fifaRanking": {
+        "worldRank": 22,
+        "points": 1606.62,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 2,
+          "wins": 1,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 3,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-26",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "ROU",
+              "nameEn": "Romania"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400021425"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "ESP",
+              "nameEn": "Spain"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400019283"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      },
+      "worldFootballElo": {
+        "worldRank": 14,
+        "rating": 1902,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      }
+      },
+      {
+        "code": "GER",
+        "nameCn": "德国",
+        "nameEn": "Germany",
+        "group": "E",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/de.png",
+      "fifaRanking": {
+        "worldRank": 10,
+        "points": 1730.37,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 11,
+        "rating": 1923,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 8,
+          "wins": 5,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 23,
+          "goalsAgainst": 7
+        },
+        "matches": [
+          {
+            "date": "2026-03-30",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GHA",
+              "nameEn": "Ghana"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "75wk9c52vnuscdgxmbp61z3mc"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 4,
+              "against": 3
+            },
+            "fifaMatchId": "e89xkn6u6ty72wxun7wg7llas"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "SVK",
+              "nameEn": "Slovakia"
+            },
+            "score": {
+              "for": 6,
+              "against": 0
+            },
+            "fifaMatchId": "400019235"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BFA",
+              "nameEn": "Burkina Faso"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020241"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "LUX",
+              "nameEn": "Luxembourg"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400019239"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SLV",
+              "nameEn": "El Salvador"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "400020185"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "PRK",
+              "nameEn": "Korea DPR"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020183"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "COL",
+              "nameEn": "Colombia"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020181"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CUW",
+      "nameCn": "库拉索",
+      "nameEn": "Curaçao",
+        "group": "E",
+      "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/cw.png",
+      "fifaRanking": {
+        "worldRank": 82,
+        "points": 1184.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 151,
+        "rating": 1239,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 1,
+          "draws": 1,
+          "losses": 2,
+          "goalsFor": 8,
+          "goalsAgainst": 7
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "FIFA Series™",
+            "role": "away",
+            "opponent": {
+              "code": "AUS",
+              "nameEn": "Australia"
+            },
+            "score": {
+              "for": 1,
+              "against": 5
+            },
+            "fifaMatchId": "400021845"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "FIFA Series™",
+            "role": "away",
+            "opponent": {
+              "code": "CHN",
+              "nameEn": "China PR"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400021842"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+        "code": "JAM",
+              "nameEn": "Jamaica"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020594"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "BER",
+              "nameEn": "Bermuda"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "400020591"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CIV",
+      "nameCn": "科特迪瓦",
+      "nameEn": "Ivory Coast",
+        "group": "E",
+      "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/ci.png",
+      "fifaRanking": {
+        "worldRank": 34,
+        "points": 1521.5,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 52,
+        "rating": 1676,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 5,
+          "draws": 0,
+          "losses": 4,
+          "goalsFor": 15,
+          "goalsAgainst": 11
+        },
+        "matches": [
+          {
+            "date": "2026-03-28",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "amgffhak5skhfc865tkqut5as"
+          },
+          {
+            "date": "2026-01-06",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "BFA",
+              "nameEn": "Burkina Faso"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "a6cq79n1fys0sgi07jbxjmtjo"
+          },
+          {
+            "date": "2025-12-31",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "GAB",
+              "nameEn": "Gabon"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "bweqqrzvqwua4tvveiekcgwt0"
+          },
+          {
+            "date": "2025-12-24",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "MOZ",
+              "nameEn": "Mozambique"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "bue4tjgpmwuzeh0gkuehbnaxg"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "OMA",
+              "nameEn": "Oman"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "4snrc2shvvgntwb325im88t90"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "9ws4meschsyh1w29dnr38u1as"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 1,
+              "against": 3
+            },
+            "fifaMatchId": "400020180"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020177"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 1,
+              "against": 4
+            },
+            "fifaMatchId": "400020176"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "ECU",
+      "nameCn": "厄瓜多尔",
+      "nameEn": "Ecuador",
+      "group": "E",
+        "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/ec.png",
+      "fifaRanking": {
+        "worldRank": 23,
+        "points": 1599.53,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 9,
+        "rating": 1933,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 2,
+          "wins": 1,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 2,
+          "goalsAgainst": 0
+        },
+        "matches": [
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NZL",
+              "nameEn": "New Zealand"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "bbzf6tz6s3klgupje1og7pt04"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "CAN",
+              "nameEn": "Canada"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "2cj5xkjgmdgjbrl2p5a59wcus"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "NED",
+      "nameCn": "荷兰",
+      "nameEn": "Netherlands",
+        "group": "F",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/nl.png",
+      "fifaRanking": {
+        "worldRank": 7,
+        "points": 1757.87,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 8,
+        "rating": 1961,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 3,
+          "wins": 2,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 7,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NOR",
+              "nameEn": "Norway"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "1ozzrwjyqpnwqcumlxzsf6z2s"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "LTU",
+              "nameEn": "Lithuania"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "400019306"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "POL",
+              "nameEn": "Poland"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019321"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "JPN",
+      "nameCn": "日本",
+      "nameEn": "Japan",
+        "group": "F",
+        "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/jp.png",
+      "fifaRanking": {
+        "worldRank": 18,
+        "points": 1660.43,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 13,
+        "rating": 1904,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 4,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 11,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020227"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "BOL",
+              "nameEn": "Bolivia"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "du898ixlnrdrs0vewk8ncgufo"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "PRK",
+              "nameEn": "Korea DPR"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020222"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "RSA",
+              "nameEn": "South Africa"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020247"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GHA",
+              "nameEn": "Ghana"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "b11vk7vda9aq73l69eu6lfxuc"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "NCL",
+              "nameEn": "New Caledonia"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020153"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020151"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "SWE",
+      "nameCn": "瑞典",
+      "nameEn": "Sweden",
+      "group": "F",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/se.png",
+      "fifaRanking": {
+        "worldRank": 38,
+        "points": 1493.12,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 43,
+        "rating": 1719,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 2,
+          "wins": 1,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 4,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-26",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "UKR",
+              "nameEn": "Ukraine"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400021423"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "SVN",
+              "nameEn": "Slovenia"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019248"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "TUN",
+      "nameCn": "突尼斯",
+      "nameEn": "Tunisia",
+      "group": "F",
+      "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/tn.png",
+      "fifaRanking": {
+        "worldRank": 44,
+        "points": 1450.56,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 58,
+        "rating": 1636,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 12,
+          "wins": 5,
+          "draws": 5,
+          "losses": 2,
+          "goalsFor": 20,
+          "goalsAgainst": 11
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "CAN",
+              "nameEn": "Canada"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "b8ixwpcwlq5onweu5pvsdvkes"
+          },
+          {
+            "date": "2026-03-29",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "HAI",
+              "nameEn": "Haiti"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "b7ruevwmwzsdan4u6eq1zz40k"
+          },
+          {
+            "date": "2025-12-30",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "TAN",
+              "nameEn": "Tanzania"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "44fog1v8i71qymm54rp3tzjf8"
+          },
+          {
+            "date": "2025-12-23",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "UGA",
+              "nameEn": "Uganda"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "42jnhm2x8jlnqedu6m9ppb76c"
+          },
+          {
+            "date": "2025-12-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "BOT",
+              "nameEn": "Botswana"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "4n61nhu5zzkq7qihcxqvgmfx0"
+          },
+          {
+            "date": "2025-12-04",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "PLE",
+              "nameEn": "Palestine"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400020116"
+          },
+          {
+            "date": "2025-12-01",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "SYR",
+              "nameEn": "Syria"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020113"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "1jac92u8wkk64ozx7u6b7bv9w"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "JOR",
+              "nameEn": "Jordan"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "eqsvzuvh95kozlp2xookw0h04"
+          },
+          {
+            "date": "2025-11-12",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "MTN",
+              "nameEn": "Mauritania"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "eq6mw37u6m5j4ucgjgd9vhu6s"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ARG",
+              "nameEn": "Argentina"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020165"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "FIJ",
+              "nameEn": "Fiji"
+            },
+            "score": {
+              "for": 6,
+              "against": 0
+            },
+            "fifaMatchId": "400020164"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "BEL",
+      "nameCn": "比利时",
+      "nameEn": "Belgium",
+        "group": "G",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/be.png",
+      "fifaRanking": {
+        "worldRank": 9,
+        "points": 1734.71,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 19,
+        "rating": 1866,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 2,
+          "draws": 2,
+          "losses": 2,
+          "goalsFor": 19,
+          "goalsAgainst": 7
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "9a9u67p5s0748bbrjkapp6710"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "LIE",
+              "nameEn": "Liechtenstein"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "400019345"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "KAZ",
+              "nameEn": "Kazakhstan"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019361"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "400020248"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "FIJ",
+              "nameEn": "Fiji"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "400020166"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ARG",
+              "nameEn": "Argentina"
+            },
+            "score": {
+              "for": 2,
+              "against": 3
+            },
+            "fifaMatchId": "400020163"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "EGY",
+      "nameCn": "埃及",
+      "nameEn": "Egypt",
+        "group": "G",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/eg.png",
+      "fifaRanking": {
+        "worldRank": 29,
+        "points": 1556.97,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 51,
+        "rating": 1689,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 15,
+          "wins": 6,
+          "draws": 4,
+          "losses": 5,
+          "goalsFor": 20,
+          "goalsAgainst": 19
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "8dfu7be9cd6srea65oaez31n8"
+          },
+          {
+            "date": "2026-01-14",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "SEN",
+              "nameEn": "Senegal"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "8cjpt2v82l93o3q1wsvsf2238"
+          },
+          {
+            "date": "2026-01-05",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "BEN",
+              "nameEn": "Benin"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "a3y0erz76jpc30v6b78c6cqac"
+          },
+          {
+            "date": "2025-12-29",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "ANG",
+              "nameEn": "Angola"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "4ez3w5ofzrznjxzhxdjfroxec"
+          },
+          {
+            "date": "2025-12-26",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "RSA",
+              "nameEn": "South Africa"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "4e3aup1ecz7tgc4txt48i15w4"
+          },
+          {
+            "date": "2025-12-22",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "ZIM",
+              "nameEn": "Zimbabwe"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "4cqi1k7i34dbvgmbf2ofumw44"
+          },
+          {
+            "date": "2025-12-16",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NGA",
+              "nameEn": "Nigeria"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "7i4r0s2bzdd6oqo041ohvt3o"
+          },
+          {
+            "date": "2025-12-09",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "JOR",
+              "nameEn": "Jordan"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "400020132"
+          },
+          {
+            "date": "2025-12-02",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "KUW",
+              "nameEn": "Kuwait"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020128"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CPV",
+              "nameEn": "Cabo Verde"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "7dl0ri596eh6qqkjjkct48bv8"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 1,
+              "against": 3
+            },
+            "fifaMatchId": "400020240"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "UZB",
+              "nameEn": "Uzbekistan"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "a348gvahdtt35q0vub12z7yms"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ENG",
+              "nameEn": "England"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "400020173"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020172"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "HAI",
+              "nameEn": "Haiti"
+            },
+            "score": {
+              "for": 4,
+              "against": 1
+            },
+            "fifaMatchId": "400020170"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "IRN",
+      "nameCn": "伊朗",
+      "nameEn": "Iran",
+        "group": "G",
+      "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/ir.png",
+      "fifaRanking": {
+        "worldRank": 21,
+        "points": 1613.72,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 31,
+        "rating": 1760,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 1,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 6,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CRC",
+              "nameEn": "Costa Rica"
+            },
+            "score": {
+              "for": 5,
+              "against": 0
+            },
+            "fifaMatchId": "cxjzlvdxv29yxkk0fgoppesr8"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NGA",
+              "nameEn": "Nigeria"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "cwyryvrqtriqz8hbwb6wy3vv8"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "UZB",
+              "nameEn": "Uzbekistan"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "7cwyn57w48kqkyr7lz1qvm7f8"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CPV",
+              "nameEn": "Cabo Verde"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "a2hbcnpn4zj1nnfd0y1l0f40k"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "NZL",
+      "nameCn": "新西兰",
+      "nameEn": "New Zealand",
+      "group": "G",
+      "confederation": "OFC",
+      "flagUrl": "https://flagcdn.com/w320/nz.png",
+      "fifaRanking": {
+        "worldRank": 85,
+        "points": 1163.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 68,
+        "rating": 1585,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 1,
+          "draws": 0,
+          "losses": 5,
+          "goalsFor": 6,
+          "goalsAgainst": 14
+        },
+        "matches": [
+          {
+            "date": "2026-03-30",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "CHI",
+              "nameEn": "Chile"
+            },
+            "score": {
+              "for": 4,
+              "against": 1
+            },
+            "fifaMatchId": "400021864"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "FIN",
+              "nameEn": "Finland"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400021865"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "ECU",
+              "nameEn": "Ecuador"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "bbzf6tz6s3klgupje1og7pt04"
+          },
+          {
+            "date": "2025-11-16",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "COL",
+              "nameEn": "Colombia"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "bbkxnzcok9yufo44bdrsfhic4"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 1,
+              "against": 4
+            },
+            "fifaMatchId": "400020216"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "MLI",
+              "nameEn": "Mali"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "400020211"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+      },
+      {
+        "code": "ESP",
+        "nameCn": "西班牙",
+        "nameEn": "Spain",
+        "group": "H",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/es.png",
+      "fifaRanking": {
+        "worldRank": 2,
+        "points": 1876.4,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 1,
+        "rating": 2165,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 2,
+          "wins": 1,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 5,
+          "goalsAgainst": 2
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "SRB",
+              "nameEn": "Serbia"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "30sdmksmqmisy6kad0a7xjjf8"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "TUR",
+              "nameEn": "Türkiye"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400019283"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CPV",
+      "nameCn": "佛得角",
+      "nameEn": "Cape Verde",
+        "group": "H",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/cv.png",
+      "fifaRanking": {
+        "worldRank": 69,
+        "points": 1275.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 72,
+        "rating": 1549,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 0,
+          "draws": 3,
+          "losses": 1,
+          "goalsFor": 4,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2026-03-30",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "FIN",
+              "nameEn": "Finland"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400021862"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "FIFA Series™",
+            "role": "away",
+            "opponent": {
+              "code": "CHI",
+              "nameEn": "Chile"
+            },
+            "score": {
+              "for": 2,
+              "against": 4
+            },
+            "fifaMatchId": "400021863"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "7dl0ri596eh6qqkjjkct48bv8"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "IRN",
+              "nameEn": "IR Iran"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "a2hbcnpn4zj1nnfd0y1l0f40k"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "KSA",
+      "nameCn": "沙特阿拉伯",
+      "nameEn": "Saudi Arabia",
+        "group": "H",
+      "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/sa.png",
+      "fifaRanking": {
+        "worldRank": 61,
+        "points": 1331.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 71,
+        "rating": 1568,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 12,
+          "wins": 4,
+          "draws": 1,
+          "losses": 7,
+          "goalsFor": 9,
+          "goalsAgainst": 16
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "SRB",
+              "nameEn": "Serbia"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "cca8rjahua6mw1d35urjurggk"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 0,
+              "against": 4
+            },
+            "fifaMatchId": "8dfu7be9cd6srea65oaez31n8"
+          },
+          {
+            "date": "2025-12-18",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020118"
+          },
+          {
+            "date": "2025-12-15",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "JOR",
+              "nameEn": "Jordan"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020144"
+          },
+          {
+            "date": "2025-12-11",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "PLE",
+              "nameEn": "Palestine"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020140"
+          },
+          {
+            "date": "2025-12-08",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020126"
+          },
+          {
+            "date": "2025-12-05",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "COM",
+              "nameEn": "Comoros"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020125"
+          },
+          {
+            "date": "2025-12-02",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "OMA",
+              "nameEn": "Oman"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020123"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ALG",
+              "nameEn": "Algeria"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "9xbqdnpilttoenvsl2eo8nv9w"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CIV",
+              "nameEn": "Côte d'Ivoire"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "9ws4meschsyh1w29dnr38u1as"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MLI",
+              "nameEn": "Mali"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020215"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020212"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "URU",
+      "nameCn": "乌拉圭",
+      "nameEn": "Uruguay",
+      "group": "H",
+      "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/uy.png",
+      "fifaRanking": {
+        "worldRank": 17,
+        "points": 1673.07,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 15,
+        "rating": 1892,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 3,
+          "wins": 0,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 2,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "ENG",
+              "nameEn": "England"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "7da5vm7jrz6b800lt0gz12f4k"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "USA",
+              "nameEn": "USA"
+            },
+            "score": {
+              "for": 1,
+              "against": 5
+            },
+            "fifaMatchId": "2r3eh28rzo0hwcs0c61h4umms"
+          },
+          {
+            "date": "2025-11-16",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "b3zsi60bcs6u83n30bxlabjmc"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "FRA",
+      "nameCn": "法国",
+      "nameEn": "France",
+        "group": "I",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/fr.png",
+      "fifaRanking": {
+        "worldRank": 1,
+        "points": 1877.32,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 3,
+        "rating": 2082,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 4,
+          "draws": 1,
+          "losses": 1,
+          "goalsFor": 11,
+          "goalsAgainst": 3
+        },
+        "matches": [
+          {
+            "date": "2026-03-26",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "czt1ct8yt0dlnxhfsjbvzep78"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020218"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "COL",
+              "nameEn": "Colombia"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020245"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "UKR",
+              "nameEn": "Ukraine"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "400019270"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "UGA",
+              "nameEn": "Uganda"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020209"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "CHI",
+              "nameEn": "Chile"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020205"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "SEN",
+      "nameCn": "塞内加尔",
+      "nameEn": "Senegal",
+        "group": "I",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/sn.png",
+      "fifaRanking": {
+        "worldRank": 14,
+        "points": 1688.99,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 17,
+        "rating": 1878,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 7,
+          "draws": 1,
+          "losses": 1,
+          "goalsFor": 19,
+          "goalsAgainst": 1
+        },
+        "matches": [
+          {
+            "date": "2026-03-28",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "PER",
+              "nameEn": "Peru"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "1h4hf34gkyq0jt3y1xtnsfytw"
+          },
+          {
+            "date": "2026-01-14",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "8cjpt2v82l93o3q1wsvsf2238"
+          },
+          {
+            "date": "2026-01-09",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "MLI",
+              "nameEn": "Mali"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "1e3le1dnr4rxeos2svs0zimms"
+          },
+          {
+            "date": "2025-12-30",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "BEN",
+              "nameEn": "Benin"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "cfyx06zjk52590c6ycsoymuj8"
+          },
+          {
+            "date": "2025-12-23",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "BOT",
+              "nameEn": "Botswana"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "cduj65k7nf6zf2ypqawfbdous"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "KEN",
+              "nameEn": "Kenya"
+            },
+            "score": {
+              "for": 8,
+              "against": 0
+            },
+            "fifaMatchId": "dpbrlpqucvmxgnq8zek0ucv10"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UGA",
+              "nameEn": "Uganda"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020236"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "CRC",
+              "nameEn": "Costa Rica"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020159"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "CRO",
+              "nameEn": "Croatia"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020157"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "IRQ",
+      "nameCn": "伊拉克",
+      "nameEn": "Iraq",
+        "group": "I",
+        "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/iq.png",
+      "fifaRanking": {
+        "worldRank": 57,
+        "points": 1359.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 63,
+        "rating": 1607,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 3,
+          "draws": 1,
+          "losses": 2,
+          "goalsFor": 7,
+          "goalsAgainst": 7
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "BOL",
+              "nameEn": "Bolivia"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400021439"
+          },
+          {
+            "date": "2025-12-12",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "JOR",
+              "nameEn": "Jordan"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020143"
+          },
+          {
+            "date": "2025-12-09",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ALG",
+              "nameEn": "Algeria"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020138"
+          },
+          {
+            "date": "2025-12-03",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BHR",
+              "nameEn": "Bahrain"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020135"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020396"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020395"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "NOR",
+      "nameCn": "挪威",
+      "nameEn": "Norway",
+      "group": "I",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/no.png",
+      "fifaRanking": {
+        "worldRank": 31,
+        "points": 1542.78,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 12,
+        "rating": 1912,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 3,
+          "wins": 1,
+          "draws": 1,
+          "losses": 1,
+          "goalsFor": 5,
+          "goalsAgainst": 3
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "5q46yotr4lplgjphwtii1y1p0"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "NED",
+              "nameEn": "Netherlands"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "1ozzrwjyqpnwqcumlxzsf6z2s"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "EST",
+              "nameEn": "Estonia"
+            },
+            "score": {
+              "for": 4,
+              "against": 1
+            },
+            "fifaMatchId": "400019222"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "ARG",
+      "nameCn": "阿根廷",
+      "nameEn": "Argentina",
+        "group": "J",
+        "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/ar.png",
+      "fifaRanking": {
+        "worldRank": 3,
+        "points": 1874.81,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 2,
+        "rating": 2113,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 3,
+          "draws": 1,
+          "losses": 0,
+          "goalsFor": 8,
+          "goalsAgainst": 4
+        },
+        "matches": [
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "400020235"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "ANG",
+              "nameEn": "Angola"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "6f8by0l813zjguexynj42xqfo"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "TUN",
+              "nameEn": "Tunisia"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020165"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BEL",
+              "nameEn": "Belgium"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "400020163"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "ALG",
+      "nameCn": "阿尔及利亚",
+      "nameEn": "Algeria",
+        "group": "J",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/dz.png",
+      "fifaRanking": {
+        "worldRank": 28,
+        "points": 1564.06,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 35,
+        "rating": 1743,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 7,
+          "draws": 2,
+          "losses": 0,
+          "goalsFor": 22,
+          "goalsAgainst": 3
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GUA",
+              "nameEn": "Guatemala"
+            },
+            "score": {
+              "for": 7,
+              "against": 0
+            },
+            "fifaMatchId": "f43al1i71tpur9o1xyzu4r6l0"
+          },
+          {
+            "date": "2026-01-06",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "COD",
+              "nameEn": "Congo DR"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "a5kd4fjlqci5grwubwwhs36z8"
+          },
+          {
+            "date": "2025-12-31",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "EQG",
+              "nameEn": "Equatorial Guinea"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "dyvpkmkmat1c94wl4y6kyknis"
+          },
+          {
+            "date": "2025-12-24",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "SDN",
+              "nameEn": "Sudan"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "dwvjgqxwk382rjxcwb6rpexhw"
+          },
+          {
+            "date": "2025-12-12",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020142"
+          },
+          {
+            "date": "2025-12-09",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "IRQ",
+              "nameEn": "Iraq"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020138"
+          },
+          {
+            "date": "2025-12-03",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "SDN",
+              "nameEn": "Sudan"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020134"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "9xbqdnpilttoenvsl2eo8nv9w"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "ZIM",
+              "nameEn": "Zimbabwe"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "2pmg4al25x2fl8fgedc0z6ot0"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "AUT",
+      "nameCn": "奥地利",
+      "nameEn": "Austria",
+        "group": "J",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/at.png",
+      "fifaRanking": {
+        "worldRank": 24,
+        "points": 1592.44,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 23,
+        "rating": 1827,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 7,
+          "draws": 1,
+          "losses": 1,
+          "goalsFor": 20,
+          "goalsAgainst": 4
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "GHA",
+              "nameEn": "Ghana"
+            },
+            "score": {
+              "for": 5,
+              "against": 1
+            },
+            "fifaMatchId": "ccbsfk62irwb6j38ix5fya51w"
+          },
+          {
+            "date": "2025-11-27",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "POR",
+              "nameEn": "Portugal"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "400020232"
+          },
+          {
+            "date": "2025-11-24",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ITA",
+              "nameEn": "Italy"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020230"
+          },
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "JPN",
+              "nameEn": "Japan"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020227"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "ENG",
+              "nameEn": "England"
+            },
+            "score": {
+              "for": 4,
+              "against": 0
+            },
+            "fifaMatchId": "400020223"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "BIH",
+              "nameEn": "Bosnia and Herzegovina"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400019328"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "CYP",
+              "nameEn": "Cyprus"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400019329"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "NZL",
+              "nameEn": "New Zealand"
+            },
+            "score": {
+              "for": 4,
+              "against": 1
+            },
+            "fifaMatchId": "400020216"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020212"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "JOR",
+      "nameCn": "约旦",
+      "nameEn": "Jordan",
+      "group": "J",
+        "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/jo.png",
+      "fifaRanking": {
+        "worldRank": 63,
+        "points": 1317.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 50,
+        "rating": 1690,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 9,
+          "wins": 4,
+          "draws": 3,
+          "losses": 2,
+          "goalsFor": 16,
+          "goalsAgainst": 11
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NGA",
+              "nameEn": "Nigeria"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "33e3v1supdgbr51z49zfwkidw"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "CRC",
+              "nameEn": "Costa Rica"
+            },
+            "score": {
+              "for": 2,
+              "against": 2
+            },
+            "fifaMatchId": "bcmoc86u2voq8yx90jvuj8b9w"
+          },
+          {
+            "date": "2025-12-18",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 2,
+              "against": 3
+            },
+            "fifaMatchId": "400020119"
+          },
+          {
+            "date": "2025-12-15",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "KSA",
+              "nameEn": "Saudi Arabia"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020144"
+          },
+          {
+            "date": "2025-12-12",
+            "competition": "FIFA Arab Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "IRQ",
+              "nameEn": "Iraq"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020143"
+          },
+          {
+            "date": "2025-12-09",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020132"
+          },
+          {
+            "date": "2025-12-06",
+            "competition": "FIFA Arab Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "KUW",
+              "nameEn": "Kuwait"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400020130"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "MLI",
+              "nameEn": "Mali"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "2zu5mclqszjuyfzxms1plu6ms"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "TUN",
+              "nameEn": "Tunisia"
+            },
+            "score": {
+              "for": 2,
+              "against": 3
+            },
+            "fifaMatchId": "eqsvzuvh95kozlp2xookw0h04"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "POR",
+      "nameCn": "葡萄牙",
+      "nameEn": "Portugal",
+        "group": "K",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/pt.png",
+      "fifaRanking": {
+        "worldRank": 5,
+        "points": 1763.83,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 5,
+        "rating": 1984,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 10,
+          "wins": 7,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 31,
+          "goalsAgainst": 5
+        },
+        "matches": [
+          {
+            "date": "2026-03-29",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "99s7co647ap41voq1mxihffo4"
+          },
+          {
+            "date": "2025-11-27",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400020232"
+          },
+          {
+            "date": "2025-11-24",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020229"
+          },
+          {
+            "date": "2025-11-21",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "SUI",
+              "nameEn": "Switzerland"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020226"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 5,
+              "against": 0
+            },
+            "fifaMatchId": "400020219"
+          },
+          {
+            "date": "2025-11-16",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "ARM",
+              "nameEn": "Armenia"
+            },
+            "score": {
+              "for": 9,
+              "against": 1
+            },
+            "fifaMatchId": "400019293"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "BEL",
+              "nameEn": "Belgium"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020248"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400019302"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "MAR",
+              "nameEn": "Morocco"
+            },
+            "score": {
+              "for": 6,
+              "against": 0
+            },
+            "fifaMatchId": "400020154"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "NCL",
+              "nameEn": "New Caledonia"
+            },
+            "score": {
+              "for": 6,
+              "against": 1
+            },
+            "fifaMatchId": "400020152"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "COD",
+      "nameCn": "刚果（金）",
+      "nameEn": "DR Congo",
+        "group": "K",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/cd.png",
+      "fifaRanking": {
+        "worldRank": 46,
+        "points": 1436.37,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 54,
+        "rating": 1655,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 5,
+          "draws": 0,
+          "losses": 1,
+          "goalsFor": 9,
+          "goalsAgainst": 1
+        },
+        "matches": [
+          {
+            "date": "2026-03-25",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "BER",
+              "nameEn": "Bermuda"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "cmavbqo9p5qbkqltjgfemgwes"
+          },
+          {
+            "date": "2026-01-06",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "ALG",
+              "nameEn": "Algeria"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "a5kd4fjlqci5grwubwwhs36z8"
+          },
+          {
+            "date": "2025-12-30",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "away",
+            "opponent": {
+              "code": "BOT",
+              "nameEn": "Botswana"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "cge6u2f5t6yf1aehuffjy96ac"
+          },
+          {
+            "date": "2025-12-23",
+            "competition": "CAF Africa Cup of Nations",
+            "role": "home",
+            "opponent": {
+              "code": "BEN",
+              "nameEn": "Benin"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "cej5wes9u7utmjuirob9u3g2c"
+          },
+          {
+            "date": "2025-12-16",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "ZAM",
+              "nameEn": "Zambia"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "68p95dpp2r6x54rghw26xibys"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "CMR",
+              "nameEn": "Cameroon"
+            },
+            "score": {
+              "for": 1,
+              "against": 0
+            },
+            "fifaMatchId": "400021229"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "UZB",
+      "nameCn": "乌兹别克斯坦",
+      "nameEn": "Uzbekistan",
+        "group": "K",
+        "confederation": "AFC",
+      "flagUrl": "https://flagcdn.com/w320/uz.png",
+      "fifaRanking": {
+        "worldRank": 50,
+        "points": 1408.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 38,
+        "rating": 1727,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 4,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 15,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2026-03-30",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400021861"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "FIFA Series™",
+            "role": "home",
+            "opponent": {
+              "code": "GAB",
+              "nameEn": "Gabon"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400021860"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "ITA",
+              "nameEn": "Italy"
+            },
+            "score": {
+              "for": 2,
+              "against": 3
+            },
+            "fifaMatchId": "400020217"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "IRN",
+              "nameEn": "IR Iran"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "7cwyn57w48kqkyr7lz1qvm7f8"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "a348gvahdtt35q0vub12z7yms"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "PAN",
+              "nameEn": "Panama"
+            },
+            "score": {
+              "for": 6,
+              "against": 1
+            },
+            "fifaMatchId": "400020204"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "PAR",
+              "nameEn": "Paraguay"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "400020199"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "COL",
+      "nameCn": "哥伦比亚",
+      "nameEn": "Colombia",
+      "group": "K",
+      "confederation": "CONMEBOL",
+      "flagUrl": "https://flagcdn.com/w320/co.png",
+      "fifaRanking": {
+        "worldRank": 13,
+        "points": 1693.09,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 7,
+        "rating": 1975,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 6,
+          "wins": 3,
+          "draws": 2,
+          "losses": 1,
+          "goalsFor": 8,
+          "goalsAgainst": 4
+        },
+        "matches": [
+          {
+            "date": "2025-11-19",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "AUS",
+              "nameEn": "Australia"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "4jdya8op1y9kowtps5sur27mc"
+          },
+          {
+            "date": "2025-11-16",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "NZL",
+              "nameEn": "New Zealand"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "bbkxnzcok9yufo44bdrsfhic4"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "FRA",
+              "nameEn": "France"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "400020245"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "PRK",
+              "nameEn": "Korea DPR"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020186"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SLV",
+              "nameEn": "El Salvador"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020184"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "GER",
+              "nameEn": "Germany"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "400020181"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "ENG",
+      "nameCn": "英格兰",
+      "nameEn": "England",
+        "group": "L",
+      "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/gb-eng.png",
+      "fifaRanking": {
+        "worldRank": 4,
+        "points": 1825.97,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 4,
+        "rating": 2020,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 4,
+          "draws": 1,
+          "losses": 2,
+          "goalsFor": 16,
+          "goalsAgainst": 9
+        },
+        "matches": [
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "URU",
+              "nameEn": "Uruguay"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "7da5vm7jrz6b800lt0gz12f4k"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 0,
+              "against": 4
+            },
+            "fifaMatchId": "400020223"
+          },
+          {
+            "date": "2025-11-15",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400020246"
+          },
+          {
+            "date": "2025-11-13",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "SRB",
+              "nameEn": "Serbia"
+            },
+            "score": {
+              "for": 2,
+              "against": 0
+            },
+            "fifaMatchId": "400019376"
+          },
+          {
+            "date": "2025-11-10",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "EGY",
+              "nameEn": "Egypt"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020173"
+          },
+          {
+            "date": "2025-11-07",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "HAI",
+              "nameEn": "Haiti"
+            },
+            "score": {
+              "for": 8,
+              "against": 1
+            },
+            "fifaMatchId": "400020171"
+          },
+          {
+            "date": "2025-11-04",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "VEN",
+              "nameEn": "Venezuela"
+            },
+            "score": {
+              "for": 0,
+              "against": 3
+            },
+            "fifaMatchId": "400020169"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "CRO",
+      "nameCn": "克罗地亚",
+      "nameEn": "Croatia",
+        "group": "L",
+        "confederation": "UEFA",
+      "flagUrl": "https://flagcdn.com/w320/hr.png",
+      "fifaRanking": {
+        "worldRank": 11,
+        "points": 1717.07,
+        "asOf": "2026-04-01"
+      },
+      "worldFootballElo": {
+        "worldRank": 10,
+        "rating": 1930,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 5,
+          "wins": 3,
+          "draws": 1,
+          "losses": 1,
+          "goalsFor": 10,
+          "goalsAgainst": 6
+        },
+        "matches": [
+          {
+            "date": "2026-04-01",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "BRA",
+              "nameEn": "Brazil"
+            },
+            "score": {
+              "for": 1,
+              "against": 3
+            },
+            "fifaMatchId": "77api02043k38olppgeoexbf8"
+          },
+          {
+            "date": "2025-11-17",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "MNE",
+              "nameEn": "Montenegro"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "400019397"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "FRO",
+              "nameEn": "Faroe Islands"
+            },
+            "score": {
+              "for": 3,
+              "against": 1
+            },
+            "fifaMatchId": "400019385"
+          },
+          {
+            "date": "2025-11-06",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "UAE",
+              "nameEn": "United Arab Emirates"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020160"
+          },
+          {
+            "date": "2025-11-03",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "SEN",
+              "nameEn": "Senegal"
+            },
+            "score": {
+              "for": 0,
+              "against": 0
+            },
+            "fifaMatchId": "400020157"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "GHA",
+      "nameCn": "加纳",
+      "nameEn": "Ghana",
+        "group": "L",
+        "confederation": "CAF",
+      "flagUrl": "https://flagcdn.com/w320/gh.png",
+      "fifaRanking": {
+        "worldRank": 74,
+        "points": 1240.0,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 82,
+        "rating": 1505,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 4,
+          "wins": 0,
+          "draws": 0,
+          "losses": 4,
+          "goalsFor": 2,
+          "goalsAgainst": 10
+        },
+        "matches": [
+          {
+            "date": "2026-03-30",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "GER",
+              "nameEn": "Germany"
+            },
+            "score": {
+              "for": 1,
+              "against": 2
+            },
+            "fifaMatchId": "75wk9c52vnuscdgxmbp61z3mc"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "AUT",
+              "nameEn": "Austria"
+            },
+            "score": {
+              "for": 1,
+              "against": 5
+            },
+            "fifaMatchId": "ccbsfk62irwb6j38ix5fya51w"
+          },
+          {
+            "date": "2025-11-18",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "KOR",
+              "nameEn": "Korea Republic"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "4k76ztfj15zday6vifbqhmgic"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "JPN",
+              "nameEn": "Japan"
+            },
+            "score": {
+              "for": 0,
+              "against": 2
+            },
+            "fifaMatchId": "b11vk7vda9aq73l69eu6lfxuc"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+    },
+    {
+      "code": "PAN",
+      "nameCn": "巴拿马",
+      "nameEn": "Panama",
+        "group": "L",
+      "confederation": "CONCACAF",
+      "flagUrl": "https://flagcdn.com/w320/pa.png",
+      "fifaRanking": {
+        "worldRank": 33,
+        "points": 1528.59,
+        "asOf": "2026-04-01",
+        "pointsNote": "interpolated from FIFA anchor ranks; verify on fifa.com"
+      },
+      "worldFootballElo": {
+        "worldRank": 36,
+        "rating": 1737,
+        "asOf": "2026-05-03",
+        "source": "eloratings.net/World.tsv"
+      },
+      "recentInternational": {
+        "window": {
+          "from": "2025-11-03",
+          "to": "2026-05-03"
+        },
+        "summary": {
+          "played": 7,
+          "wins": 3,
+          "draws": 1,
+          "losses": 3,
+          "goalsFor": 11,
+          "goalsAgainst": 15
+        },
+        "matches": [
+          {
+            "date": "2026-03-31",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "RSA",
+              "nameEn": "South Africa"
+            },
+            "score": {
+              "for": 2,
+              "against": 1
+            },
+            "fifaMatchId": "ec0sbf7yknz58qdojafa0rztg"
+          },
+          {
+            "date": "2026-03-27",
+            "competition": "Friendlies",
+            "role": "away",
+            "opponent": {
+              "code": "RSA",
+              "nameEn": "South Africa"
+            },
+            "score": {
+              "for": 1,
+              "against": 1
+            },
+            "fifaMatchId": "ebganqs8gof4e7ayi163q6uj8"
+          },
+          {
+            "date": "2026-01-23",
+            "competition": "Friendlies",
+            "role": "home",
+            "opponent": {
+              "code": "MEX",
+              "nameEn": "Mexico"
+            },
+            "score": {
+              "for": 0,
+              "against": 1
+            },
+            "fifaMatchId": "7380nzri8gwn521uqbic8wk5w"
+          },
+          {
+            "date": "2025-11-19",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "home",
+            "opponent": {
+              "code": "SLV",
+              "nameEn": "El Salvador"
+            },
+            "score": {
+              "for": 3,
+              "against": 0
+            },
+            "fifaMatchId": "400020583"
+          },
+          {
+            "date": "2025-11-14",
+            "competition": "FIFA World Cup™ Qualifiers",
+            "role": "away",
+            "opponent": {
+              "code": "GUA",
+              "nameEn": "Guatemala"
+            },
+            "score": {
+              "for": 3,
+              "against": 2
+            },
+            "fifaMatchId": "400020581"
+          },
+          {
+            "date": "2025-11-11",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "away",
+            "opponent": {
+              "code": "UZB",
+              "nameEn": "Uzbekistan"
+            },
+            "score": {
+              "for": 1,
+              "against": 6
+            },
+            "fifaMatchId": "400020204"
+          },
+          {
+            "date": "2025-11-05",
+            "competition": "FIFA U-17 World Cup™",
+            "role": "home",
+            "opponent": {
+              "code": "IRL",
+              "nameEn": "Republic of Ireland"
+            },
+            "score": {
+              "for": 1,
+              "against": 4
+            },
+            "fifaMatchId": "400020200"
+          }
+        ],
+        "source": "api.fifa.com/api/v3/calendar/matches"
+      }
+      }
+    ]
+  }

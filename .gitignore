@@ -1,0 +1,7 @@
+node_modules/
+dist/
+.env
+*.log
+.DS_Store
+ci-l1-report.json
+ci-l1-summary.md

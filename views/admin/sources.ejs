@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main">
+      <h1 class="admin-page-title"><%= matchId ? '来源记录（筛选）' : '来源记录' %></h1>
+      <p class="admin-page-sub">SourceRecord，最多 200 条</p>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">筛选</h2>
+        <form method="get" action="<%= avBase %>/sources" class="admin-form-row">
+          <div>
+            <label>matchId</label>
+            <input name="matchId" value="<%= matchId %>" placeholder="比赛 ID" style="min-width:280px;" />
+          </div>
+          <div><button type="submit" class="admin-btn">应用</button></div>
+        </form>
+        <p class="admin-muted" style="margin:0.5rem 0 0;">共 <%= rows.length %> 条</p>
+      </section>
+
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>时间</th>
+            <th>类型</th>
+            <th>名称</th>
+            <th>比赛</th>
+            <th>链接</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (s) { %>
+            <tr>
+              <td><%= new Date(s.fetchedAt).toISOString().slice(0,19).replace('T',' ') %></td>
+              <td><%= s.sourceType %></td>
+              <td><%= (s.sourceName || '').slice(0, 40) %></td>
+              <td><% if (s.matchId) { %><a href="<%= avBase %>/matches/<%= s.matchId %>"><%= s.matchId.slice(0, 12) %>…</a><% } else { %>—<% } %></td>
+              <td><% if (s.sourceUrl) { %><a href="<%= s.sourceUrl %>" target="_blank" rel="noopener">打开</a><% } else { %>—<% } %></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "scheduledMatchId": null,
+  "liveMatchId": null,
+  "finishedMatchId": null,
+  "_comment": "L2 人工签收：未开赛 / 进行中 / 已结束各一场，填 staging matchId"
+}

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main" style="max-width:800px;">
+      <h1 class="admin-page-title">海报 Prompt 预览</h1>
+      <p class="admin-page-sub">仅预览，不扣费、不画图</p>
+      <p><a class="admin-back" href="<%= avBase %>/matches/<%= matchId %>">← 返回比赛详情</a></p>
+      <section class="admin-card">
+        <pre class="admin-pre" style="max-height:none;"><%= prompt %></pre>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title || '数据报表' %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <% var ov = locals.overview || {}; var totals = ov.totals || {}; var buckets = ov.byTournament || []; var pd = ov.playerData || {}; var pds = pd.byDataSource || []; var pdp = pd.byPosition || []; var pdr = pd.recentSample || []; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main" style="max-width:1100px;">
+      <h1 class="admin-page-title"><%= title %></h1>
+      <p class="admin-page-sub">
+        只读快照 · 生成时间 <code><%= ov.generatedAt || '—' %></code>。按 <strong>Tournament（赛事模块）</strong>分组：各 <strong>Competition（杯赛实例）</strong> 的比赛、<code>MatchFacts</code>，以及<strong>球员 roster / 单场快照 / 情报行</strong>统计；下方另有全局球员分布与最近更新样本。
+      </p>
+      <p><a class="admin-back" href="<%= avBase %>">← Dashboard</a>
+        · <a href="<%= avBase %>/data-ingest">数据入库</a>
+        · <a href="<%= avBase %>/data-ingest#statsbomb-batch">StatsBomb 批量</a>
+        · <a href="<%= avBase %>/competitions">杯赛实例</a></p>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">全局汇总</h2>
+        <div class="admin-grid-stats" style="grid-template-columns:repeat(auto-fill,minmax(120px,1fr));">
+          <div class="admin-stat"><small>比赛总数</small><span><%= totals.matches != null ? totals.matches : 0 %></span></div>
+          <div class="admin-stat"><small>已完赛</small><span><%= totals.finished != null ? totals.finished : 0 %></span></div>
+          <div class="admin-stat"><small>未赛 SCHEDULED</small><span><%= totals.scheduled != null ? totals.scheduled : 0 %></span></div>
+          <div class="admin-stat"><small>进行中 LIVE</small><span><%= totals.live != null ? totals.live : 0 %></span></div>
+          <div class="admin-stat"><small>其他状态</small><span><%= totals.otherStatus != null ? totals.otherStatus : 0 %></span></div>
+          <div class="admin-stat"><small>含 MatchFacts 的场次</small><span><%= totals.withMatchFacts != null ? totals.withMatchFacts : 0 %></span></div>
+          <div class="admin-stat"><small>AF 来源 Match</small><span><%= totals.apiFootballMatches != null ? totals.apiFootballMatches : 0 %></span></div>
+          <div class="admin-stat"><small>FD 来源 Match</small><span><%= totals.footballDataMatches != null ? totals.footballDataMatches : 0 %></span></div>
+          <div class="admin-stat"><small>球队 Team</small><span><%= totals.teams != null ? totals.teams : 0 %></span></div>
+          <div class="admin-stat"><small>球员 Player</small><span><%= totals.players != null ? totals.players : 0 %></span></div>
+          <div class="admin-stat"><small>球员含 externalId</small><span><%= totals.playersWithExternalId != null ? totals.playersWithExternalId : 0 %></span></div>
+          <div class="admin-stat"><small>球员含 profile JSON</small><span><%= totals.playersWithProfileJson != null ? totals.playersWithProfileJson : 0 %></span></div>
+          <div class="admin-stat"><small>PlayerMatchSnapshot 行</small><span><%= totals.playerMatchSnapshots != null ? totals.playerMatchSnapshots : 0 %></span></div>
+          <div class="admin-stat"><small>PlayerIntelligence 行</small><span><%= totals.playerIntelligenceRows != null ? totals.playerIntelligenceRows : 0 %></span></div>
+          <div class="admin-stat"><small>赛事实例数</small><span><%= totals.competitions != null ? totals.competitions : 0 %></span></div>
+          <div class="admin-stat"><small>入库任务 IngestJobRun</small><span><%= totals.ingestJobs != null ? totals.ingestJobs : 0 %></span></div>
+        </div>
+        <p class="admin-muted" style="margin:0.85rem 0 0;font-size:0.78rem;line-height:1.6;">
+          「含 MatchFacts」按有扩展事实表的<strong>比赛场次数</strong>计（与比赛行 1:1）。AF / FD 来源指 <code>Match.dataSource</code> 为 <code>API_FOOTBALL</code> / <code>FOOTBALL_DATA</code> 的场次数。各杯赛「roster」为在该实例赛程中出现过的主客队上的<strong>去重球员数</strong>；模块小计里的 roster 为各杯赛数字<strong>相加</strong>（同一球员跨多个杯赛实例时会重复计）。CLI：<code>npm run stats:match-report</code>；REST：<code>GET /admin/match-data-report</code>（需 Admin JWT）。
+        </p>
+      </section>
+
+      <section class="admin-card" style="margin-top:1rem;">
+        <h2 class="admin-card-title">球员全局分布</h2>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;">
+          <div>
+            <h3 class="admin-muted" style="margin:0 0 0.5rem;font-size:0.8rem;font-weight:600;">按 dataSource</h3>
+            <div style="overflow-x:auto;">
+              <table class="admin-table" style="font-size:0.76rem;">
+                <thead><tr><th>来源</th><th>人数</th></tr></thead>
+                <tbody>
+                  <% if (!pds.length) { %><tr><td colspan="2">—</td></tr><% } %>
+                  <% pds.forEach(function(r) { %>
+                    <tr><td><code><%= r.source %></code></td><td><strong><%= r.count %></strong></td></tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div>
+            <h3 class="admin-muted" style="margin:0 0 0.5rem;font-size:0.8rem;font-weight:600;">按 position（展示位）</h3>
+            <div style="overflow-x:auto;">
+              <table class="admin-table" style="font-size:0.76rem;">
+                <thead><tr><th>位置</th><th>人数</th></tr></thead>
+                <tbody>
+                  <% if (!pdp.length) { %><tr><td colspan="2">—</td></tr><% } %>
+                  <% pdp.forEach(function(r) { %>
+                    <tr><td><%= r.position %></td><td><strong><%= r.count %></strong></td></tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card" style="margin-top:1rem;">
+        <h2 class="admin-card-title">最近更新的球员（最多 30 条）</h2>
+        <p class="admin-muted" style="margin:0 0 0.75rem;font-size:0.78rem;">按 <code>Player.updatedAt</code> 降序；展示归属球队、外部 id、档案 JSON 顶层字段名（不含完整 JSON）。</p>
+        <div style="overflow-x:auto;">
+          <table class="admin-table" style="font-size:0.72rem;">
+            <thead>
+              <tr>
+                <th>中文名</th>
+                <th>英文名</th>
+                <th>球队</th>
+                <th>位置</th>
+                <th>号码</th>
+                <th>国籍</th>
+                <th>externalId</th>
+                <th>来源</th>
+                <th>profile 键</th>
+                <th>updatedAt</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% if (!pdr.length) { %><tr><td colspan="10">暂无球员数据</td></tr><% } %>
+              <% pdr.forEach(function(p) { %>
+                <tr>
+                  <td><%= p.nameCn %></td>
+                  <td><%= p.nameEn %></td>
+                  <td><%= p.teamNameCn %> <span class="admin-muted">/ <%= p.teamNameEn %></span></td>
+                  <td><%= p.position != null ? p.position : '—' %></td>
+                  <td><%= p.shirtNumber != null ? p.shirtNumber : '—' %></td>
+                  <td><%= p.nationality != null ? p.nationality : '—' %></td>
+                  <td style="max-width:120px;word-break:break-all;"><%= p.externalId != null ? p.externalId : '—' %></td>
+                  <td><code><%= p.dataSource %></code></td>
+                  <td style="max-width:200px;font-size:0.68rem;line-height:1.35;">
+                    <% if (p.hasProfileJson && p.profileFieldKeys && p.profileFieldKeys.length) { %>
+                      <%= p.profileFieldKeys.join(', ') %>
+                    <% } else if (p.hasProfileJson) { %>（有 JSON 无对象键）<% } else { %>—<% } %>
+                  </td>
+                  <td style="white-space:nowrap;font-size:0.68rem;"><%= p.updatedAt %></td>
+                </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <% buckets.forEach(function(bucket) { %>
+        <section class="admin-card" style="margin-top:1rem;">
+          <h2 class="admin-card-title" style="font-size:0.8rem;color:var(--admin-text);text-transform:none;letter-spacing:0;">
+            <% if (bucket.tournamentCode) { %>
+              <code><%= bucket.tournamentCode %></code>
+            <% } else { %>
+              <span style="color:var(--admin-warn);">未关联</span>
+            <% } %>
+            · <%= bucket.tournamentNameCn %>
+            <span class="admin-muted" style="font-weight:400;font-size:0.75rem;">（<%= bucket.tournamentType %> · <%= bucket.tournamentNameEn %>）</span>
+          </h2>
+          <p class="admin-muted" style="margin:0 0 0.75rem;font-size:0.78rem;">
+            小计：比赛 <strong><%= bucket.subtotalMatches %></strong> · 已完赛 <strong><%= bucket.subtotalFinished %></strong> · 含 MatchFacts <strong><%= bucket.subtotalWithFacts %></strong>
+            · roster 合计 <strong><%= bucket.subtotalPlayersOnRosterSum != null ? bucket.subtotalPlayersOnRosterSum : 0 %></strong>（跨杯赛可能重复）
+            · 球员快照行 <strong><%= bucket.subtotalPlayerSnapshots != null ? bucket.subtotalPlayerSnapshots : 0 %></strong>
+            · 球员情报行 <strong><%= bucket.subtotalPlayerIntelligence != null ? bucket.subtotalPlayerIntelligence : 0 %></strong>
+          </p>
+          <div style="overflow-x:auto;">
+            <table class="admin-table" style="font-size:0.78rem;">
+              <thead>
+                <tr>
+                  <th>实例 ID</th>
+                  <th>code</th>
+                  <th>名称</th>
+                  <th>赛季</th>
+                  <th>场数</th>
+                  <th>完赛</th>
+                  <th>Facts</th>
+                  <th>roster</th>
+                  <th>快照</th>
+                  <th>情报</th>
+                  <th>AF</th>
+                  <th>FD</th>
+                  <th>手动</th>
+                  <th>OF</th>
+                  <th>状态分布</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% bucket.competitions.forEach(function(c) { %>
+                  <tr>
+                    <td><code style="font-size:0.68rem;"><%= c.competitionId %></code></td>
+                    <td><%= c.code || '—' %></td>
+                    <td><%= c.nameCn %></td>
+                    <td><%= c.seasonCode || '—' %></td>
+                    <td><strong><%= c.matchTotal %></strong></td>
+                    <td><%= c.finishedCount %></td>
+                    <td><%= c.withMatchFacts %></td>
+                    <td><%= c.playersOnRoster != null ? c.playersOnRoster : 0 %></td>
+                    <td><%= c.playerSnapshots != null ? c.playerSnapshots : 0 %></td>
+                    <td><%= c.playerIntelligenceRows != null ? c.playerIntelligenceRows : 0 %></td>
+                    <td><%= c.apiFootballCount != null ? c.apiFootballCount : 0 %></td>
+                    <td><%= c.footballDataCount %></td>
+                    <td><%= c.manualCount %></td>
+                    <td><%= c.worldfootballCount %></td>
+                    <td style="max-width:220px;font-size:0.68rem;line-height:1.35;">
+                      <% if (c.byStatus && Object.keys(c.byStatus).length) {
+                           var parts = [];
+                           Object.keys(c.byStatus).forEach(function(st) {
+                             var n = c.byStatus[st];
+                             if (n) parts.push(st + ' ' + n);
+                           });
+                      %>
+                        <%= parts.join(' · ') %>
+                      <% } else { %>—<% } %>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      <% }); %>
+
+      <section class="admin-card" style="margin-top:1rem;">
+        <h2 class="admin-card-title">完整 JSON（可复制）</h2>
+        <pre style="margin:0;max-height:40vh;overflow:auto;padding:0.75rem;border-radius:8px;background:#0c0c0e;border:1px solid var(--admin-border);color:#a1a1aa;font-size:0.68rem;line-height:1.4;white-space:pre-wrap;"><%= locals.overviewJson || '{}' %></pre>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var mid = m.id; %>
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <% var oc = (typeof orderCount === 'number' && !isNaN(orderCount)) ? orderCount : 0; %>
+  <% var uc = (typeof unlockCount === 'number' && !isNaN(unlockCount)) ? unlockCount : 0; %>
+  <% var tsCount = (m.teamSnapshots && m.teamSnapshots.length) || 0; %>
+  <% var psCount = (m.playerSnapshots && m.playerSnapshots.length) || 0; %>
+  <% var intelCount = (m.playerIntelligence && m.playerIntelligence.length) || 0; %>
+  <% var tacCount = (m.tacticalScenarios && m.tacticalScenarios.length) || 0; %>
+  <% var repCount = (m.aiReports && m.aiReports.length) || 0; %>
+  <% var srcCount = (m.sourceRecords && m.sourceRecords.length) || 0; %>
+  <% var phaseAny = !!(m.publicSourcesPhase48At || m.publicSourcesPhase8At || m.publicSourcesPhase2At || m.publicSourcesPhasePostAt); %>
+  <% var teamSnapsSorted = (m.teamSnapshots || []).slice().sort(function (a, b) { if (a.isHome === b.isHome) return 0; return a.isHome ? -1 : 1; }); %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main admin-md-wrap">
+      <p class="admin-md-breadcrumb"><a href="<%= avBase %>/matches">比赛列表</a> <span style="opacity:0.5">/</span> 详情</p>
+
+      <% if (m.homeTeam && m.awayTeam) { %>
+        <div class="admin-page-head-teams">
+          <%- include('_team-block', { team: m.homeTeam, size: 'lg' }) %>
+          <span class="admin-vs" style="font-size:0.95rem;margin:0 0.25rem;">vs</span>
+          <%- include('_team-block', { team: m.awayTeam, size: 'lg' }) %>
+        </div>
+        <p class="admin-page-sub">查看比分与数据是否齐全；需要时在下方点按钮更新。</p>
+      <% } else { %>
+        <h1 class="admin-page-title"><%= title %></h1>
+        <p class="admin-page-sub">单场数据总览与操作</p>
+      <% } %>
+
+      <% if (locals.flashMsg) { %><p class="admin-flash-ok"><%= locals.flashMsg %></p><% } %>
+      <% if (locals.flashErr) { %><p class="admin-flash-err"><%= locals.flashErr %></p><% } %>
+      <% var looksDry = tsCount === 0 && !m.prediction && !m.weatherSnapshot && intelCount === 0; %>
+      <% if (looksDry) { %>
+        <div class="admin-callout" style="margin-bottom:1rem;">
+          <strong>页面较空？</strong> 刚同步进库的场次通常只有对阵和开球时间。请在下方<strong>本页操作</strong>里点「整场管线」或分步拉数据。本地验收可打开种子比赛 <code>seed-match-admin-showcase</code>。
+        </div>
+      <% } %>
+
+      <nav class="admin-md-toc" aria-label="本页章节">
+        <a href="#md-overview">概览</a>
+        <a href="#md-readiness">就绪度</a>
+        <a href="#md-ops">本页操作</a>
+        <a href="#md-detail-more">详细内容</a>
+        <a href="#md-sources">来源表</a>
+        <a href="#md-debug">调试 JSON</a>
+      </nav>
+
+      <section class="admin-card admin-md-anchor" id="md-overview">
+        <h2 class="admin-card-title">概览</h2>
+        <div class="admin-md-hero">
+          <dl class="admin-md-kv">
+            <dt>比赛 ID</dt>
+            <dd><code style="font-size:0.78rem;"><%= mid %></code></dd>
+            <dt>外部 ID（FD 数字 id / <code>af-f-*</code> 等）</dt>
+            <dd><%= m.externalId ? m.externalId : '—' %></dd>
+            <dt>数据源 / 状态 / 报告</dt>
+            <dd><%= m.dataSource %> · <strong><%= m.status %></strong> · 报告 <strong><%= m.reportStatus %></strong></dd>
+            <dt>开球（北京）</dt>
+            <dd><code style="font-size:0.85rem;"><%- include('_kickoff-zh', { kickoff: m.kickoffTime, wrapSpan: false }) %></code></dd>
+            <dt>场地</dt>
+            <dd><%= [m.stadium, m.city, m.country].filter(Boolean).join(' · ') || '—' %></dd>
+            <dt>轮次 / 阶段 / 小组</dt>
+            <dd><%= [m.round, m.stage, m.groupName].filter(Boolean).join(' · ') || '—' %></dd>
+            <dt>赛事实例</dt>
+            <dd>
+              <% if (m.competition) { %>
+                <a href="<%= avBase %>/competitions/<%= m.competition.id %>"><%= m.competition.nameCn %></a>
+                <% if (m.competition.code) { %><span class="admin-muted">（code <code><%= m.competition.code %></code>）</span><% } %>
+              <% } else { %>—<% } %>
+            </dd>
+            <dt>赛季 / 锦标赛</dt>
+            <dd>
+              <% if (m.season) { %>赛季 <strong><%= m.season.code %></strong>（<%= m.season.year %>）<% } else { %><span class="admin-muted">无赛季关联</span><% } %>
+              <% if (m.tournament) { %> · 锦标赛 <strong><%= m.tournament.nameCn %></strong><% } %>
+            </dd>
+            <dt>商业</dt>
+            <dd>本场订单 <strong><%= oc %></strong> · 解锁记录 <strong><%= uc %></strong></dd>
+          </dl>
+          <div class="admin-md-score">
+            <% var hs = m.homeScore, as = m.awayScore; %>
+            <% if (hs != null && as != null) { %>
+              <%= hs %> : <%= as %>
+            <% } else { %>
+              — : —
+            <% } %>
+            <small>比分（未完场可能为空）</small>
+          </div>
+        </div>
+      </section>
+
+      <section class="admin-card admin-md-anchor" id="md-readiness">
+        <h2 class="admin-card-title">数据就绪度</h2>
+        <p class="admin-muted" style="margin:0;">一眼判断哪些模块已有数据，便于验收与排障。</p>
+        <div class="admin-md-tiles">
+          <div class="admin-md-tile <%= tsCount ? 'ok' : 'empty' %>"><div class="label">球队快照</div><div class="val"><%= tsCount %> 条</div></div>
+          <div class="admin-md-tile <%= psCount ? 'ok' : 'empty' %>"><div class="label">球员快照</div><div class="val"><%= psCount %> 条</div></div>
+          <div class="admin-md-tile <%= m.prediction ? 'ok' : 'empty' %>"><div class="label">预测</div><div class="val"><%= m.prediction ? '已有' : '未生成' %></div></div>
+          <div class="admin-md-tile <%= intelCount ? 'ok' : 'empty' %>"><div class="label">球员画像</div><div class="val"><%= intelCount %> 条</div></div>
+          <div class="admin-md-tile <%= tacCount ? 'ok' : 'empty' %>"><div class="label">战术沙盘</div><div class="val"><%= tacCount %> 条</div></div>
+          <div class="admin-md-tile <%= m.fantasyAdvice ? 'ok' : 'empty' %>"><div class="label">Fantasy</div><div class="val"><%= m.fantasyAdvice ? '已有' : '未生成' %></div></div>
+          <div class="admin-md-tile <%= m.headToHead ? 'ok' : 'empty' %>"><div class="label">历史交锋</div><div class="val"><%= m.headToHead ? '已有' : '未生成' %></div></div>
+          <div class="admin-md-tile <%= m.socialGuide ? 'ok' : 'empty' %>"><div class="label">社媒指南</div><div class="val"><%= m.socialGuide ? '已有' : '未生成' %></div></div>
+          <div class="admin-md-tile <%= repCount ? 'ok' : 'empty' %>"><div class="label">AI 报告</div><div class="val"><%= repCount %> 条</div></div>
+          <div class="admin-md-tile <%= m.weatherSnapshot ? 'ok' : 'empty' %>"><div class="label">天气</div><div class="val"><%= m.weatherSnapshot ? '已同步' : '无' %></div></div>
+          <div class="admin-md-tile <%= m.refereeSnapshot ? 'ok' : 'empty' %>"><div class="label">裁判快照</div><div class="val"><%= m.refereeSnapshot ? '已有' : '无' %></div></div>
+          <div class="admin-md-tile <%= phaseAny ? 'ok' : 'warn' %>"><div class="label">公开来源阶段</div><div class="val"><%= phaseAny ? '部分已跑' : '均未记录' %></div></div>
+          <div class="admin-md-tile <%= srcCount ? 'ok' : 'warn' %>"><div class="label">来源记录（本页）</div><div class="val"><%= srcCount %> / 60</div></div>
+        </div>
+      </section>
+
+      <% var h = locals.envHints || {}; %>
+      <% var posterCents = (typeof h.socialPosterPriceCents === 'number' && !isNaN(h.socialPosterPriceCents)) ? h.socialPosterPriceCents : 390; %>
+
+      <section class="admin-card admin-md-anchor" id="md-ops">
+        <h2 class="admin-card-title">本页操作</h2>
+        <p class="admin-muted" style="margin-top:0;">优先试<strong>橙色「Phase C 整场管线」</strong>一键补齐；若等待较久，再改用下面分步按钮。</p>
+        <p class="admin-muted" style="margin:0.35rem 0 0.85rem;">焦点战：<%= m.isFeatured ? '是' : '否' %> · 联赛 code：<strong><%= m.competition && m.competition.code ? m.competition.code : '—' %></strong> · 海报约 <strong><%= posterCents / 100 %> 元</strong>/次（管理员同样计费规则）</p>
+
+        <div class="admin-md-actions">
+          <div class="admin-md-action-group">
+            <h3>① 外部数据</h3>
+            <div class="admin-btn-row">
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/fetch-public-sources"><button type="submit" class="admin-btn">公开来源</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/fetch-public-sources-force"><button type="submit" class="admin-btn warn">公开来源（强制）</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-weather"><button type="submit" class="admin-btn">同步天气</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-football-matches"><button type="submit" class="admin-btn">同步赛程 (FD)</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-football-standings"><button type="submit" class="admin-btn">同步积分榜</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-fd-match-intel"><button type="submit" class="admin-btn" title="需 FD 数字场次 id">FD 单场详情</button></form>
+            </div>
+          </div>
+          <div class="admin-md-action-group">
+            <h3>② 模型与 AI</h3>
+            <div class="admin-btn-row">
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/run-intel-pipeline"><button type="submit" class="admin-btn warn">Phase C 整场管线</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-prediction"><button type="submit" class="admin-btn">仅生成预测</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-player-intelligence"><button type="submit" class="admin-btn">球员画像</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-tactics"><button type="submit" class="admin-btn">战术沙盘</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-fantasy"><button type="submit" class="admin-btn">Fantasy</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-head-to-head"><button type="submit" class="admin-btn">历史交锋</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-social-guide"><button type="submit" class="admin-btn">社媒指南</button></form>
+            </div>
+          </div>
+          <div class="admin-md-action-group">
+            <h3>③ 海报与报告</h3>
+            <p class="admin-muted">海报说明 2～120 字，须与足球相关。</p>
+            <div class="poster-form" style="margin-top:0.5rem;">
+              <form method="get" action="<%= avBase %>/matches/<%= mid %>/poster-prompt-preview" target="_blank" style="margin-bottom:0.75rem;">
+                <textarea name="customElements" placeholder="例如：英超主场氛围" style="width:100%;max-width:520px;min-height:3rem;padding:0.5rem;border-radius:8px;border:1px solid var(--admin-border);background:#09090b;color:var(--admin-text);font-family:inherit;"></textarea><br />
+                <button type="submit" class="admin-btn secondary" style="margin-top:0.45rem;">预览海报文案（新窗口）</button>
+              </form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/social-poster-generate">
+                <textarea name="customElements" placeholder="与上框相同或修改" style="width:100%;max-width:520px;min-height:3rem;padding:0.5rem;border-radius:8px;border:1px solid var(--admin-border);background:#09090b;color:var(--admin-text);font-family:inherit;"></textarea><br />
+                <button type="submit" class="admin-btn" style="margin-top:0.45rem;">生成海报</button>
+              </form>
+            </div>
+            <% if (m.socialGuide && m.socialGuide.posterImageUrl) { %>
+              <% var _pu = m.socialGuide.posterImageUrl; var _isData = typeof _pu === 'string' && _pu.indexOf('data:') === 0; %>
+              <p class="admin-muted" style="margin-top:0.75rem;">
+                已存海报<% if (m.socialGuide.posterGeneratedAt) { %> · <%= new Date(m.socialGuide.posterGeneratedAt).toISOString().slice(0, 19).replace('T', ' ') %> UTC<% } %>
+                <% if (_isData) { %>
+                  （API 返回 base64 内联图；请勿用「新窗口打开链接」预览超长 data URL，请直接看下方缩略图）
+                <% } else { %>
+                  ：<a href="<%= _pu %>" target="_blank" rel="noopener noreferrer">在新标签打开图片</a>
+                <% } %>
+              </p>
+              <img style="max-width:min(480px,100%);height:auto;border-radius:10px;margin-top:0.5rem;border:1px solid var(--admin-border);display:block;" src="<%= _pu %>" alt="社交海报预览" loading="lazy" />
+            <% } %>
+            <div class="admin-btn-row" style="margin-top:0.75rem;">
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/generate-report"><button type="submit" class="admin-btn">生成 AI 报告草稿</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/publish-report"><button type="submit" class="admin-btn">发布报告</button></form>
+            </div>
+          </div>
+          <div class="admin-md-action-group">
+            <h3>④ 运营</h3>
+            <div class="admin-btn-row">
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/set-featured"><input type="hidden" name="featured" value="1" /><button type="submit" class="admin-btn">设为焦点战</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/set-featured"><input type="hidden" name="featured" value="0" /><button type="submit" class="admin-btn secondary">取消焦点</button></form>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <details class="admin-card" style="margin-bottom:1.1rem;">
+        <summary style="cursor:pointer;font-weight:600;padding:0.15rem 0;">环境开关（技术排障）</summary>
+        <p style="margin:0.75rem 0 0;line-height:1.7;">
+          <span class="admin-pill <%= h.enableCronSync ? 'on' : 'off' %>">Cron</span>
+          <span class="admin-pill <%= h.enablePublicSourceFetch ? 'on' : 'off' %>">公开来源定时</span>
+          <span class="admin-pill <%= h.enableMockDeepseek ? 'off' : 'on' %>">DeepSeek <%= h.enableMockDeepseek ? 'Mock' : '真实' %></span>
+          <span class="admin-pill <%= h.hasApiFootballKey ? 'on' : 'off' %>">API-Football Key</span>
+          <span class="admin-pill <%= h.hasFootballDataKey ? 'on' : 'off' %>">FD Key</span>
+          <span class="admin-pill <%= h.hasDeepseekKey ? 'on' : 'off' %>">DeepSeek Key</span>
+          <span class="admin-pill <%= h.hasQweather ? 'on' : 'off' %>">和风</span>
+          <span class="admin-pill <%= h.posterImageMock ? 'on' : 'off' %>">海报 Mock</span>
+          <span class="admin-pill <%= h.posterDevBypass ? 'on' : 'off' %>">海报计费绕过</span>
+          <span class="admin-pill <%= h.hasGptImage2Key ? 'on' : 'off' %>">GPT Image</span>
+        </p>
+      </details>
+
+      <details id="md-detail-more" class="admin-card" style="margin-bottom:1.1rem;">
+        <summary style="cursor:pointer;font-weight:600;padding:0.15rem 0;">展开：天气、快照、预测与战术全文、社媒与报告、公开来源时间</summary>
+
+      <section class="admin-card admin-md-anchor" id="md-external">
+        <h2 class="admin-card-title">场地、天气、裁判与球队快照</h2>
+
+        <% if (m.weatherSnapshot) { %>
+          <% var w = m.weatherSnapshot; %>
+          <h3 style="margin-top:0;">天气</h3>
+          <dl class="admin-md-kv" style="margin-bottom:1rem;">
+            <dt>概况</dt>
+            <dd><%= w.condition || '—' %> · <%= w.temperature != null ? w.temperature + '°C' : '温度 —' %> · 湿度 <%= w.humidity != null ? w.humidity + '%' : '—' %></dd>
+            <dt>风速 / 能见度 / 场地</dt>
+            <dd><%= w.windSpeed != null ? w.windSpeed : '—' %> · <%= w.visibility != null ? w.visibility : '—' %> · <%= w.pitchCondition || '—' %></dd>
+            <dt>影响分 / 来源 / 质量</dt>
+            <dd><%= w.weatherImpactScore %> · <%= w.source || w.dataSource %> · <%= w.dataQuality %></dd>
+          </dl>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无天气快照，可在下方「操作」中同步。</p>
+        <% } %>
+
+        <% if (m.refereeSnapshot && m.refereeSnapshot.referee) { %>
+          <% var rs = m.refereeSnapshot, rf = rs.referee; %>
+          <h3>裁判</h3>
+          <p style="margin:0 0 0.35rem;font-weight:600;"><%= rf.nameCn %><% if (rf.nameEn) { %> <span class="admin-muted" style="font-weight:400;">(<%= rf.nameEn %>)</span><% } %></p>
+          <dl class="admin-md-kv" style="margin-bottom:1rem;">
+            <dt>场均黄 / 红 / 点 / 犯规</dt>
+            <dd><%= rs.yellowCardsAvg != null ? rs.yellowCardsAvg : '—' %> · <%= rs.redCardsAvg != null ? rs.redCardsAvg : '—' %> · <%= rs.penaltiesAvg != null ? rs.penaltiesAvg : '—' %> · <%= rs.foulsAvg != null ? rs.foulsAvg : '—' %></dd>
+            <dt>主队胜率倾向 / 补时</dt>
+            <dd><%= rs.homeWinRate != null ? rs.homeWinRate : '—' %> · <%= rs.addedTimeAvg != null ? rs.addedTimeAvg : '—' %></dd>
+            <% if (rs.notes) { %><dt>备注</dt><dd class="admin-md-prose" style="margin-top:0.25rem;"><%= rs.notes %></dd><% } %>
+          </dl>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无裁判快照。</p>
+        <% } %>
+
+        <h3>球队快照（结构化）</h3>
+        <% if (teamSnapsSorted.length === 0) { %>
+          <p class="admin-muted" style="margin:0;">暂无。需先有公开来源 / FD 同步等数据管道。</p>
+        <% } else { %>
+          <% teamSnapsSorted.forEach(function (snap) { %>
+            <% var tname = snap.team ? snap.team.nameCn : (snap.isHome ? '主队' : '客队'); %>
+            <div class="admin-md-scenario">
+              <h4><%= tname %> <%= snap.isHome ? '（主）' : '（客）' %></h4>
+              <p class="admin-muted" style="margin:0;font-size:0.72rem;">排名 <%= snap.leagueRank != null ? snap.leagueRank : '—' %> · 积分 <%= snap.points != null ? snap.points : '—' %> · 近况 <%= snap.recentForm || '—' %></p>
+              <p style="margin:0.45rem 0 0;font-size:0.78rem;">场均进 / 失 · xG / xGA：<%= snap.goalsForAvg != null ? snap.goalsForAvg : '—' %> / <%= snap.goalsAgainstAvg != null ? snap.goalsAgainstAvg : '—' %> · <%= snap.xgAvg != null ? snap.xgAvg : '—' %> / <%= snap.xgaAvg != null ? snap.xgaAvg : '—' %></p>
+              <p style="margin:0.35rem 0 0;font-size:0.78rem;">攻防评 <%= snap.attackRating %> / <%= snap.defenseRating %> · 疲劳 <%= snap.fatigueIndex %> · 伤病影响 <%= snap.injuryImpact %></p>
+              <% if (snap.formation || snap.coachName) { %>
+                <p style="margin:0.35rem 0 0;font-size:0.78rem;">阵型 <%= snap.formation || '—' %> · 教练 <%= snap.coachName || '—' %><% if (snap.coachStyle) { %>（<%= snap.coachStyle %>）<% } %></p>
+              <% } %>
+              <% if (snap.notes) { %><p class="admin-md-prose" style="margin-top:0.45rem;font-size:0.78rem;"><%= snap.notes %></p><% } %>
+            </div>
+          <% }); %>
+        <% } %>
+      </section>
+
+      <section class="admin-card admin-md-anchor" id="md-prediction-ai">
+        <h2 class="admin-card-title">预测与 AI 子模块</h2>
+
+        <% if (m.prediction) { %>
+          <% var p = m.prediction; %>
+          <h3 style="margin-top:0;">赛果概率模型</h3>
+          <div class="admin-md-probwrap">
+            <div class="admin-md-probrow" title="主 / 平 / 客">
+              <span style="flex:<%= Math.max(1, p.homeWinProbability || 0) %>;background:#16a34a;"></span>
+              <span style="flex:<%= Math.max(1, p.drawProbability || 0) %>;background:#52525b;"></span>
+              <span style="flex:<%= Math.max(1, p.awayWinProbability || 0) %>;background:#dc2626;"></span>
+            </div>
+            <div class="admin-md-prob-legend">
+              <span>主胜 <%= p.homeWinProbability %>%</span>
+              <span>平 <%= p.drawProbability %>%</span>
+              <span>客胜 <%= p.awayWinProbability %>%</span>
+            </div>
+          </div>
+          <dl class="admin-md-kv">
+            <dt>期望进球（主 / 客 / 总）</dt>
+            <dd><%= p.homeExpectedGoals %> / <%= p.awayExpectedGoals %> / <%= p.totalExpectedGoals %></dd>
+            <dt>节奏 / 冷门指数 / 置信度</dt>
+            <dd><%= p.tempoIndex %> / <%= p.upsetIndex %> / <%= p.confidence %>% · <%= p.modelVersion %></dd>
+            <% if (p.totalGoalsTrend) { %><dt>大小球倾向</dt><dd><%= p.totalGoalsTrend %></dd><% } %>
+          </dl>
+          <% if (p.explanation) { %>
+            <p class="admin-md-prose"><%= p.explanation %></p>
+          <% } %>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无预测，可在「操作」中生成。</p>
+        <% } %>
+
+        <h3>球员快照（节选）</h3>
+        <% var psList = (m.playerSnapshots || []).slice(0, 24); %>
+        <% if (psList.length === 0) { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无。</p>
+        <% } else { %>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>球员</th><th>球队</th><th>风险</th><th>先发概率</th><th>伤停摘要</th></tr></thead>
+              <tbody>
+                <% psList.forEach(function (row) { %>
+                  <tr>
+                    <td><%= row.player ? row.player.nameCn : row.playerId %></td>
+                    <td><%= row.team ? row.team.nameCn : '—' %></td>
+                    <td><%= row.riskLevel %></td>
+                    <td><%= row.expectedStartProbability != null ? row.expectedStartProbability + '%' : '—' %></td>
+                    <td class="admin-muted" style="max-width:220px;"><%= (row.injuryNote || row.injuryNews || '').slice(0, 120) %><%= (row.injuryNote || row.injuryNews || '').length > 120 ? '…' : '' %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+          <% if (psCount > 24) { %><p class="admin-muted" style="margin:0.5rem 0 0;">另有 <%= psCount - 24 %> 条见下方 JSON。</p><% } %>
+        <% } %>
+
+        <h3>球员画像（AI）</h3>
+        <% var intelList = (m.playerIntelligence || []).slice(0, 16); %>
+        <% if (intelList.length === 0) { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无。</p>
+        <% } else { %>
+          <% intelList.forEach(function (intel) { %>
+            <details class="admin-md-details" style="margin-top:0.5rem;">
+              <summary><strong><%= intel.player ? intel.player.nameCn : intel.playerId %></strong> · <%= intel.team ? intel.team.nameCn : '' %> · <%= intel.statusTag %> · 先发 <%= intel.startProbability %>% · <%= intel.riskLevel %></summary>
+              <% if (intel.aiSummary) { %><p class="admin-md-prose" style="margin-top:0.5rem;"><%= intel.aiSummary %></p><% } %>
+              <% if (intel.fitnessAnalysis) { %><p class="admin-muted" style="margin:0.65rem 0 0.25rem;font-size:0.72rem;">体能</p><p class="admin-md-prose" style="margin-top:0;"><%= intel.fitnessAnalysis %></p><% } %>
+              <% if (intel.psychologyAnalysis) { %><p class="admin-muted" style="margin:0.65rem 0 0.25rem;font-size:0.72rem;">心理</p><p class="admin-md-prose" style="margin-top:0;"><%= intel.psychologyAnalysis %></p><% } %>
+              <% if (intel.matchupAnalysis) { %><p class="admin-muted" style="margin:0.65rem 0 0.25rem;font-size:0.72rem;">对位</p><p class="admin-md-prose" style="margin-top:0;"><%= intel.matchupAnalysis %></p><% } %>
+              <% if (intel.weatherImpact) { %><p class="admin-muted" style="margin:0.65rem 0 0.25rem;font-size:0.72rem;">天气影响</p><p class="admin-md-prose" style="margin-top:0;"><%= intel.weatherImpact %></p><% } %>
+              <% if (intel.fantasySuggestion) { %><p class="admin-muted" style="margin:0.65rem 0 0.25rem;font-size:0.72rem;">Fantasy 建议</p><p class="admin-md-prose" style="margin-top:0;"><%= intel.fantasySuggestion %></p><% } %>
+            </details>
+          <% }); %>
+          <% if (intelCount > 16) { %><p class="admin-muted" style="margin:0.5rem 0 0;">另有 <%= intelCount - 16 %> 条可在 JSON 中查看。</p><% } %>
+        <% } %>
+
+        <h3>战术沙盘</h3>
+        <% if (!(m.tacticalScenarios || []).length) { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无。</p>
+        <% } else { %>
+          <% (m.tacticalScenarios || []).forEach(function (sc) { %>
+            <div class="admin-md-scenario">
+              <h4><%= sc.title %> <span class="admin-muted" style="font-weight:400;font-size:0.72rem;">· <%= sc.scenarioType %> · <%= sc.probability %>%</span></h4>
+              <p class="admin-muted" style="margin:0;font-size:0.72rem;">前提</p>
+              <p class="admin-md-prose" style="margin-top:0.2rem;font-size:0.78rem;"><%= sc.precondition %></p>
+              <p class="admin-muted" style="margin:0.5rem 0 0;font-size:0.72rem;">进程</p>
+              <p class="admin-md-prose" style="margin-top:0.2rem;font-size:0.78rem;"><%= sc.process %></p>
+              <% if (sc.possibleScore) { %><p style="margin:0.45rem 0 0;font-size:0.78rem;">可能比分：<strong><%= sc.possibleScore %></strong></p><% } %>
+            </div>
+          <% }); %>
+        <% } %>
+
+        <h3>Fantasy 建议</h3>
+        <% if (m.fantasyAdvice) { %>
+          <% var fa = m.fantasyAdvice; %>
+          <% if (fa.captainRecommendation) { %><p class="admin-md-prose"><strong>队长：</strong><%= fa.captainRecommendation %></p><% } %>
+          <details class="admin-md-details"><summary>mustHave / valuePicks / avoid（JSON）</summary><pre class="admin-pre"><%= JSON.stringify({ mustHave: fa.mustHave, valuePicks: fa.valuePicks, avoid: fa.avoid, predictedPoints: fa.predictedPoints, riskWarnings: fa.riskWarnings }, null, 2) %></pre></details>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0;">暂无。</p>
+        <% } %>
+
+        <h3>历史交锋</h3>
+        <% if (m.headToHead) { %>
+          <% var hh = m.headToHead; %>
+          <p style="margin:0;font-size:0.85rem;">近 <%= hh.lastMeetingsCount != null ? hh.lastMeetingsCount : '—' %> 场 · 主 <%= hh.homeWins != null ? hh.homeWins : '—' %> 胜 · 平 <%= hh.draws != null ? hh.draws : '—' %> · 客 <%= hh.awayWins != null ? hh.awayWins : '—' %> 胜 · 场均球 <%= hh.avgGoals != null ? hh.avgGoals : '—' %></p>
+          <% if (hh.summary) { %><p class="admin-md-prose"><%= hh.summary %></p><% } %>
+          <% if (hh.homeAdvantageText) { %><p class="admin-muted" style="margin:0.5rem 0 0;font-size:0.72rem;">主场因素</p><p class="admin-md-prose" style="margin-top:0.2rem;"><%= hh.homeAdvantageText %></p><% } %>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0;">暂无。</p>
+        <% } %>
+      </section>
+
+      <section class="admin-card admin-md-anchor" id="md-social-reports">
+        <h2 class="admin-card-title">社媒指南与 AI 报告</h2>
+        <% if (m.socialGuide) { %>
+          <% var sg = m.socialGuide; %>
+          <h3 style="margin-top:0;">社媒指南</h3>
+          <p style="margin:0;font-weight:600;"><%= sg.oneLiner %></p>
+          <% if (sg.shareCopy) { %><p class="admin-muted" style="margin:0.35rem 0 0;font-size:0.72rem;">分享文案</p><p class="admin-md-prose" style="margin-top:0.2rem;"><%= sg.shareCopy %></p><% } %>
+          <% if (sg.shortVideoScript) { %><p class="admin-muted" style="margin:0.5rem 0 0;font-size:0.72rem;">短视频脚本</p><p class="admin-md-prose" style="margin-top:0.2rem;"><%= sg.shortVideoScript %></p><% } %>
+          <% if (sg.posterTitle) { %><p style="margin:0.5rem 0 0;font-size:0.78rem;">海报标题：<strong><%= sg.posterTitle %></strong></p><% } %>
+          <% if (sg.posterGeneratedAt) { %><p class="admin-muted" style="margin:0.25rem 0 0;font-size:0.72rem;">海报生成时间（UTC 存库）：<%= new Date(sg.posterGeneratedAt).toISOString() %></p><% } %>
+        <% } else { %>
+          <p class="admin-muted" style="margin:0 0 1rem;">暂无社媒指南。</p>
+        <% } %>
+
+        <h3>AI 报告列表</h3>
+        <% if (!(m.aiReports || []).length) { %>
+          <p class="admin-muted" style="margin:0;">暂无草稿或已发布报告。</p>
+        <% } else { %>
+          <% (m.aiReports || []).forEach(function (r) { %>
+            <div class="admin-md-report-card">
+              <div class="meta"><%= r.id %> · <strong><%= r.status %></strong> · 生成 <%= new Date(r.generatedAt).toISOString().slice(0,16) %> <% if (r.publishedAt) { %>· 发布 <%= new Date(r.publishedAt).toISOString().slice(0,16) %><% } %></div>
+              <p style="margin:0;font-size:0.82rem;line-height:1.55;"><%= (r.freeSummary || '').slice(0, 400) %><%= (r.freeSummary || '').length > 400 ? '…' : '' %></p>
+              <% if (r.dashboardSummary) { %>
+                <details class="admin-md-details" style="margin-top:0.5rem;"><summary>dashboardSummary</summary><p class="admin-md-prose" style="margin-top:0.5rem;"><%= r.dashboardSummary %></p></details>
+              <% } %>
+            </div>
+          <% }); %>
+        <% } %>
+      </section>
+
+      <section class="admin-card admin-md-anchor" id="md-phases">
+        <h2 class="admin-card-title">公开来源 · 分阶段（北京时间）</h2>
+        <ul class="admin-muted" style="margin:0;padding-left:1.1rem;line-height:1.85;">
+          <li>T-48h：<code><%- include('_kickoff-zh', { kickoff: m.publicSourcesPhase48At, wrapSpan: false }) %></code></li>
+          <li>T-8h：<code><%- include('_kickoff-zh', { kickoff: m.publicSourcesPhase8At, wrapSpan: false }) %></code></li>
+          <li>T-2h：<code><%- include('_kickoff-zh', { kickoff: m.publicSourcesPhase2At, wrapSpan: false }) %></code></li>
+          <li>完场后：<code><%- include('_kickoff-zh', { kickoff: m.publicSourcesPhasePostAt, wrapSpan: false }) %></code></li>
+        </ul>
+        <p style="margin:0.75rem 0 0;"><a href="<%= avBase %>/sources?matchId=<%= encodeURIComponent(mid) %>">本场全部来源记录</a></p>
+      </section>
+
+      </details>
+
+      <section class="admin-card admin-md-anchor" id="md-sources">
+        <h2 class="admin-card-title">本场来源（最近 60 条）</h2>
+        <% if (srcCount === 0) { %>
+          <p class="admin-muted" style="margin:0;">暂无。可先执行「公开来源」。</p>
+        <% } else { %>
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead><tr><th>抓取时间（北京）</th><th>类型</th><th>名称</th><th>链接</th></tr></thead>
+              <tbody>
+                <% (m.sourceRecords || []).forEach(function (s) { %>
+                  <tr>
+                    <td><code style="font-size:0.78rem;"><%- include('_kickoff-zh', { kickoff: s.fetchedAt, wrapSpan: false }) %></code></td>
+                    <td><%= s.sourceType %></td>
+                    <td><%= (s.sourceName || '').slice(0, 48) %></td>
+                    <td><% if (s.sourceUrl) { %><a href="<%= s.sourceUrl %>" target="_blank" rel="noopener">打开</a><% } else { %>—<% } %></td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+
+      <details class="admin-card admin-md-anchor" id="md-debug">
+        <summary style="cursor:pointer;font-weight:600;">原始 JSON（开发调试用，默认折叠）</summary>
+        <p class="admin-muted" style="margin:0.75rem 0;">完整结构供开发验收；日常运营不必打开。</p>
+        <details class="admin-md-details"><summary>球队快照 JSON</summary><pre class="admin-pre"><%= JSON.stringify(m.teamSnapshots || [], null, 2) %></pre></details>
+        <details class="admin-md-details"><summary>预测 JSON</summary><pre class="admin-pre"><%= JSON.stringify(m.prediction || null, null, 2) %></pre></details>
+        <details class="admin-md-details"><summary>球员快照 JSON（全量）</summary><pre class="admin-pre"><%= JSON.stringify(m.playerSnapshots || [], null, 2) %></pre></details>
+        <details class="admin-md-details"><summary>AI 报告摘要 JSON</summary><pre class="admin-pre"><%= JSON.stringify((m.aiReports || []).map(function (r) { return { id: r.id, status: r.status, freeSummary: (r.freeSummary || '').slice(0, 240) }; }), null, 2) %></pre></details>
+      </details>
+
+      <p class="admin-back"><a href="<%= avBase %>/matches">← 返回比赛列表</a><% if (m.competition) { %> · <a href="<%= avBase %>/competitions/<%= m.competition.id %>/tools?seasonId=<%= encodeURIComponent(m.seasonId || '') %>">杯赛工具</a><% } %></p>
+    </main>
+  </div>
+</body>
+</html>

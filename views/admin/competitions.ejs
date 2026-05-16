@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= title %></title>
+  <%- include('_admin-theme') %>
+</head>
+<body class="admin-body">
+  <% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+  <div class="admin-layout">
+    <%- include('_nav') %>
+    <main class="admin-main">
+      <h1 class="admin-page-title">杯赛实例</h1>
+      <p class="admin-page-sub">赛事实例与球队工具</p>
+      <p class="admin-muted" style="margin:0 0 1rem;">「工具」列出该杯赛赛程中出现过的球队，便于核对公开来源队名。</p>
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>名称</th>
+            <th>code</th>
+            <th>赛季</th>
+            <th>赛事</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% rows.forEach(function (r) { %>
+            <tr>
+              <td><%= r.nameCn %><br /><span class="admin-muted" style="font-size:0.8rem;"><%= r.nameEn %></span></td>
+              <td><%= r.code || '—' %></td>
+              <td><%= r.season ? r.season.code : '—' %><br /><span class="admin-muted" style="font-size:0.75rem;"><%= r.seasonId || '' %></span></td>
+              <td><%= r.tournament ? r.tournament.code : '—' %></td>
+              <td>
+                <a href="<%= avBase %>/competitions/<%= r.id %>/tools">工具</a>
+                <% if (r.code === 'WC' || (r.tournament && r.tournament.code === 'FIFA_WC')) { %>
+                  · <a href="<%= avBase %>/competitions/<%= r.id %>/worldcup2026-teams">WC2026</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </main>
+  </div>
+</body>
+</html>

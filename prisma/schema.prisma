@@ -1,0 +1,1181 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum DataQuality {
+  PUBLIC_DATA
+  MANUAL_INPUT
+  MODEL_ESTIMATED
+  AI_GENERATED
+  UNKNOWN
+}
+
+enum DataSourceType {
+  /**
+   * api-sports.io / API-Football（v3），主数据源（赛程/阵容等）
+   */
+  API_FOOTBALL
+  FOOTBALL_DATA
+  DEEPSEEK
+  QWEATHER
+  WIKIPEDIA
+  FIFA
+  UEFA
+  FPL
+  KAGGLE
+  ESPN
+  WORLDFOOTBALL
+  ELEVEN_V_ELEVEN
+  TRANSFERMARKT
+  /**
+   * StatsBomb Open Data（GitHub 开放数据集，须遵守其许可）
+   */
+  STATSBOMB
+  MANUAL
+  MODEL
+  UNKNOWN
+}
+
+enum MatchStatus {
+  SCHEDULED
+  LIVE
+  FINISHED
+  POSTPONED
+  CANCELLED
+  UNKNOWN
+}
+
+enum ReportStatus {
+  NONE
+  DRAFT
+  REVIEW
+  PUBLISHED
+  ARCHIVED
+}
+
+enum AiReportType {
+  PRE_MATCH
+  POST_MATCH
+  LIVE_NARRATIVE
+}
+
+/**
+ * 单场情报生成管线执行记录（Phase C）
+ */
+enum PipelineRunStatus {
+  RUNNING
+  SUCCEEDED
+  PARTIAL
+  FAILED
+}
+
+enum OrderStatus {
+  CREATED
+  PAYING
+  PAID
+  CLOSED
+  FAILED
+  REFUNDED
+}
+
+enum OrderProduct {
+  REPORT_UNLOCK
+  /**
+   * 焦点战等：单价高于普通单场（见 isFeatured + featuredReportUnlockPriceCents）
+   */
+  FEATURED_REPORT_UNLOCK
+  SOCIAL_POSTER
+  MEMBERSHIP_PRO_MONTH
+  MEMBERSHIP_PRO_QUARTER
+  MEMBERSHIP_PRO_YEAR
+}
+
+enum PaymentProvider {
+  WECHAT
+}
+
+enum TournamentType {
+  DOMESTIC_LEAGUE
+  DOMESTIC_CUP
+  CONTINENTAL_CLUB
+  CONTINENTAL_NATIONAL
+  GLOBAL_NATIONAL
+  GLOBAL_CLUB
+  FRIENDLY
+  OTHER
+}
+
+enum CompetitionLevel {
+  TIER_1
+  TIER_2
+  TIER_3
+  CUP
+  INTERNATIONAL
+  OTHER
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  MEDIUM_HIGH
+  HIGH
+  UNKNOWN
+}
+
+model User {
+  id                     String    @id @default(cuid())
+  /**
+   * 微信 openid；手机验证码注册用户绑定微信前可为空
+   */
+  openid                 String?   @unique
+  unionid                String?
+  /**
+   * 中国大陆手机建议存 11 位数字；E.164 亦可，须与发送验证码时规范化一致
+   */
+  phone                  String?   @unique
+  phoneVerifiedAt        DateTime?
+  /**
+   * bcrypt 哈希；手机注册后可 PATCH 设置
+   */
+  passwordHash           String?
+  nickname               String?
+  avatarUrl              String?
+  role                   UserRole  @default(USER)
+  /**
+   * 社交分享海报：每位用户终身一次免费（消耗后 true）
+   */
+  socialPosterFreeUsed   Boolean   @default(false)
+  /**
+   * UTC 自然月 YYYYMM；与 posterFreeUsedInMonth 配合实现「每月 1 张免费海报」
+   */
+  posterFreeUtcYearMonth Int       @default(0)
+  /**
+   * 当前 posterFreeUtcYearMonth 内已用免费张数（0/1）
+   */
+  posterFreeUsedInMonth  Int       @default(0)
+  /**
+   * Pro 会员有效期：无限单场情报 + 无限海报（旧字段 posterMemberDay* 保留兼容，新逻辑不再递增）
+   */
+  membershipUntil        DateTime?
+  /**
+   * @deprecated 历史「会员每日 5 张海报」计数；V2 Pro 为无限，新代码不再写入
+   */
+  posterMemberDayKey     Int?
+  /**
+   * @deprecated 见 posterMemberDayKey
+   */
+  posterMemberDayCount   Int       @default(0)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  orders          Order[]
+  unlocks         PaymentUnlock[]
+  wcTeamFollows   UserTeamFollow[]
+  favoriteMatches UserMatchFavorite[]
+  matchReminders  UserMatchReminder[]
+  preferences     UserPreferences?
+  feedbacks       UserFeedback[]
+}
+
+/**
+ * 手机验证码（短期有效，一次性消费）
+ */
+model AuthPhoneOtp {
+  id         String    @id @default(cuid())
+  phone      String
+  codeHash   String
+  expiresAt  DateTime
+  consumedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+/**
+ * 用户关注的 2026 世界杯国家队（externalId 前缀 wc26-）
+ */
+model UserTeamFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  teamId    String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, teamId])
+  @@index([userId])
+}
+
+model UserMatchFavorite {
+  id        String   @id @default(cuid())
+  userId    String
+  matchId   String
+  createdAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+  @@index([userId])
+}
+
+model UserMatchReminder {
+  id                  String   @id @default(cuid())
+  userId              String
+  matchId             String
+  /**
+   * 开球前多少分钟提醒（正数）
+   */
+  notifyOffsetMinutes Int      @default(60)
+  /**
+   * app | sms（仅占位；推送通道由后续接入）
+   */
+  channel             String   @default("app")
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, matchId])
+  @@index([userId])
+}
+
+model UserPreferences {
+  userId    String   @id
+  /**
+   * 前端约定：matchRemind、scoreAlert 等布尔或字符串
+   */
+  data      Json     @default("{}")
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserFeedback {
+  id        String   @id @default(cuid())
+  userId    String?
+  message   String   @db.Text
+  contact   String?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+}
+
+model Tournament {
+  id          String           @id @default(cuid())
+  code        String           @unique
+  nameCn      String
+  nameEn      String
+  type        TournamentType
+  level       CompetitionLevel @default(TIER_1)
+  region      String?
+  country     String?
+  organizer   String?
+  isGlobal    Boolean          @default(false)
+  isActive    Boolean          @default(true)
+  description String?          @db.Text
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  competitions     Competition[]
+  matches          Match[]
+  providerMappings DataProviderMapping[]
+}
+
+model Season {
+  id        String    @id @default(cuid())
+  code      String    @unique
+  name      String
+  year      Int?
+  startDate DateTime?
+  endDate   DateTime?
+  isCurrent Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  competitions Competition[]
+  matches      Match[]
+}
+
+model Competition {
+  id                String           @id @default(cuid())
+  tournamentId      String?
+  seasonId          String?
+  externalId        String?          @unique
+  code              String?
+  nameCn            String
+  nameEn            String
+  country           String?
+  seasonName        String?
+  currentMatchday   Int?
+  level             CompetitionLevel @default(TIER_1)
+  dataSource        DataSourceType   @default(UNKNOWN)
+  /**
+   * API-Football（api-sports）联赛 id，如英超 39；与 code 并行便于同步
+   */
+  apiSportsLeagueId Int?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  tournament       Tournament?           @relation(fields: [tournamentId], references: [id])
+  season           Season?               @relation(fields: [seasonId], references: [id])
+  matches          Match[]
+  providerMappings DataProviderMapping[]
+
+  @@index([tournamentId, seasonId])
+  @@index([apiSportsLeagueId])
+}
+
+model DataProviderMapping {
+  id                      String         @id @default(cuid())
+  provider                DataSourceType
+  tournamentId            String?
+  competitionId           String?
+  providerCompetitionCode String?
+  providerCompetitionId   String?
+  providerSeasonCode      String?
+  extra                   Json?
+  createdAt               DateTime       @default(now())
+  updatedAt               DateTime       @updatedAt
+
+  tournament  Tournament?  @relation(fields: [tournamentId], references: [id])
+  competition Competition? @relation(fields: [competitionId], references: [id])
+
+  @@index([provider, providerCompetitionCode])
+}
+
+model Team {
+  id              String         @id @default(cuid())
+  externalId      String?        @unique
+  nameCn          String
+  nameEn          String
+  shortName       String?
+  logoUrl         String?
+  country         String?
+  founded         Int?
+  venue           String?
+  website         String?
+  eloRating       Int            @default(1500)
+  dataSource      DataSourceType @default(UNKNOWN)
+  /**
+   * 2026 世界杯小组赛档位 A–L（仅世界杯种子队使用）
+   */
+  wcGroup         String?
+  /**
+   * 2026 世界杯扩展档案：FIFA 排名、Elo、近半年国际赛等（与 worldcup2026_teams.json 对齐）
+   */
+  wc2026Profile   Json?
+  /**
+   * FD 教练档案：`/teams/{id}` 的 coach、可选 `/persons`、`/persons/.../matches`、
+   * 以及近若干场 `/matches/{id}` 摘录的阵型/教练席；战术理念长文本 FD 不提供时见 JSON 内 `tacticalSemantics`。
+   */
+  coachProfile    Json?
+  /**
+   * OLS 文档一：俱乐部/国家队基础战力 TPR（约 35–99，无快照时可能为 null）
+   */
+  powerRating     Float?
+  /**
+   * 子分项、模型版本等 JSON
+   */
+  powerRatingMeta Json?
+  powerRatingAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  players               Player[]
+  homeMatches           Match[]               @relation("MatchHomeTeam")
+  awayMatches           Match[]               @relation("MatchAwayTeam")
+  teamSnapshots         TeamMatchSnapshot[]
+  playerSnapshotsOnTeam PlayerMatchSnapshot[] @relation("PlayerSnapshotTeam")
+  playerIntelAsTeam     PlayerIntelligence[]  @relation("IntelTeam")
+  userFollows           UserTeamFollow[]
+
+  @@index([wcGroup])
+}
+
+model Player {
+  id                 String         @id @default(cuid())
+  teamId             String
+  externalId         String?
+  nameCn             String
+  nameEn             String
+  /**
+   * 头像 URL：抓取 JSON 中的图片字段或常量表手工映射
+   */
+  avatarUrl          String?
+  position           String?
+  nationality        String?
+  shirtNumber        Int?
+  fantasyPrice       Float?
+  fantasySource      String?
+  status             String?
+  dataSource         DataSourceType @default(UNKNOWN)
+  /**
+   * 扩展档案：身体/身价/多位置/多来源 id 等（Zod 校验后写入）
+   */
+  profile            Json?
+  /**
+   * FBref CSV 最近一次成功写入（与 profile.fbref 对齐）
+   */
+  fbrefStatsSyncedAt DateTime?
+  /**
+   * 与 profile.fbref.seasons 下的季次 key 一致，便于筛选
+   */
+  fbrefSeasonTag     String?        @db.VarChar(40)
+  /**
+   * FBref「Min」列解析后的总分钟（便于排序；明细见 profile.fbref）
+   */
+  fbrefMinutes       Int?
+  /**
+   * OLS 文档二：球员战斗力 PPR
+   */
+  powerRating        Float?
+  powerRatingMeta    Json?
+  powerRatingAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  team          Team                  @relation(fields: [teamId], references: [id])
+  snapshots     PlayerMatchSnapshot[]
+  intelligences PlayerIntelligence[]
+
+  @@index([teamId])
+  @@index([fbrefSeasonTag])
+  @@index([fbrefStatsSyncedAt])
+}
+
+model Match {
+  id                       String         @id @default(cuid())
+  externalId               String?        @unique
+  competitionId            String
+  tournamentId             String?
+  seasonId                 String?
+  round                    String?
+  /**
+   * 联赛轮次序号（与 football-data matchday 等对齐时可填）
+   */
+  matchday                 Int?
+  stage                    String?
+  groupName                String?
+  /**
+   * 两回合制场次序号
+   */
+  leg                      Int?
+  homeTeamId               String
+  awayTeamId               String
+  stadium                  String?
+  city                     String?
+  country                  String?
+  kickoffTime              DateTime
+  status                   MatchStatus    @default(SCHEDULED)
+  homeScore                Int?
+  awayScore                Int?
+  isFeatured               Boolean        @default(false)
+  reportStatus             ReportStatus   @default(NONE)
+  dataSource               DataSourceType @default(UNKNOWN)
+  /**
+   * StatsBomb Open Data `match_id`（与 GitHub `data/events/{id}.json` 一致）
+   */
+  statsbombMatchId         Int?           @unique
+  /**
+   * 定时公开来源：开球前约 48h 首轮抓取完成时间
+   */
+  publicSourcesPhase48At   DateTime?
+  /**
+   * 开球前约 8h
+   */
+  publicSourcesPhase8At    DateTime?
+  /**
+   * 开球前约 2h
+   */
+  publicSourcesPhase2At    DateTime?
+  /**
+   * 完场后补抓（见 Cron 窗口逻辑）
+   */
+  publicSourcesPhasePostAt DateTime?
+  /**
+   * API-Football 赛前快照：开球前约 24h
+   */
+  afPreMatchSnapshot24At   DateTime?
+  /**
+   * 开球前约 1h
+   */
+  afPreMatchSnapshot1At    DateTime?
+  /**
+   * 赔率快照 T-24h
+   */
+  afOddsSnapshot24At       DateTime?
+  /**
+   * 赔率快照 T-1h
+   */
+  afOddsSnapshot1At        DateTime?
+  /**
+   * 当前对外展示的预测版本（C 端 intel / detail 读此指针）
+   */
+  activePredictionId       String?        @unique
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  competition        Competition           @relation(fields: [competitionId], references: [id])
+  tournament         Tournament?           @relation(fields: [tournamentId], references: [id])
+  season             Season?               @relation(fields: [seasonId], references: [id])
+  homeTeam           Team                  @relation("MatchHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam           Team                  @relation("MatchAwayTeam", fields: [awayTeamId], references: [id])
+  teamSnapshots      TeamMatchSnapshot[]
+  playerSnapshots    PlayerMatchSnapshot[]
+  refereeSnapshot    RefereeSnapshot?
+  weatherSnapshot    WeatherSnapshot?
+  activePrediction   MatchPrediction?      @relation("ActivePrediction", fields: [activePredictionId], references: [id], onDelete: SetNull)
+  predictions        MatchPrediction[]     @relation("MatchPredictions")
+  predictionGradings MatchPredictionGrading[]
+  playerIntelligence PlayerIntelligence[]
+  tacticalScenarios  TacticalScenario[]
+  fantasyAdvice      FantasyAdvice?
+  headToHead         HeadToHeadInsight?
+  socialGuide        SocialGuide?
+  aiReports          AiReport[]
+  orders             Order[]
+  unlocks            PaymentUnlock[]
+  sourceRecords      SourceRecord[]
+  pipelineRuns       MatchPipelineRun[]
+  matchFacts         MatchFacts?
+  oddsSnapshots      MatchOddsSnapshot[]
+  favoriteUsers      UserMatchFavorite[]
+  reminderUsers      UserMatchReminder[]
+
+  @@index([kickoffTime])
+  @@index([isFeatured])
+  @@index([tournamentId])
+  @@index([competitionId])
+  @@index([seasonId])
+}
+
+/**
+ * 单场「事实包」：完赛后的扩展比分、统计、阵容、事件等多嵌套字段。
+ * 优先用结构化 JSON + Zod 校验落库；与 Match 核心字段（比分/状态）同步互补。
+ */
+model MatchFacts {
+  matchId String @id
+  match   Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  minuteRegulation Int?
+  attendance       Int?
+  htHome           Int?
+  htAway           Int?
+  /**
+   * 全场（常规时间终场，与 Match.homeScore 一致时可冗余）
+   */
+  ftHome           Int?
+  ftAway           Int?
+  etHome           Int?
+  etAway           Int?
+  penHome          Int?
+  penAway          Int?
+
+  /**
+   * 控球、射门、xG 等聚合统计
+   */
+  teamStats     Json?
+  /**
+   * 首发/替补/阵型
+   */
+  lineups       Json?
+  /**
+   * 进球/换人等事件列表
+   */
+  events        Json?
+  /**
+   * 裁判组、VAR
+   */
+  officials     Json?
+  venueDetail   Json?
+  weatherDetail Json?
+
+  /**
+   * 上游原始快照（便于追溯与二次解析）
+   */
+  rawFdMatch      Json?
+  rawOpenfootball Json?
+  /**
+   * StatsBomb Open Data 原始 lineups/events 等（大 JSON；许可见 https://github.com/statsbomb/open-data）
+   */
+  rawStatsbomb    Json?
+  /**
+   * API-Football（api-sports）GET /fixtures?id= 单项快照（写入前可 shrink，见 MatchAfFactsSyncService）
+   */
+  rawAfFixture Json?
+  /**
+   * 最后一次从 API-Football 拉取单场事实包（lineups/events/statistics/fixture）的时间
+   */
+  afLastSyncedAt DateTime?
+  /**
+   * 赛中增量：AF events/statistics 上次拉取时刻
+   */
+  afLiveLastSyncedAt DateTime?
+  /**
+   * 赛中增量：Football-Data 单场详情上次拉取时刻
+   */
+  fdLiveLastSyncedAt DateTime?
+  /**
+   * 赛中元数据：比分快照、seq、合成事件状态等
+   */
+  liveMetaJson Json?
+
+  /**
+   * 多源参考层（FD/StatsBomb/公开源等）；不覆盖 canonical teamStats/events/lineups，除非 Admin 确认合并。
+   * 结构：{ "STATSBOMB"?: {...}, "OPENFOOTBALL"?: {...}, "FOOTBALL_DATA"?: {...} }
+   */
+  supplementaryFacts Json?
+
+  /**
+   * 多来源外部 id：{ "FOOTBALL_DATA": "123", "OPENFOOTBALL": "...", "API_FOOTBALL": "12345" }
+   */
+  externalRefs    Json?
+
+  primaryProvider   DataSourceType  @default(UNKNOWN)
+  structureProvider DataSourceType?
+  /**
+   * 细分来源标签：openfootball、fbref、dongqiudi 等（避免 ENUM 爆炸式增长）
+   */
+  providerTag       String?
+
+  lastSyncedAt  DateTime?
+  validatedAt   DateTime?
+  validationLog Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/**
+ * 批量入库/爬虫任务审计（重试、丢弃原因写入 resultSummary）
+ */
+model IngestJobRun {
+  id            String    @id @default(cuid())
+  kind          String
+  status        String    @default("RUNNING")
+  params        Json?
+  resultSummary Json?
+  errorMessage  String?   @db.Text
+  startedAt     DateTime  @default(now())
+  finishedAt    DateTime?
+
+  @@index([kind, startedAt])
+}
+
+model MatchPipelineRun {
+  id           String            @id @default(cuid())
+  matchId      String
+  kind         String            @default("INTEL_FULL_V1")
+  status       PipelineRunStatus @default(RUNNING)
+  /**
+   * 启动时是否启用真实 DeepSeek（非 mock、已配置 Key）
+   */
+  deepseekReal Boolean           @default(false)
+  steps        Json
+  summary      String?           @db.Text
+  createdAt    DateTime          @default(now())
+  finishedAt   DateTime?
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, createdAt])
+}
+
+/**
+ * 赛前/临场赔率快照（API-Football 等；C 端只读展示须带合规 disclaimer）
+ */
+model MatchOddsSnapshot {
+  id                   String         @id @default(cuid())
+  matchId              String
+  apiFootballFixtureId Int
+  /**
+   * T24 | T1 | LIVE
+   */
+  phase                String
+  provider             DataSourceType @default(API_FOOTBALL)
+  capturedAt           DateTime       @default(now())
+  marketsJson          Json
+  rawOdds              Json?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+
+  match       Match             @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  predictions MatchPrediction[]
+  aiReports   AiReport[]
+
+  @@unique([matchId, phase, provider])
+  @@index([matchId, capturedAt])
+}
+
+model TeamMatchSnapshot {
+  id                String         @id @default(cuid())
+  matchId           String
+  teamId            String
+  isHome            Boolean
+  leagueRank        Int?
+  points            Int?
+  recentForm        String?
+  goalsForAvg       Float?
+  goalsAgainstAvg   Float?
+  xgAvg             Float?
+  xgaAvg            Float?
+  attackRating      Float          @default(50)
+  defenseRating     Float          @default(50)
+  injuryImpact      Float          @default(0)
+  fatigueIndex      Float          @default(0)
+  formation         String?
+  coachName         String?
+  coachStyle        String?
+  possessionAvg     Float?
+  attackStyle       String?
+  defensiveWeakness String?
+  tacticalTags      Json?
+  notes             String?        @db.Text
+  dataQuality       DataQuality    @default(UNKNOWN)
+  dataSource        DataSourceType @default(UNKNOWN)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team  Team  @relation(fields: [teamId], references: [id])
+
+  @@unique([matchId, teamId])
+}
+
+model PlayerMatchSnapshot {
+  id                       String         @id @default(cuid())
+  matchId                  String
+  playerId                 String
+  teamId                   String
+  last5Goals               Int?
+  last5Assists             Int?
+  last5Minutes             Int?
+  avgMinutes               Float?
+  isNationalTeamDuty       Boolean        @default(false)
+  consecutiveStarts        Int?
+  expectedStartProbability Float?
+  fitnessScore             Float?
+  formScore                Float?
+  riskLevel                RiskLevel      @default(UNKNOWN)
+  injuryNews               String?        @db.Text
+  injuryNote               String?        @db.Text
+  recentStatsText          String?        @db.Text
+  matchupText              String?        @db.Text
+  sentimentText            String?        @db.Text
+  fantasyPrice             Float?
+  predictedFantasyPoints   Float?
+  notes                    String?        @db.Text
+  dataQuality              DataQuality    @default(UNKNOWN)
+  dataSource               DataSourceType @default(UNKNOWN)
+  createdAt                DateTime       @default(now())
+  updatedAt                DateTime       @updatedAt
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+  team   Team   @relation("PlayerSnapshotTeam", fields: [teamId], references: [id])
+
+  @@unique([matchId, playerId])
+}
+
+model Referee {
+  id         String         @id @default(cuid())
+  /**
+   * football-data.org Person id（主裁判等），有则按此去重 upsert
+   */
+  externalId String?        @unique
+  nameCn     String
+  nameEn     String?
+  /**
+   * 头像 URL：FD 场次裁判节点或手工映射
+   */
+  avatarUrl  String?
+  country    String?
+  dataSource DataSourceType @default(UNKNOWN)
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+
+  snapshots RefereeSnapshot[]
+}
+
+model RefereeSnapshot {
+  id                 String         @id @default(cuid())
+  matchId            String         @unique
+  refereeId          String
+  matchesCount       Int?
+  yellowCardsAvg     Float?
+  redCardsAvg        Float?
+  penaltiesAvg       Float?
+  foulsAvg           Float?
+  homeWinRate        Float?
+  addedTimeAvg       Float?
+  notes              String?        @db.Text
+  /**
+   * 联赛尺度对照（聚合或 AI 估计），结构见 `RefereeIntelLeagueBenchmarkJson`
+   */
+  leagueBenchmarks   Json?
+  /**
+   * 主队在当前主裁判执法样本下的战绩摘要
+   */
+  homeTeamRefHistory Json?
+  /**
+   * 客队在当前主裁判执法样本下的战绩摘要
+   */
+  awayTeamRefHistory Json?
+  dataQuality        DataQuality    @default(UNKNOWN)
+  dataSource         DataSourceType @default(UNKNOWN)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  match   Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  referee Referee @relation(fields: [refereeId], references: [id])
+}
+
+model WeatherSnapshot {
+  id                     String         @id @default(cuid())
+  matchId                String         @unique
+  temperature            Float?
+  condition              String?
+  humidity               Float?
+  windSpeed              Float?
+  visibility             Float?
+  pitchCondition         String?
+  source                 String?
+  weatherImpactScore     Float          @default(0)
+  /**
+   * 主场历史同期/同月等上下文（统计或 AI 归纳），结构见 `VenueHistoricalContextJson`
+   */
+  venueHistoricalContext Json?
+  dataQuality            DataQuality    @default(UNKNOWN)
+  dataSource             DataSourceType @default(QWEATHER)
+  createdAt              DateTime       @default(now())
+  updatedAt              DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model MatchPrediction {
+  id                 String         @id @default(cuid())
+  matchId            String
+  version            Int            @default(1)
+  /**
+   * 开球前冻结时刻；锁定后重算写入新版本
+   */
+  lockedAt           DateTime?
+  inputsHash         String?
+  predictionMarkets  Json?
+  oddsSnapshotId     String?
+  homeWinProbability Int
+  drawProbability    Int
+  awayWinProbability Int
+  homeExpectedGoals  Float
+  awayExpectedGoals  Float
+  totalExpectedGoals Float
+  totalGoalsTrend    String?
+  tempoIndex         Int
+  upsetIndex         Int
+  /**
+   * OLS 单场战力（含主场/伤停/疲劳等修正），供前端与文档 §4 对齐
+   */
+  homeMatchPower     Float?
+  awayMatchPower     Float?
+  confidence         Int
+  modelVersion       String
+  factorBreakdown    Json?
+  explanation        String?        @db.Text
+  dataQuality        DataQuality    @default(MODEL_ESTIMATED)
+  dataSource         DataSourceType @default(MODEL)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  match          Match                   @relation("MatchPredictions", fields: [matchId], references: [id], onDelete: Cascade)
+  activeForMatch Match?                  @relation("ActivePrediction")
+  oddsSnapshot   MatchOddsSnapshot?      @relation(fields: [oddsSnapshotId], references: [id], onDelete: SetNull)
+  grading        MatchPredictionGrading?
+  aiReports      AiReport[]
+
+  @@unique([matchId, version])
+  @@index([matchId, createdAt])
+}
+
+/**
+ * 冻结预测 vs 实际赛果对账（Brier、命中率、模拟 ROI）
+ */
+model MatchPredictionGrading {
+  id             String   @id @default(cuid())
+  matchId        String
+  predictionId   String   @unique
+  gradedAt       DateTime @default(now())
+  actualOutcome  Json
+  metricsJson    Json
+  oddsSnapshotId String?
+
+  match      Match           @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  prediction MatchPrediction @relation(fields: [predictionId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, gradedAt])
+}
+
+model PlayerIntelligence {
+  id                 String         @id @default(cuid())
+  matchId            String
+  playerId           String
+  teamId             String
+  statusTag          String
+  startProbability   Int
+  riskLevel          RiskLevel
+  fitnessAnalysis    String?        @db.Text
+  psychologyAnalysis String?        @db.Text
+  matchupAnalysis    String?        @db.Text
+  weatherImpact      String?        @db.Text
+  fantasySuggestion  String?        @db.Text
+  aiSummary          String?        @db.Text
+  rawInput           Json?
+  rawOutput          Json?
+  dataQuality        DataQuality    @default(AI_GENERATED)
+  dataSource         DataSourceType @default(DEEPSEEK)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  match  Match  @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player @relation(fields: [playerId], references: [id])
+  team   Team   @relation("IntelTeam", fields: [teamId], references: [id])
+
+  @@unique([matchId, playerId])
+}
+
+model TacticalScenario {
+  id            String         @id @default(cuid())
+  matchId       String
+  scenarioType  String
+  title         String
+  probability   Int
+  precondition  String         @db.Text
+  process       String         @db.Text
+  possibleScore String?
+  timeline      String?        @db.Text
+  keyPlayers    Json?
+  riskPoints    Json?
+  rawInput      Json?
+  rawOutput     Json?
+  dataQuality   DataQuality    @default(AI_GENERATED)
+  dataSource    DataSourceType @default(DEEPSEEK)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model FantasyAdvice {
+  id                    String         @id @default(cuid())
+  matchId               String         @unique
+  mustHave              Json?
+  valuePicks            Json?
+  avoid                 Json?
+  captainRecommendation String?        @db.Text
+  predictedPoints       Json?
+  riskWarnings          Json?
+  /**
+   * 三套推荐阵容、预算与说明，结构见 `FantasyLineupLaboratoryJson`
+   */
+  lineupLaboratory      Json?
+  priceSource           String?
+  rawInput              Json?
+  rawOutput             Json?
+  dataQuality           DataQuality    @default(AI_GENERATED)
+  dataSource            DataSourceType @default(DEEPSEEK)
+  createdAt             DateTime       @default(now())
+  updatedAt             DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model HeadToHeadInsight {
+  id                String         @id @default(cuid())
+  matchId           String         @unique
+  lastMeetingsCount Int?
+  homeWins          Int?
+  draws             Int?
+  awayWins          Int?
+  avgGoals          Float?
+  homeAdvantageText String?        @db.Text
+  cardsText         String?        @db.Text
+  cornersText       String?        @db.Text
+  summary           String?        @db.Text
+  rawStats          Json?
+  missingFields     Json?
+  dataQuality       DataQuality    @default(PUBLIC_DATA)
+  dataSource        DataSourceType @default(UNKNOWN)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model SocialGuide {
+  id                String         @id @default(cuid())
+  matchId           String         @unique
+  oneLiner          String
+  keyMoments        Json?
+  shareCopy         String?        @db.Text
+  posterTitle       String?
+  shortVideoScript  String?        @db.Text
+  momentsCopy       String?        @db.Text
+  xiaohongshuTitle  String?
+  /**
+   * GPT-Image2（或兼容接口）生成的分享海报图 URL；可能为 http(s) 或 data:image/*;base64,（须 LONGTEXT）
+   */
+  posterImageUrl    String?        @db.LongText
+  posterPromptUser  String?        @db.VarChar(200)
+  posterPromptFinal String?        @db.Text
+  posterGeneratedAt DateTime?
+  rawInput          Json?
+  rawOutput         Json?
+  dataQuality       DataQuality    @default(AI_GENERATED)
+  dataSource        DataSourceType @default(DEEPSEEK)
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+}
+
+model AiReport {
+  id                    String       @id @default(cuid())
+  matchId               String
+  reportType            AiReportType @default(PRE_MATCH)
+  predictionId          String?
+  oddsSnapshotId        String?
+  structuredContentJson Json?
+  factCheckJson         Json?
+  reviewedAt            DateTime?
+  reviewedByUserId      String?
+  freeSummary           String       @db.Text
+  dashboardSummary      String?      @db.Text
+  refereeAnalysis       Json?
+  weatherAnalysis       Json?
+  playerProfiles        Json?
+  tacticalScenarios     Json?
+  fantasyAdvice         Json?
+  historicalInsight     String?      @db.Text
+  headToHeadInsight     Json?
+  expertVariables       Json?
+  socialGuide           Json?
+  sourceSummary         Json?
+  disclaimer            String       @db.Text
+  modelName             String?
+  status                ReportStatus @default(DRAFT)
+  rawInput              Json?
+  rawOutput             Json?
+  contentWarnings       Json?
+  generatedAt           DateTime     @default(now())
+  publishedAt           DateTime?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  match        Match              @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  prediction   MatchPrediction?   @relation(fields: [predictionId], references: [id], onDelete: SetNull)
+  oddsSnapshot MatchOddsSnapshot? @relation(fields: [oddsSnapshotId], references: [id], onDelete: SetNull)
+
+  @@index([matchId, status])
+  @@index([matchId, reportType, status])
+}
+
+model Order {
+  id              String          @id @default(cuid())
+  orderNo         String          @unique
+  userId          String
+  /**
+   * 会员类订单可为空；单场报告/海报订单必填
+   */
+  matchId         String?
+  amount          Int
+  currency        String          @default("CNY")
+  status          OrderStatus     @default(CREATED)
+  provider        PaymentProvider @default(WECHAT)
+  product         OrderProduct    @default(REPORT_UNLOCK)
+  /**
+   * 社交海报单次付费订单：生成成功后置 true
+   */
+  posterConsumed  Boolean         @default(false)
+  wxPrepayId      String?
+  wxTransactionId String?
+  description     String?
+  paidAt          DateTime?
+  closedAt        DateTime?
+  notifyRaw       Json?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  user    User            @relation(fields: [userId], references: [id])
+  match   Match?          @relation(fields: [matchId], references: [id])
+  unlocks PaymentUnlock[]
+
+  @@index([userId, matchId])
+  @@index([userId, matchId, product])
+}
+
+model PaymentUnlock {
+  id            String          @id @default(cuid())
+  userId        String
+  matchId       String
+  orderId       String?
+  amount        Int
+  status        OrderStatus
+  provider      PaymentProvider
+  transactionId String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id])
+  match Match  @relation(fields: [matchId], references: [id])
+  order Order? @relation(fields: [orderId], references: [id])
+
+  @@index([userId, matchId])
+}
+
+model SourceRecord {
+  id          String         @id @default(cuid())
+  matchId     String?
+  entityType  String
+  entityId    String?
+  sourceType  DataSourceType
+  sourceName  String
+  sourceUrl   String?
+  title       String?
+  content     String?        @db.Text
+  fetchedAt   DateTime       @default(now())
+  dataQuality DataQuality    @default(PUBLIC_DATA)
+  createdAt   DateTime       @default(now())
+
+  match Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@index([matchId, sourceType])
+}
+
+model ApiLog {
+  id         String   @id @default(cuid())
+  provider   String
+  endpoint   String
+  method     String?
+  statusCode Int?
+  success    Boolean
+  message    String?  @db.Text
+  createdAt  DateTime @default(now())
+}

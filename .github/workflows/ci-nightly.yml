@@ -1,0 +1,58 @@
+name: CI (L1 Nightly)
+
+on:
+  schedule:
+    - cron: "0 18 * * *"
+  workflow_dispatch:
+
+jobs:
+  l0-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npx prisma generate
+      - run: npm run build
+      - run: npm run test:ci
+
+  l1-acceptance:
+    runs-on: ubuntu-latest
+    needs: l0-smoke
+    if: ${{ secrets.DATABASE_URL != '' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CI_STRICT: "1"
+      NODE_ENV: development
+      JWT_SECRET: ci-nightly-placeholder-secret-min-24-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run build
+      - run: npm run ci:l1
+      - run: npm run ci:report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-l1-report
+          path: |
+            ci-l1-report.json
+            ci-l1-summary.md
+
+  l1-skipped-hint:
+    runs-on: ubuntu-latest
+    needs: l0-smoke
+    if: ${{ secrets.DATABASE_URL == '' }}
+    steps:
+      - run: |
+          echo "::warning::DATABASE_URL secret not set — L1 acceptance skipped. See docs/ci-secrets.example.md"

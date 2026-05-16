@@ -1,0 +1,11 @@
+# 本地可选：仅起 MySQL 8，应用在宿主机执行 npm run start:dev 并指向 DATABASE_URL=mysql://root:football@127.0.0.1:3306/football_ai_report
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: football
+      MYSQL_DATABASE: football_ai_report
+    ports:
+      - '3306:3306'
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci']

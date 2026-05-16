@@ -1,0 +1,33 @@
+<% var avBase = (typeof locals.adminViewPathPrefix !== 'undefined' && locals.adminViewPathPrefix) ? locals.adminViewPathPrefix : '/admin-view'; %>
+<aside class="admin-sidenav" aria-label="后台导航">
+  <div class="admin-nav-brand">
+    <span class="admin-nav-mark" aria-hidden="true">⚽</span>
+    <span class="admin-nav-title">赛前情报</span>
+    <span class="admin-nav-tagline">轻量运维</span>
+  </div>
+  <nav class="admin-nav-groups">
+    <div class="admin-nav-group">
+      <div class="admin-nav-group-label">每天常用</div>
+      <a class="admin-nav-link" href="<%= avBase %>">运维中心</a>
+      <a class="admin-nav-link" href="<%= avBase %>/matches">比赛列表</a>
+      <a class="admin-nav-link" href="<%= avBase %>/orders">订单</a>
+      <a class="admin-nav-link" href="<%= avBase %>/data-report">数据报表</a>
+    </div>
+    <div class="admin-nav-group">
+      <details class="admin-nav-details">
+        <summary class="admin-nav-details-summary">高级与排障</summary>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/data-ingest">数据入库（全选项）</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/player-data">球员数据 / 审计</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/schedule-audit">赛程审计（FD）</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/worldcup2026-teams">世界杯 2026</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/competitions">杯赛实例</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/tournaments">赛事</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/seasons">赛季</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/provider-mappings">数据源映射</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/sources">来源记录</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/api-logs">接口日志</a>
+        <a class="admin-nav-link admin-nav-link-nested" href="<%= avBase %>/unlocks">解锁记录</a>
+      </details>
+    </div>
+  </nav>
+</aside>

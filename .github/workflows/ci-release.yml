@@ -1,0 +1,62 @@
+name: CI (Release)
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  l0:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma validate
+      - run: npx prisma generate
+      - run: npm run build
+      - run: npm run test:ci
+
+  l1-strict:
+    runs-on: ubuntu-latest
+    needs: l0
+    if: ${{ secrets.DATABASE_URL != '' }}
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      CI_STRICT: "1"
+      CI_RELEASE: "1"
+      NODE_ENV: development
+      JWT_SECRET: ci-release-placeholder-secret-min-24-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npx prisma migrate deploy
+      - run: npm run build
+      - run: npm run test:e2e
+      - run: npm run ci:l1
+      - run: npm run ci:report
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-release-report
+          path: |
+            ci-l1-report.json
+            ci-l1-summary.md
+
+  l1-missing-secrets:
+    runs-on: ubuntu-latest
+    needs: l0
+    if: ${{ secrets.DATABASE_URL == '' }}
+    steps:
+      - run: |
+          echo "::error::Release L1 requires DATABASE_URL secret. Configure staging DB before tagging."
+          exit 1
