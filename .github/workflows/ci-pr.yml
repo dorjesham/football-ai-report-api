@@ -5,12 +5,15 @@ on:
   push:
     branches: [main, master]
 
+env:
+  DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
+
 jobs:
   build-test:
     runs-on: ubuntu-latest
     # Prisma schema uses env("DATABASE_URL"); L0 does not connect to a real DB.
     env:
-      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/ci_placeholder
+      DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
     steps:
       - uses: actions/checkout@v4
 
@@ -21,9 +24,15 @@ jobs:
 
       - run: npm ci
 
-      - run: npx prisma validate
+      - name: Prisma validate
+        run: npx prisma validate
+        env:
+          DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
 
-      - run: npx prisma generate
+      - name: Prisma generate
+        run: npx prisma generate
+        env:
+          DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
 
       - run: npm run build
 

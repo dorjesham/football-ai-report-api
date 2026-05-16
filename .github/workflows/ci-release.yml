@@ -10,7 +10,7 @@ jobs:
   l0:
     runs-on: ubuntu-latest
     env:
-      DATABASE_URL: mysql://ci:ci@127.0.0.1:3306/ci_placeholder
+      DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -19,7 +19,11 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma validate
+        env:
+          DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
       - run: npx prisma generate
+        env:
+          DATABASE_URL: "mysql://ci:ci@127.0.0.1:3306/ci_placeholder"
       - run: npm run build
       - run: npm run test:ci
 
