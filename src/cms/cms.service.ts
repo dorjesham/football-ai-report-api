@@ -17,6 +17,27 @@ export type CmsMaterialItem = {
   isPremium: boolean;
 };
 
+export type CmsReportPreviewSection = {
+  section: string;
+  detail: string;
+};
+
+export type CmsReportItem = {
+  id: string;
+  title: string;
+  summary: string;
+  type: 'match' | 'season' | 'team' | 'player';
+  league: string;
+  tags: string[];
+  pages?: number;
+  confidence?: number;
+  isPremium: boolean;
+  publishedAt: string;
+  category?: string;
+  matchId?: string;
+  preview?: CmsReportPreviewSection[];
+};
+
 @Injectable()
 export class CmsService {
   /** 内置默认；后续可改为 DB 或远程配置 */
@@ -52,6 +73,39 @@ export class CmsService {
     },
   ];
 
+  private readonly defaultReports: CmsReportItem[] = [
+    {
+      id: 'demo-el-clasico',
+      title: '国家德比 · 战术复盘样例',
+      summary: '演示用专题：压迫节奏、边路对位与关键球员状态（非真实订单数据）。',
+      type: 'match',
+      league: '西甲',
+      tags: ['演示', '战术'],
+      pages: 8,
+      confidence: 72,
+      isPremium: true,
+      publishedAt: '2026-05-01T00:00:00.000Z',
+      category: 'featured',
+      preview: [
+        { section: '阵型', detail: '主队 4-3-3 高位逼抢 vs 客队 4-2-3-1 反击站位。' },
+        { section: '看点', detail: '边路一对一与中场二次球争夺为胜负手。' },
+      ],
+    },
+    {
+      id: 'demo-wc-group',
+      title: '世界杯小组赛 · 出线形势观察',
+      summary: '演示用赛季专题：积分形势与末轮对阵压力（静态样例）。',
+      type: 'season',
+      league: '世界杯',
+      tags: ['演示', '世界杯'],
+      pages: 6,
+      isPremium: false,
+      publishedAt: '2026-04-15T00:00:00.000Z',
+      category: 'worldcup',
+      preview: [{ section: '形势', detail: '各组积分密度与净胜球敏感度简析。' }],
+    },
+  ];
+
   private readonly defaultMaterials: CmsMaterialItem[] = [
     {
       id: 'brand-kit',
@@ -76,6 +130,16 @@ export class CmsService {
     const items = c ?
         this.defaultMaterials.filter((m) => m.category === c)
       : this.defaultMaterials;
+    return { items };
+  }
+
+  listReports(opts?: { category?: string; type?: string }): { items: CmsReportItem[] } {
+    const cat = opts?.category?.trim().toLowerCase();
+    const typ = opts?.type?.trim().toLowerCase() as CmsReportItem['type'] | undefined;
+    const allowedTypes = new Set(['match', 'season', 'team', 'player']);
+    let items = [...this.defaultReports];
+    if (cat) items = items.filter((r) => r.category?.toLowerCase() === cat);
+    if (typ && allowedTypes.has(typ)) items = items.filter((r) => r.type === typ);
     return { items };
   }
 }

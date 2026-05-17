@@ -12,6 +12,20 @@ enum UserRole {
   ADMIN
 }
 
+enum BrowseHistoryType {
+  ANALYSIS
+  POSTER
+  VIEW
+}
+
+enum UserNotificationType {
+  ORDER_PAID
+  POSTER_READY
+  POSTER_CREDIT
+  MEMBERSHIP
+  SYSTEM
+}
+
 enum DataQuality {
   PUBLIC_DATA
   MANUAL_INPUT
@@ -135,10 +149,30 @@ enum RiskLevel {
 model User {
   id                     String    @id @default(cuid())
   /**
-   * 微信 openid；手机验证码注册用户绑定微信前可为空
+   * 微信小程序 openid（支付 JSAPI 依赖此字段）
    */
   openid                 String?   @unique
+  /**
+   * 微信开放平台网站应用扫码 openid（与小程序 openid 不同）
+   */
+  wechatWebOpenid        String?   @unique
   unionid                String?
+  /**
+   * 邮箱注册/登录（小写存储）
+   */
+  email                  String?   @unique
+  /**
+   * 用户名注册/登录（3–32 位字母数字下划线）
+   */
+  username               String?   @unique
+  /**
+   * Sign in with Apple `sub`
+   */
+  appleSub               String?   @unique
+  /**
+   * Google OAuth `sub`
+   */
+  googleSub              String?   @unique
   /**
    * 中国大陆手机建议存 11 位数字；E.164 亦可，须与发送验证码时规范化一致
    */
@@ -185,6 +219,8 @@ model User {
   matchReminders  UserMatchReminder[]
   preferences     UserPreferences?
   feedbacks       UserFeedback[]
+  browseHistories UserBrowseHistory[]
+  notifications   UserNotification[]
 }
 
 /**
@@ -274,6 +310,43 @@ model UserFeedback {
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([createdAt])
+}
+
+model UserBrowseHistory {
+  id         String            @id @default(cuid())
+  userId     String
+  type       BrowseHistoryType
+  matchId    String?
+  title      String
+  sub        String?
+  visitedAt  DateTime          @default(now())
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  match Match? @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@unique([userId, matchId, type])
+  @@index([userId, visitedAt])
+}
+
+model UserNotification {
+  id        String                @id @default(cuid())
+  userId    String
+  type      UserNotificationType  @default(SYSTEM)
+  title     String
+  desc      String                @db.Text
+  read      Boolean               @default(false)
+  icon      String?
+  color     String?
+  link      String?
+  orderNo   String?
+  createdAt DateTime              @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([userId, read])
 }
 
 model Tournament {
@@ -559,6 +632,7 @@ model Match {
   oddsSnapshots      MatchOddsSnapshot[]
   favoriteUsers      UserMatchFavorite[]
   reminderUsers      UserMatchReminder[]
+  browseHistories    UserBrowseHistory[]
 
   @@index([kickoffTime])
   @@index([isFeatured])

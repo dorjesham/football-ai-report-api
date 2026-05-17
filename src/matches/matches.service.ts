@@ -445,6 +445,21 @@ export class MatchesService {
             awayWins: true,
           },
         },
+        playerIntelligence: {
+          take: 6,
+          orderBy: { startProbability: 'desc' },
+          include: {
+            player: {
+              select: {
+                id: true,
+                nameCn: true,
+                nameEn: true,
+                position: true,
+                avatarUrl: true,
+              },
+            },
+          },
+        },
         _count: { select: { playerIntelligence: true } },
       },
     });
@@ -455,7 +470,57 @@ export class MatchesService {
       viewer,
     );
 
+    const tacticsItems =
+      isUnlocked ?
+        match.tacticalScenarios
+      : match.tacticalScenarios.slice(0, 2).map((t) => ({
+          id: t.id,
+          title: t.title,
+          scenarioType: t.scenarioType,
+        }));
+
+    const playerIntelItems =
+      isUnlocked ?
+        match.playerIntelligence.map((pi) => ({
+          id: pi.id,
+          statusTag: pi.statusTag,
+          startProbability: pi.startProbability,
+          riskLevel: pi.riskLevel,
+          aiSummary: pi.aiSummary,
+          player: pi.player,
+        }))
+      : match.playerIntelligence.slice(0, 3).map((pi) => ({
+          id: pi.id,
+          statusTag: pi.statusTag,
+          riskLevel: pi.riskLevel,
+          locked: true as const,
+          player: {
+            id: pi.player.id,
+            nameCn: pi.player.nameCn,
+            position: pi.player.position,
+          },
+        }));
+
+    const headToHeadPayload =
+      match.headToHead ?
+        isUnlocked ?
+          match.headToHead
+        : {
+            id: match.headToHead.id,
+            lastMeetingsCount: match.headToHead.lastMeetingsCount,
+            homeWins: match.headToHead.homeWins,
+            draws: match.headToHead.draws,
+            awayWins: match.headToHead.awayWins,
+            locked: true as const,
+          }
+      : null;
+
     return {
+      meta: {
+        contractVersion: 'analysis-preview-v1',
+        fieldBoundary:
+          'Full paid modules: GET /matches/:id/intel; phase pages: pre-match/live/post-match; do not call Admin tactics/fantasy routes.',
+      },
       matchId: match.id,
       status: match.status,
       kickoffTime: match.kickoffTime,
@@ -470,12 +535,7 @@ export class MatchesService {
         : null,
       tactics: {
         count: match.tacticalScenarios.length,
-        items:
-          isUnlocked ? match.tacticalScenarios
-          : match.tacticalScenarios.slice(0, 2).map((t) => ({
-              id: t.id,
-              title: t.title,
-            })),
+        items: tacticsItems,
       },
       fantasy: match.fantasyAdvice
         ? isUnlocked ?
@@ -486,18 +546,12 @@ export class MatchesService {
             }
           : { id: match.fantasyAdvice.id, locked: true as const }
         : null,
-      headToHead: match.headToHead
-        ? isUnlocked ?
-            match.headToHead
-          : {
-              id: match.headToHead.id,
-              lastMeetingsCount: match.headToHead.lastMeetingsCount,
-              homeWins: match.headToHead.homeWins,
-              draws: match.headToHead.draws,
-              awayWins: match.headToHead.awayWins,
-              locked: true as const,
-            }
-        : null,
+      headToHead: headToHeadPayload,
+      head_to_head: headToHeadPayload,
+      playerIntelligence: {
+        count: match._count.playerIntelligence,
+        items: playerIntelItems,
+      },
       playerIntelligenceCount: match._count.playerIntelligence,
     };
   }

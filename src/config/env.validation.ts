@@ -53,6 +53,16 @@ export function validateEnv(_config: Record<string, unknown>) {
     if (process.env.HTTP_THROTTLE_DISABLED === 'true') {
       throw new Error('HTTP_THROTTLE_DISABLED must not be true in production');
     }
+
+    if (process.env.AUTH_REQUIRE_VERIFIED_PHONE === 'true') {
+      const pepper = process.env.AUTH_OTP_PEPPER?.trim();
+      const jwt = process.env.JWT_SECRET?.trim();
+      if (!pepper && (!jwt || jwt.length < 24)) {
+        throw new Error(
+          'AUTH_REQUIRE_VERIFIED_PHONE=true requires AUTH_OTP_PEPPER or a strong JWT_SECRET for OTP hashing',
+        );
+      }
+    }
   }
 
   return _config;

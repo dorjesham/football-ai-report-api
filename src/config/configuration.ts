@@ -12,6 +12,33 @@ export default () => ({
   enableSwaggerDocs: process.env.ENABLE_SWAGGER_DOCS === 'true',
   wechatAppId: process.env.WECHAT_APP_ID,
   wechatAppSecret: process.env.WECHAT_APP_SECRET,
+  wechatOpenAppId: process.env.WECHAT_OPEN_APP_ID,
+  wechatOpenAppSecret: process.env.WECHAT_OPEN_APP_SECRET,
+  wechatWebOauthRedirectUri: process.env.WECHAT_WEB_OAUTH_REDIRECT_URI || '',
+  authWebFrontendCallback: process.env.AUTH_WEB_FRONTEND_CALLBACK || '',
+  authDisablePhoneRegister: process.env.AUTH_DISABLE_PHONE_REGISTER !== 'false',
+  authDisablePhoneOtpLogin: process.env.AUTH_DISABLE_PHONE_OTP_LOGIN !== 'false',
+  authRegisterMaxPerIpDay: parseInt(process.env.AUTH_REGISTER_MAX_PER_IP_DAY || '5', 10),
+  authRegisterMaxPerDeviceDay: parseInt(
+    process.env.AUTH_REGISTER_MAX_PER_DEVICE_DAY || '3',
+    10,
+  ),
+  authCaptchaSkipUntil: parseInt(process.env.AUTH_CAPTCHA_SKIP_UNTIL || '0', 10),
+  authCaptchaTtlSeconds: parseInt(process.env.AUTH_CAPTCHA_TTL_SECONDS || '300', 10),
+  /** svg | geetest；未设且 GEETEST_ID 存在时默认 geetest */
+  authCaptchaProvider: process.env.AUTH_CAPTCHA_PROVIDER?.trim().toLowerCase() || '',
+  geetestId: process.env.GEETEST_ID?.trim() || '',
+  geetestKey: process.env.GEETEST_KEY?.trim() || '',
+  geetestApiServer: process.env.GEETEST_API_SERVER?.trim() || '',
+  appleClientId: process.env.APPLE_CLIENT_ID?.trim() || '',
+  googleClientId: process.env.GOOGLE_CLIENT_ID?.trim() || '',
+  googleClientSecret: process.env.GOOGLE_CLIENT_SECRET?.trim() || '',
+  googleOauthRedirectUri: process.env.GOOGLE_OAUTH_REDIRECT_URI?.trim() || '',
+  authGoogleFrontendCallback:
+    process.env.AUTH_GOOGLE_FRONTEND_CALLBACK?.trim() ||
+    process.env.AUTH_WEB_FRONTEND_CALLBACK?.trim() ||
+    '',
+  authRequireVerifiedPhone: process.env.AUTH_REQUIRE_VERIFIED_PHONE === 'true',
   adminBootstrapOpenid: process.env.ADMIN_BOOTSTRAP_OPENID,
   /** 管理后台 EJS 账号密码登录（未设置密码则仅保留 JWT 粘贴登录） */
   adminViewLoginUsername: process.env.ADMIN_VIEW_LOGIN_USERNAME || '',

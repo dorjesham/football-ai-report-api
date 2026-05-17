@@ -2,8 +2,9 @@
 
 > **文档目的**：列出当前 **越位线 Web** 产品体验仍依赖本地 mock、占位文案或「即将上线」的 **C 端能力**；便于后端评估是 **新增接口**、**扩展现有接口字段**，还是 **仅开放只读权限/聚合读模型**。  
 > **对照基准**：仓库内 [`API接口对接文档-完整版.md`](./API接口对接文档-完整版.md)（与 Swagger `/docs` 一致）。  
-> **后端落地（2026-05-13）**：§2 所列 C 端缺口已在 API 实现，详见完整版文档 — `GET/POST/DELETE /me/favorite-matches`、`/me/match-reminders*`、`GET|PATCH /me/preferences`、`GET /me/social-posters`、`GET /me/report-unlocks`、`GET /me/orders`、`GET /rankings/players`、`GET /players/:id/summary`、`GET /insights/upset-signals`、`GET /competitions/:id/standings`、`GET /tournaments/:code/standings`、`GET /cms/tools`、`GET /cms/materials`、`POST /feedback`、`GET /matches/:id/analysis-preview`；**§1** 仍以 **前端对接真实登录/下单** 为主。数据库需执行对应 Prisma migration（含 `UserMatchFavorite` 等表）。  
-> **更新建议**：联调进度请同步改本文档勾选与 **`API接口对接文档-完整版.md`**。
+> **后端落地（2026-05-13）**：用户域基础路由（收藏/提醒/偏好/订单/榜单等）见 **`API接口对接文档-完整版.md`**。  
+> **后端落地（2026-05-16，Batch 1 + §2）**：`GET/POST /me/browse-history`、`GET/PATCH /me/notifications*`、`POST /me/notifications/read-all`、`GET /cms/reports`；增强 `GET /me/report-unlocks`（`title`/`freeSummary`/`reportStatus`）、`GET /me/social-posters`（`imageUrl` 等）、`POST .../social-poster/generate`（`status`/`orderNo`）、`GET /matches/:id/analysis-preview`（**analysis-preview-v1**）。详见 **[Web前端对接回复.md](./Web前端对接回复.md)**。Migration：**`20260516120000_web_browse_history_notifications`**。  
+> **§1** 仍以 **前端对接真实登录/下单** 为主。
 
 ---
 
@@ -28,7 +29,19 @@
 
 ## 2. 建议新增或明确的 C 端接口（前端真实缺口）
 
-以下为 **当前 Web 仍用 mock / 占位 / 无持久化** 且 **在 §1 所列公开/用户 JSON 中无直接等价物** 的能力。请后端按优先级拆分迭代。
+> **2026-05-16 更新**：下列 **浏览历史 / 通知收件箱 / CMS 报告** 后端已提供，请前端改对接文档路径，勿再标「缺接口」。
+
+### 2.0 已提供（2026-05-16）— 请前端对接
+
+| 需求 | 路径 | 说明 |
+|------|------|------|
+| 浏览历史 | `GET/POST /me/browse-history` | 同场同 `type` upsert；`analysis`/`poster` 需 `matchId` |
+| 通知收件箱 | `GET /me/notifications`、`PATCH .../:id`、`POST .../read-all` | **非** `match-reminders` |
+| 报告发现样例 | `GET /cms/reports` | 内置运营列表 |
+
+---
+
+以下为 **2026-05-13 之前** 整理的缺口说明（收藏/提醒等已在当时落地）。
 
 ### 2.1 用户域 — 收藏、提醒、设置
 
@@ -68,14 +81,9 @@
 | **海报生成历史** | 海报页「历史记录」`comingSoon` | `GET /me/social-posters?cursor=` 或 `GET /me/orders?type=social_poster` |
 | **已购报告列表** | 个人中心/报告相关若需展示 | `GET /me/unlocks` 或 `GET /me/orders?type=match_report`（与现有订单模型对齐即可） |
 
-### 2.6 深度分析只读 — 若产品要对登录用户开放（非 Admin）
+### 2.6 深度分析只读 — C 端（2026-05-16 已增强）
 
-当前文档中 **`GET /matches/:id/tactics`、`fantasy`、`head-to-head`、`player-intelligence`** 等挂在 **Admin** 能力上。若产品要在 **C 端分析页** 展示只读切片，需要其一：
-
-- **方案 A**：新增 **用户可读** 路由（如 `GET /matches/:id/tactics-preview`），内部鉴权 + 已解锁/Pro 校验；或  
-- **方案 B**：在 **`GET /matches/:id` / `intel`** 的 `data` 中嵌入已生成的子模块摘要（后端组装）。
-
-请后端与产品定 **解锁边界**（与 `unlock-status`、订单类型一致）。
+采用 **`GET /matches/:id/analysis-preview`**（**analysis-preview-v1**：`playerIntelligence.items`、`head_to_head` 别名等）。**勿**调 Admin `GET /matches/:id/tactics` 等。全文仍用 **`intel`** / 三页合同。
 
 ---
 
@@ -105,7 +113,8 @@
 - [ ] C 端只读是否标 `@Public()` 或 JWT + 资源权限说明清楚  
 - [ ] 与现有 `GET /matches`、`GET /matches/:id`、`GET /matches/:id/intel` 的 `matchId`（cuid）一致  
 - [x] Swagger `/docs` 与 **`API接口对接文档-完整版.md`** 已同步 §2 新增路由（2026-05-13）
+- [x] Batch 1 + §2（browse-history、notifications、cms/reports、契约增强）已同步（2026-05-16）
 
 ---
 
-**文档版本**：与仓库前端代码现状对齐整理（2026-05-13）。
+**文档版本**：与仓库前端代码现状对齐整理（2026-05-16）。

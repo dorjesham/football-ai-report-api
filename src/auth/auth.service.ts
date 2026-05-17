@@ -1,8 +1,10 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -11,8 +13,18 @@ import axios from 'axios';
 import * as bcrypt from 'bcrypt';
 import type { User } from '@prisma/client';
 import { UserRole } from '@prisma/client';
+import type { Request } from 'express';
 import { PrismaService } from '../prisma/prisma.service';
 import { RequestUser } from '../common/types/request-user.type';
+import {
+  assertPasswordStrength,
+  maskEmail,
+  normalizeEmail,
+  normalizeUsername,
+  parseLoginIdentifier,
+} from './auth-identity.util';
+import { AuthRegistrationLimitService } from './auth-registration-limit.service';
+import { CaptchaService } from './captcha/captcha.service';
 import {
   generateNumericOtp,
   hashOtp,
@@ -33,6 +45,8 @@ export class AuthService {
     private readonly jwt: JwtService,
     private readonly config: ConfigService,
     private readonly sms: SmsService,
+    private readonly captcha: CaptchaService,
+    private readonly regLimit: AuthRegistrationLimitService,
   ) {}
 
   async resolveUserFromAuthHeader(authorization?: string): Promise<RequestUser | null> {
@@ -130,7 +144,7 @@ export class AuthService {
     return this.sign(user);
   }
 
-  private sign(user: User) {
+  sign(user: User) {
     const token = this.jwt.sign({ sub: user.id });
     return {
       accessToken: token,
@@ -138,18 +152,98 @@ export class AuthService {
     };
   }
 
-  private toPublicUser(user: User) {
+  signByUserId(userId: string) {
+    return this.prisma.user.findUnique({ where: { id: userId } }).then((u) => {
+      if (!u) throw new UnauthorizedException();
+      return this.sign(u);
+    });
+  }
+
+  toPublicUser(user: User) {
     return {
       id: user.id,
       openid: user.openid,
       role: user.role,
       nickname: user.nickname,
       avatarUrl: user.avatarUrl,
+      email: maskEmail(user.email),
+      username: user.username,
       phone: maskPhone(user.phone),
       phoneVerified: !!user.phoneVerifiedAt,
       hasPassword: !!user.passwordHash,
       linkedWechat: !!user.openid,
+      linkedWechatWeb: !!user.wechatWebOpenid,
+      linkedApple: !!user.appleSub,
+      linkedGoogle: !!user.googleSub,
     };
+  }
+
+  async register(
+    req: Request,
+    body: {
+      email?: string;
+      username?: string;
+      password: string;
+      captchaId: string;
+      captchaCode?: string;
+      lotNumber?: string;
+      captchaOutput?: string;
+      passToken?: string;
+      genTime?: string;
+    },
+  ) {
+    const email = body.email?.trim() ? normalizeEmail(body.email) : undefined;
+    const username = body.username?.trim() ? normalizeUsername(body.username) : undefined;
+    if (!email && !username) {
+      throw new BadRequestException('email or username is required');
+    }
+    assertPasswordStrength(body.password);
+
+    const { requireCaptcha } = await this.regLimit.assertRegistrationAllowed(req);
+    if (requireCaptcha) {
+      await this.captcha.verifyRegisterCaptcha({
+        captchaId: body.captchaId,
+        captchaCode: body.captchaCode,
+        lotNumber: body.lotNumber,
+        captchaOutput: body.captchaOutput,
+        passToken: body.passToken,
+        genTime: body.genTime,
+      });
+    }
+
+    if (email) {
+      const taken = await this.prisma.user.findUnique({ where: { email } });
+      if (taken) throw new ConflictException('Email already registered');
+    }
+    if (username) {
+      const taken = await this.prisma.user.findUnique({ where: { username } });
+      if (taken) throw new ConflictException('Username already taken');
+    }
+
+    const passwordHash = await bcrypt.hash(body.password, BCRYPT_ROUNDS);
+    const user = await this.prisma.user.create({
+      data: {
+        email,
+        username,
+        passwordHash,
+        nickname: username || (email ? email.split('@')[0] : '用户'),
+        role: UserRole.USER,
+      },
+    });
+    return this.sign(user);
+  }
+
+  async loginWithPassword(identifier: string, password: string) {
+    const { kind, value } = parseLoginIdentifier(identifier);
+    const user = await this.prisma.user.findUnique({
+      where: kind === 'email' ? { email: value } : { username: value },
+    });
+    if (!user?.passwordHash) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    const ok = await bcrypt.compare(password, user.passwordHash);
+    if (!ok) throw new UnauthorizedException('Invalid credentials');
+    return this.sign(user);
   }
 
   private otpPepper(): string {
@@ -166,9 +260,18 @@ export class AuthService {
     return sec * 1000;
   }
 
-  /** 发送手机验证码（占位短信） */
-  async sendPhoneCode(phoneRaw: string) {
+  /** 发送手机验证码（占位短信）；purpose: bind | reset_password */
+  async sendPhoneCode(
+    phoneRaw: string,
+    purpose: 'bind' | 'reset_password' = 'bind',
+  ) {
     const phone = normalizeCnPhone(phoneRaw);
+    if (purpose === 'reset_password') {
+      const user = await this.prisma.user.findUnique({ where: { phone } });
+      if (!user) {
+        throw new NotFoundException('No account with this phone number');
+      }
+    }
     const since = new Date(Date.now() - 3600_000);
     const sent = await this.prisma.authPhoneOtp.count({
       where: { phone, createdAt: { gte: since } },
@@ -206,8 +309,13 @@ export class AuthService {
     });
   }
 
-  /** 手机验证码注册（openid 为空，可后续 bind-wechat） */
+  /** 手机验证码注册（已默认关闭，见 AUTH_DISABLE_PHONE_REGISTER） */
   async phoneRegister(phoneRaw: string, code: string, password?: string) {
+    if (this.config.get<boolean>('authDisablePhoneRegister') !== false) {
+      throw new ForbiddenException(
+        'Phone SMS registration is disabled. Use POST /auth/register or WeChat login.',
+      );
+    }
     const phone = normalizeCnPhone(phoneRaw);
     const exists = await this.prisma.user.findUnique({ where: { phone } });
     if (exists) {
@@ -242,8 +350,13 @@ export class AuthService {
     return this.sign(user);
   }
 
-  /** 手机号 + 验证码快捷登录（须已注册） */
+  /** 手机号 + 验证码快捷登录（已默认关闭） */
   async phoneOtpLogin(phoneRaw: string, code: string) {
+    if (this.config.get<boolean>('authDisablePhoneOtpLogin') !== false) {
+      throw new ForbiddenException(
+        'Phone OTP login is disabled. Use POST /auth/login with password or WeChat.',
+      );
+    }
     const phone = normalizeCnPhone(phoneRaw);
     const user = await this.prisma.user.findUnique({ where: { phone } });
     if (!user) {
@@ -347,5 +460,23 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new UnauthorizedException();
     return this.toPublicUser(user);
+  }
+
+  async forgotPhonePassword(phoneRaw: string) {
+    return this.sendPhoneCode(phoneRaw, 'reset_password');
+  }
+
+  async resetPhonePassword(phoneRaw: string, code: string, newPassword: string) {
+    const phone = normalizeCnPhone(phoneRaw);
+    const user = await this.prisma.user.findUnique({ where: { phone } });
+    if (!user) throw new NotFoundException('No account with this phone number');
+    assertPasswordStrength(newPassword);
+    await this.consumeOtpOrThrow(phone, code);
+    const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+    const updated = await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+    return this.sign(updated);
   }
 }

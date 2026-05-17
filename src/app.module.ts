@@ -7,6 +7,7 @@ import configuration from './config/configuration';
 import { validateEnv } from './config/env.validation';
 import { PrismaModule } from './prisma/prisma.module';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
+import { VerifiedPhoneGuard } from './common/guards/verified-phone.guard';
 import { HealthModule } from './health/health.module';
 import { AuthModule } from './auth/auth.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
@@ -42,6 +43,7 @@ import { PlayersModule } from './players/players.module';
 import { InsightsModule } from './insights/insights.module';
 import { CmsModule } from './cms/cms.module';
 import { FeedbackModule } from './feedback/feedback.module';
+import { UserNotificationsModule } from './user-notifications/user-notifications.module';
 
 @Module({
   imports: [
@@ -64,6 +66,7 @@ import { FeedbackModule } from './feedback/feedback.module';
       ],
     }),
     PrismaModule,
+    UserNotificationsModule,
     RedisModule,
     HealthModule,
     AuthModule,
@@ -107,6 +110,10 @@ import { FeedbackModule } from './feedback/feedback.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_GUARD,
+      useClass: VerifiedPhoneGuard,
     },
     {
       provide: APP_INTERCEPTOR,

@@ -69,9 +69,9 @@ export class MatchesController {
   @Public()
   @Get(':id/analysis-preview')
   @ApiOperation({
-    summary: '分析模块只读聚合（战术/Fantasy/交锋/球员情报计数）',
+    summary: '分析模块只读聚合（analysis-preview-v1）',
     description:
-      '解锁判断与情报接口一致；未解锁仅返回少量战术标题与统计类 teaser，不含付费长文。',
+      '含 tactics、fantasy、headToHead/head_to_head、playerIntelligence.items；解锁边界与 GET /matches/:id/intel 一致。未解锁为 teaser（战术含 scenarioType，球员情报最多 3 条脱敏）。',
   })
   async analysisPreview(
     @Param('id') id: string,

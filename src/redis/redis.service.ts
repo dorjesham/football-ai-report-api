@@ -95,6 +95,41 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async setString(key: string, value: string, ttlSec: number): Promise<void> {
+    if (!this.enabled) return;
+    try {
+      await this.client!.set(this.k(key), value, 'EX', Math.max(1, ttlSec));
+    } catch (e) {
+      this.log.warn(`redis setString ${key}: ${String(e)}`);
+    }
+  }
+
+  async getString(key: string): Promise<string | null> {
+    if (!this.enabled) return null;
+    try {
+      return await this.client!.get(this.k(key));
+    } catch (e) {
+      this.log.warn(`redis getString ${key}: ${String(e)}`);
+      return null;
+    }
+  }
+
+  /** 递增并设置 TTL（仅在新键时）；返回递增后的值 */
+  async incrDaily(key: string, ttlSec: number): Promise<number | null> {
+    if (!this.enabled) return null;
+    try {
+      const full = this.k(key);
+      const n = await this.client!.incr(full);
+      if (n === 1) {
+        await this.client!.expire(full, Math.max(1, ttlSec));
+      }
+      return n;
+    } catch (e) {
+      this.log.warn(`redis incrDaily ${key}: ${String(e)}`);
+      return null;
+    }
+  }
+
   async del(...logicalKeys: string[]): Promise<void> {
     if (!this.enabled || !logicalKeys.length) return;
     try {

@@ -9,6 +9,7 @@ import {
 import { IncomingHttpHeaders } from 'http';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchCacheInvalidationService } from '../matches/match-cache-invalidation.service';
+import { UserNotificationService } from '../user-notifications/user-notification.service';
 import { WechatPayV3Service } from './wechat-pay-v3.service';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class WxpayService {
     private readonly config: ConfigService,
     private readonly v3: WechatPayV3Service,
     private readonly matchCacheInvalidation: MatchCacheInvalidationService,
+    private readonly notifications: UserNotificationService,
   ) {}
 
   /**
@@ -161,6 +163,17 @@ export class WxpayService {
       order.product === OrderProduct.MEMBERSHIP_PRO_YEAR
     ) {
       await this.matchCacheInvalidation.invalidateAllUserMatchCaches(order.userId);
+    }
+
+    try {
+      await this.notifications.notifyOrderPaid(order.userId, {
+        orderNo: order.orderNo,
+        product: order.product,
+        matchId: order.matchId,
+        amount: order.amount,
+      });
+    } catch (e) {
+      this.log.warn(`wxpay notify: user notification failed: ${String(e)}`);
     }
 
     return { code: 'SUCCESS', message: 'OK' };

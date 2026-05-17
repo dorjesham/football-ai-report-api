@@ -12,6 +12,7 @@ import {
   OrderStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { UserNotificationService } from '../user-notifications/user-notification.service';
 import { GptImage2Client } from './gpt-image2.client';
 import { assertFootballPosterTheme, buildPosterPrompt } from './poster-theme.validator';
 
@@ -23,6 +24,7 @@ export class SocialGuideService {
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
     private readonly images: GptImage2Client,
+    private readonly notifications: UserNotificationService,
   ) {}
 
   async generate(matchId: string) {
@@ -128,6 +130,14 @@ export class SocialGuideService {
     if (!match) throw new NotFoundException('Match not found');
 
     const billing = await this.resolvePosterBilling(userId, matchId);
+    let paidOrderNo: string | undefined;
+    if (billing.mode === 'PAID_ORDER' && billing.paidOrderId) {
+      const paidOrder = await this.prisma.order.findUnique({
+        where: { id: billing.paidOrderId },
+        select: { orderNo: true },
+      });
+      paidOrderNo = paidOrder?.orderNo;
+    }
     const prompt = buildPosterPrompt({
       homeCn: match.homeTeam.nameCn,
       awayCn: match.awayTeam.nameCn,
@@ -195,9 +205,22 @@ export class SocialGuideService {
       return sg;
     });
 
+    try {
+      await this.notifications.notifyPosterReady(
+        userId,
+        matchId,
+        match.homeTeam.nameCn,
+        match.awayTeam.nameCn,
+      );
+    } catch {
+      /* 通知失败不阻断海报生成 */
+    }
+
     return {
+      status: 'ok' as const,
       ok: true,
       billing: billing.mode,
+      orderNo: paidOrderNo,
       posterImageUrl: saved.posterImageUrl,
       posterGeneratedAt: saved.posterGeneratedAt,
     };

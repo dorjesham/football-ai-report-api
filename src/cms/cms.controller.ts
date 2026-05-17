@@ -22,4 +22,13 @@ export class CmsController {
   materials(@Query('category') category?: string) {
     return this.cms.listMaterials(category);
   }
+
+  @Get('reports')
+  @ApiOperation({ summary: '报告发现页 / 专题样例列表（内置配置）' })
+  reports(
+    @Query('category') category?: string,
+    @Query('type') type?: string,
+  ) {
+    return this.cms.listReports({ category, type });
+  }
 }
