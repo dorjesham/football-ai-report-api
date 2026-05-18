@@ -22,11 +22,20 @@ export class HttpExceptionFilter implements ExceptionFilter {
       const body = exception.getResponse();
       if (typeof body === 'string') {
         message = body;
-      } else if (body && typeof body === 'object' && 'message' in body) {
-        const m = (body as { message?: string | string[] }).message;
-        message = Array.isArray(m) ? m.join(', ') : m || message;
+      } else if (body && typeof body === 'object') {
+        const obj = body as { message?: string | string[]; code?: string };
+        if ('message' in obj) {
+          const m = obj.message;
+          message = Array.isArray(m) ? m.join(', ') : m || message;
+        }
+        if (typeof obj.code === 'string' && obj.code.trim()) {
+          errorCode = obj.code.trim();
+        } else {
+          errorCode = exception.name;
+        }
+      } else {
+        errorCode = exception.name;
       }
-      errorCode = exception.name;
     } else if (exception instanceof Error) {
       message = exception.message;
     }

@@ -41,7 +41,7 @@
       <% var looksDry = tsCount === 0 && !m.prediction && !m.weatherSnapshot && intelCount === 0; %>
       <% if (looksDry) { %>
         <div class="admin-callout" style="margin-bottom:1rem;">
-          <strong>页面较空？</strong> 刚同步进库的场次通常只有对阵和开球时间。请在下方<strong>本页操作</strong>里点「整场管线」或分步拉数据。本地验收可打开种子比赛 <code>seed-match-admin-showcase</code>。
+          <strong>页面较空？</strong> 刚同步进库的场次通常只有对阵和开球时间。请在下方<strong>本页操作</strong>里点「整场管线」或分步拉数据；也可对即将开赛的精选场次运行 <code>scripts/batch-pipeline-upcoming.ts</code>。
         </div>
       <% } %>
 
@@ -128,12 +128,13 @@
         <div class="admin-md-actions">
           <div class="admin-md-action-group">
             <h3>① 外部数据</h3>
+            <p class="admin-muted" style="margin:0 0 0.5rem;font-size:0.78rem;">「同步积分榜 (FD)」≠ Web 展示的 <code>GET /leagues/:code/standings</code>（api-sports BFF，见仓库 <code>Web积分榜球员榜对接说明.md</code>）。</p>
             <div class="admin-btn-row">
               <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/fetch-public-sources"><button type="submit" class="admin-btn">公开来源</button></form>
               <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/fetch-public-sources-force"><button type="submit" class="admin-btn warn">公开来源（强制）</button></form>
               <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-weather"><button type="submit" class="admin-btn">同步天气</button></form>
               <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-football-matches"><button type="submit" class="admin-btn">同步赛程 (FD)</button></form>
-              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-football-standings"><button type="submit" class="admin-btn">同步积分榜</button></form>
+              <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-football-standings"><button type="submit" class="admin-btn" title="Football-Data：写入本场球队快照 rank/points；非 C 端 GET /leagues/standings">同步积分榜 (FD)</button></form>
               <form method="post" action="<%= avBase %>/matches/<%= mid %>/actions/sync-fd-match-intel"><button type="submit" class="admin-btn" title="需 FD 数字场次 id">FD 单场详情</button></form>
             </div>
           </div>

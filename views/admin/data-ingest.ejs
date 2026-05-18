@@ -145,6 +145,9 @@
           </div>
           <p class="admin-muted" style="margin:0;font-size:0.75rem;">REST：<code>POST /admin/data-ingest/api-football/squads</code>（Admin JWT）。</p>
         </form>
+        <p class="admin-muted" style="margin:1rem 0 0;font-size:0.78rem;line-height:1.6;">
+          CLI 等价：<code>npx ts-node scripts/sync-league-squads.ts</code>（<code>SEASON=2025 CODES=PL,PD,…</code>）。运维总览见仓库 <code>docs/比赛数据管线运维说明.md</code>。部署后若库内仍有历史演示场 <code>seed-match-admin-showcase</code>，执行一次 <code>npx ts-node scripts/cleanup-admin-showcase-match.ts</code>。
+        </p>
       </section>
 
       <!-- 1. FD 已完赛 -->

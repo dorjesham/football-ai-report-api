@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { mapPlayerMarketValueFields } from '../players/player-market.util';
 
 export type PlayerRankingMetric = 'powerRating' | 'fantasyPrice' | 'fbrefMinutes';
 
@@ -56,6 +57,7 @@ export class RankingsService {
         powerRating: p.powerRating,
         fantasyPrice: p.fantasyPrice,
         fbrefMinutes: p.fbrefMinutes,
+        ...mapPlayerMarketValueFields(p.profile),
         team: p.team,
       })),
     };

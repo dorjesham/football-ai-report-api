@@ -20,6 +20,9 @@
     <%- include('_nav') %>
     <main class="admin-main" style="max-width:980px;">
       <h1 class="admin-page-title"><%= title %></h1>
+      <div class="admin-callout" style="margin-bottom:1rem;">
+        <strong>C 端 Web 展示</strong>：积分榜用 <code>GET /leagues/standings</code>（勿让浏览器直连 <code>/football-feed/*</code>）；球员榜用 <code>GET /rankings/players</code>（<code>metric=fantasyPrice</code> 身价 / <code>powerRating</code> 战力）。响应含 <code>avatarUrl</code>（AF 名单）、<code>marketValue</code>（主要来自 FD squad → <code>profile.fdSquad.raw.marketValue</code>）。说明见仓库 <code>Web积分榜球员榜对接说明.md</code>。
+      </div>
       <p class="admin-page-sub">
         以 <strong>API-Football</strong> 同步<strong>赛程与球员名单</strong>为主（<code>profile.apiFootball</code>）；<strong>Football-Data</strong> 作<strong>辅助</strong>大名单与教练 enrich；<strong>OpenFootball</strong> 补历史赛程与比分；<strong>StatsBomb Open Data</strong> 可写入 <code>MatchFacts.rawStatsbomb</code>（<a href="<%= avBase %>/data-ingest#statsbomb-open-data">单场</a> · <a href="<%= avBase %>/data-ingest#statsbomb-batch">多季批量</a>）；<strong>FBref</strong> 支持 <strong>CSV 上传</strong> 合并 <code>profile.fbref</code>；<strong>Understat / Transfermarkt</strong> 仍为规划键。入库任务写入 <code>IngestJobRun</code>（含 <code>API_FOOTBALL_*</code> / <code>FD_PLAYER_SQUADS</code> / OpenFootball / <code>STATSBOMB_OPEN_DATA</code> / <code>STATSBOMB_OPEN_DATA_BATCH</code> / 审计）。
       </p>

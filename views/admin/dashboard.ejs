@@ -51,6 +51,9 @@
           · <a href="<%= avBase %>/data-report">数据报表</a>
           · <a href="<%= avBase %>/data-ingest">高级 · 数据入库</a>
         </p>
+        <div class="admin-callout" style="margin-top:0.85rem;">
+          <strong>运维文档（仓库内 Markdown）</strong>：<code>docs/比赛数据管线运维说明.md</code> — Cron、AF 赛程/名单、单场与批量情报管线、清理历史演示场。<strong>Web 前端</strong>见 <code>Web比赛详情对接说明.md</code>、<code>Web积分榜球员榜对接说明.md</code>（C 端 <code>GET /leagues/standings</code> 与后台「同步积分榜」不是同一路径）。
+        </div>
       </section>
 
       <h2 class="admin-card-title" style="margin:0 0 0.75rem;font-size:0.75rem;">一键同步（默认五大联赛 + 欧战，赛季 2025/26）</h2>
@@ -129,6 +132,16 @@
           <button type="submit" class="admin-btn" style="margin-left:0.5rem;">立即执行一轮</button>
         </form>
         <p class="admin-muted" style="margin:0.75rem 0 0;font-size:0.78rem;">单场精细操作请打开「比赛列表」进入对应场次。</p>
+      </section>
+
+      <section class="admin-card">
+        <h2 class="admin-card-title">⑤ 批量情报 enrich（CLI）</h2>
+        <p class="admin-muted" style="margin:0 0 0.65rem;line-height:1.65;">
+          对即将开赛的 <strong>SCHEDULED</strong> 场次批量跑 <strong>Phase C 整场管线</strong>，与单场详情页橙色按钮、<code>POST /admin/matches/:id/pipeline/intel-full</code> 同源。在服务器项目根目录执行：
+        </p>
+        <pre style="margin:0 0 0.65rem;padding:0.65rem 0.85rem;font-size:0.78rem;background:#09090b;border:1px solid var(--admin-border);border-radius:8px;overflow:auto;"><code>DRY_RUN=1 npx ts-node scripts/batch-pipeline-upcoming.ts
+COMPETITION_IDS=seed-comp-pl,seed-comp-pd DAYS=14 LIMIT=30 npx ts-node scripts/batch-pipeline-upcoming.ts</code></pre>
+        <p class="admin-muted" style="margin:0;font-size:0.78rem;">详见仓库 <code>docs/比赛数据管线运维说明.md</code>。</p>
       </section>
 
       <section class="admin-card">

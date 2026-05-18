@@ -58,6 +58,8 @@
 | GET | `/competitions/:id/worldcup2026-teams/:teamId` | `slim?` = `1` / `true` 精简 |
 | GET | `/competitions/:id/worldcup2026-teams` | `slim?` |
 | GET | `/competitions/:id/standings` | `group?`（由已完赛场次聚合积分） |
+| GET | `/leagues/standings` | `codes?`（默认 PL,PD,SA,BL1,FL1,CL,EL）、`season?`（默认 2025）、`source?`（`auto` \| `db` \| `api_football`） |
+| GET | `/leagues/:code/standings` | `season?`, `source?`；BFF 规范化 api-sports 积分榜 |
 | GET | `/competitions/:id` | — |
 | GET | `/matches` | `tournamentId?`, `competitionId?`, `seasonId?`, `status?`；**无分页**；含 `liveStatusSyncHint`（见第二期规范 §4.5） |
 | GET | `/matches/:id/intel` | 可选 Bearer；付费多模块聚合 **`MatchIntelResponse`** |
@@ -68,8 +70,8 @@
 | GET | `/matches/:id/live/stream` | **SSE** `text/event-stream`；Query `lastSeq?`；限流约 **30 次/分钟/IP**；网关需 `X-Accel-Buffering: no`、读超时 **≥120s** |
 | GET | `/matches/:id/odds-snapshots` | 赔率快照 T24/T1/LIVE + disclaimer；**非投注建议** |
 | GET | `/matches/:id` | 可选 Bearer；详情与解锁态 |
-| GET | `/rankings/players` | `competitionId?`, `metric?`（`powerRating` \| `fantasyPrice` \| `fbrefMinutes`）, `limit?` |
-| GET | `/players/:id/summary` | 球员公开摘要（榜单/对比） |
+| GET | `/rankings/players` | `competitionId?`, `metric?`（`powerRating` \| `fantasyPrice` \| `fbrefMinutes`）, `limit?`；含 `avatarUrl`、`marketValue`、`marketValueCurrency` |
+| GET | `/players/:id/summary` | 球员公开摘要；含 `marketValue`、`marketValueCurrency` |
 | GET | `/insights/upset-signals` | `from?`, `to?`, `limit?`, `minUpset?`（ISO 时间；默认近/后各约 14 天） |
 | GET | `/cms/tools` | 工具入口配置（内置默认列表） |
 | GET | `/cms/materials` | `category?` |
@@ -195,7 +197,8 @@
 | 已购报告 | GET | `/me/report-unlocks`（含 `title`/`freeSummary`） |
 | 浏览历史 | GET/POST | `/me/browse-history` |
 | 通知中心 | GET/PATCH/POST | `/me/notifications*` |
-| 积分榜 | GET | `/competitions/:id/standings`、`/tournaments/:code/standings` |
+| 积分榜 | GET | `/leagues/standings?codes=PL,PD,...&season=2025`（**BFF，推荐**）、`/leagues/:code/standings`、`/competitions/:id/standings`（仅已完赛聚合） |
+| 球员榜 | GET | `/rankings/players`（含 `avatarUrl`、`marketValue`、`fantasyPrice`） |
 | 单队赛程 | GET | `/competitions/:id/worldcup2026-schedule/:teamId` |
 | 球队关注 | GET/POST/DELETE | `/worldcup2026/me/team-follows*` |
 
@@ -203,8 +206,7 @@
 
 | 页面/能力 | 方法 | 路径 |
 |-----------|------|------|
-| 球员榜 | GET | `/rankings/players` |
-| 球员摘要 | GET | `/players/:id/summary` |
+| 球员摘要 | GET | `/players/:id/summary`（含 `marketValue`、`marketValueCurrency`） |
 | 冷门信号 | GET | `/insights/upset-signals` |
 | 分析页只读 | GET | `/matches/:id/analysis-preview`（v1，见 §2.7） |
 | 三页合同 | GET | `.../pre-match`、`.../live`、`.../post-match`（+ 可选 SSE `.../live/stream`） |

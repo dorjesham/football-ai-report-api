@@ -145,6 +145,8 @@ GET /insights/reports?...
 
 ### 3.2 分析页扩展区 — `GET /matches/:id/analysis-preview` — **后端已增强（analysis-preview-v1）**
 
+> **对接说明**：[Web比赛详情对接说明.md](./Web比赛详情对接说明.md)（加载顺序、字段边界、curl 验收）
+
 | 项 | 内容 |
 |----|------|
 | **前端** | [`MatchDetailSupplement.tsx`](src/components/matchAnalysis/MatchDetailSupplement.tsx)、[`AnalysisPreviewFromApi.tsx`](src/components/matchAnalysis/AnalysisPreviewFromApi.tsx) |

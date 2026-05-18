@@ -14,6 +14,9 @@
 | 本期后端做了什么？ | **Batch 1 + §2** 用户域；**登录 MVP**：Web 微信扫码、图形验证码注册、邮箱/用户名密码登录。 |
 | 联调前必做 | `npx prisma migrate deploy`（含 `20260516120000_*`、`20260517120000_auth_email_username_wechat_web`）。 |
 | 登录文档 | **[登录注册对接说明.md](./登录注册对接说明.md)** |
+| 比赛详情 | **[Web比赛详情对接说明.md](./Web比赛详情对接说明.md)**（多接口组合、勿调 Admin） |
+| 数据管线 | [docs/比赛数据管线运维说明.md](./docs/比赛数据管线运维说明.md) |
+| 积分榜 / 球员榜 | **[Web积分榜球员榜对接说明.md](./Web积分榜球员榜对接说明.md)**（`GET /leagues/standings`、`GET /rankings/players`） |
 
 ---
 

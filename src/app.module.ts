@@ -13,6 +13,7 @@ import { AuthModule } from './auth/auth.module';
 import { TournamentsModule } from './tournaments/tournaments.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { CompetitionsModule } from './competitions/competitions.module';
+import { LeaguesModule } from './leagues/leagues.module';
 import { MatchLiveModule } from './match-live/match-live.module';
 import { MatchPhaseModule } from './match-phase/match-phase.module';
 import { MatchesModule } from './matches/matches.module';
@@ -73,6 +74,7 @@ import { UserNotificationsModule } from './user-notifications/user-notifications
     TournamentsModule,
     SeasonsModule,
     CompetitionsModule,
+    LeaguesModule,
     MatchesModule,
     MatchPhaseModule,
     MatchLiveModule,
