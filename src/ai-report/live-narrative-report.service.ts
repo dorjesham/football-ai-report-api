@@ -4,7 +4,7 @@ import { DEFAULT_AI_DISCLAIMER } from '../common/constants/disclaimer.constant';
 import { sanitizeAiReportText } from '../common/utils/content-safety';
 import { MatchLiveService } from '../match-live/match-live.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { DeepseekService } from './deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { buildLiveNarrativeStructured } from './live-narrative.builder';
 import {
   polishedToFreeSummary,

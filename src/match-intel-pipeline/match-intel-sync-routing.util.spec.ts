@@ -12,24 +12,27 @@ describe('match-intel-sync-routing', () => {
     expect(shouldRunAfMatchFactsSync({ externalId: null })).toBe(false);
   });
 
-  it('shouldRunFootballDataIntelSync rejects af- and accepts FD', () => {
+  it('shouldRunFootballDataIntelSync off when enableFootballData=false', () => {
     expect(
-      shouldRunFootballDataIntelSync({
-        externalId: 'af-f-1',
-        dataSource: DataSourceType.API_FOOTBALL,
-      }),
+      shouldRunFootballDataIntelSync(
+        { externalId: '999', dataSource: DataSourceType.FOOTBALL_DATA },
+        false,
+      ),
     ).toBe(false);
     expect(
-      shouldRunFootballDataIntelSync({
-        externalId: '999',
-        dataSource: DataSourceType.FOOTBALL_DATA,
-      }),
-    ).toBe(true);
+      shouldRunFootballDataIntelSync(
+        { externalId: 'af-f-1', dataSource: DataSourceType.API_FOOTBALL },
+        true,
+      ),
+    ).toBe(false);
+  });
+
+  it('shouldRunFootballDataIntelSync accepts FD when enabled', () => {
     expect(
-      shouldRunFootballDataIntelSync({
-        externalId: '888',
-        dataSource: DataSourceType.API_FOOTBALL,
-      }),
+      shouldRunFootballDataIntelSync(
+        { externalId: '999', dataSource: DataSourceType.FOOTBALL_DATA },
+        true,
+      ),
     ).toBe(true);
   });
 });

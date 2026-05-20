@@ -1,7 +1,7 @@
 import { ConfigService } from '@nestjs/config';
 
 /**
- * 与 {@link DeepseekService.generateReportJson} 一致：无 Key 或显式开启 mock 时走占位逻辑。
+ * 与 {@link DeepseekService.generateReportJson}（`src/deepseek/deepseek.service.ts`）一致：无 Key 或显式开启 mock 时走占位逻辑。
  */
 export function shouldUseDeepseekMock(config: ConfigService): boolean {
   const key = config.get<string>('deepseekApiKey');

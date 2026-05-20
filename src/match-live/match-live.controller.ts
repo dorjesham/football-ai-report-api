@@ -30,7 +30,7 @@ export class MatchLiveController {
   @ApiOperation({
     summary: '赛中页合同（match-phase-v1）',
     description:
-      '外层 match-phase-v1；赛中事实见 facts.live（match-live-v1）。建议 LIVE 时 10–30s 轮询或配合 SSE。',
+      '外层 match-phase-v1；赛中事实见 facts.live（match-live-v2：clock、playerStats、commentaryV2、possessionTimeline、activityHeatmapLive、spatial、standingsSnippet）。建议 LIVE 时 10–30s 轮询或配合 SSE。',
   })
   async getLive(
     @Param('id') id: string,

@@ -26,4 +26,12 @@ export class InsightsController {
       minUpset: minUpset ? parseInt(minUpset, 10) : 55,
     });
   }
+
+  @Get('champion-prediction')
+  @ApiOperation({ summary: '世界杯冠军预测启发式（v1）' })
+  championPrediction(@Query('competitionId') competitionId: string) {
+    return this.insights.championPrediction(
+      competitionId?.trim() || 'seed-comp-wc',
+    );
+  }
 }

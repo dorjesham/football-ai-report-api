@@ -655,6 +655,8 @@ export class DataIngestService {
     maxMatches?: number;
     delayBetweenMatchesMs?: number;
     force?: boolean;
+    lookaheadDays?: number;
+    onlyMissingDetail?: boolean;
   }) {
     const job = await this.prisma.ingestJobRun.create({
       data: {
@@ -664,12 +666,22 @@ export class DataIngestService {
       },
     });
     try {
+      const now = new Date();
+      const lookaheadDays = Math.min(30, Math.max(1, body.lookaheadDays ?? 10));
+      const windowEnd = new Date(now.getTime() + lookaheadDays * 86_400_000);
       const where: Prisma.MatchWhereInput = {
         externalId: { startsWith: 'af-f-' },
         status: MatchStatus.SCHEDULED,
+        kickoffTime: { gte: now, lte: windowEnd },
       };
       if (body.competitionId?.trim()) {
         where.competitionId = body.competitionId.trim();
+      }
+      if (body.onlyMissingDetail === true) {
+        where.OR = [
+          { afPreMatchSnapshot24At: null },
+          { activePredictionId: null },
+        ];
       }
       const maxM = Math.min(200, Math.max(1, body.maxMatches ?? 30));
       const rows = await this.prisma.match.findMany({

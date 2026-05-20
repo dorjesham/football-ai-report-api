@@ -8,11 +8,15 @@ export function shouldRunAfMatchFactsSync(match: {
   return /^af-f-\d+$/.test(ext);
 }
 
-/** 是否应跑 Football-Data 单场 intel（Phase B FD 路径） */
-export function shouldRunFootballDataIntelSync(match: {
-  externalId: string | null;
-  dataSource: DataSourceType;
-}): boolean {
+/** 是否应跑 Football-Data 单场 intel（AF-only 下默认永不执行） */
+export function shouldRunFootballDataIntelSync(
+  match: {
+    externalId: string | null;
+    dataSource: DataSourceType;
+  },
+  enableFootballData = false,
+): boolean {
+  if (!enableFootballData) return false;
   const ext = match.externalId?.trim() ?? '';
   if (!ext) return false;
   if (ext.startsWith('af-')) return false;

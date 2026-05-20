@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DeepseekService } from '../ai-report/deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { shouldUseDeepseekMock } from '../common/utils/deepseek-env.util';
 import {
   MatchFactsPartialEnvelopeSchema,

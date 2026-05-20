@@ -2,37 +2,51 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma/prisma.service';
-import { FootballDataService } from '../football-data/football-data.service';
 import { PublicSourcesService } from '../public-sources/public-sources.service';
 import { WeatherService } from '../weather/weather.service';
 import { AutoAiReportBatchService } from '../ai-report/auto-ai-report-batch.service';
 import { AutoPostMatchReportBatchService } from '../ai-report/auto-post-match-report-batch.service';
 import { AutoIntelBatchService } from '../auto-intel/auto-intel-batch.service';
 import { ApiFootballIngestService } from '../api-football/api-football-ingest.service';
+import { AfSyncOrchestrator } from '../api-football/af-sync-orchestrator.service';
+import { AfCatalogSyncService } from '../api-football/af-catalog-sync.service';
+import { MatchOddsLiveSyncService } from '../api-football/match-odds-live-sync.service';
+import { ApiFootballQuotaService } from '../api-football/api-football-quota.service';
 import { PredictionGradingService } from '../prediction/prediction-grading.service';
 import { PredictionService } from '../prediction/prediction.service';
 import { MatchLiveFactsIngestService } from '../match-live/match-live-facts-ingest.service';
+import { LiveStandingsTickService } from '../data-pipeline/live-standings-tick.service';
+import { LeaguesStandingsService } from '../leagues/leagues-standings.service';
+import { RedisService } from '../redis/redis.service';
+import { WorldCupCronService } from '../world-cup/world-cup-cron.service';
 
 @Injectable()
 export class CronService {
   private readonly log = new Logger(CronService.name);
-  /** 防止赛中高频 tick 与自身重叠（单轮拉取较慢时）。 */
   private liveStatusPollRunning = false;
   private liveFactsIngestRunning = false;
+  private livePlayersIngestRunning = false;
 
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
-    private readonly footballData: FootballDataService,
     private readonly weather: WeatherService,
     private readonly publicSources: PublicSourcesService,
     private readonly autoIntel: AutoIntelBatchService,
     private readonly autoAiReport: AutoAiReportBatchService,
     private readonly apiFootballIngest: ApiFootballIngestService,
+    private readonly afSync: AfSyncOrchestrator,
+    private readonly afCatalog: AfCatalogSyncService,
+    private readonly oddsLiveSync: MatchOddsLiveSyncService,
+    private readonly afQuota: ApiFootballQuotaService,
     private readonly prediction: PredictionService,
     private readonly predictionGrading: PredictionGradingService,
     private readonly liveFactsIngest: MatchLiveFactsIngestService,
+    private readonly liveStandingsTick: LiveStandingsTickService,
     private readonly autoPostMatchReport: AutoPostMatchReportBatchService,
+    private readonly leaguesStandings: LeaguesStandingsService,
+    private readonly redis: RedisService,
+    private readonly worldCupCron: WorldCupCronService,
   ) {}
 
   private postMatchReportCronEnabled() {
@@ -44,6 +58,18 @@ export class CronService {
   private afLiveFactsCronEnabled() {
     return (
       this.enabled() && this.config.get<boolean>('enableAfLiveFactsCron') === true
+    );
+  }
+
+  private afLivePlayersCronEnabled() {
+    return (
+      this.enabled() && this.config.get<boolean>('enableAfLivePlayersCron') === true
+    );
+  }
+
+  private liveStandingsTickEnabled() {
+    return (
+      this.enabled() && this.config.get<boolean>('enableLiveStandingsTick') === true
     );
   }
 
@@ -81,13 +107,20 @@ export class CronService {
     );
   }
 
-  /** 赛中约每 10 秒拉上游（需 ENABLE_CRON_SYNC + 近窗轮询 + ENABLE_MATCH_LIVE_FAST_POLL）。 */
   private matchLiveFastPollEnabled() {
     return (
       this.enabled() &&
       this.config.get<boolean>('enableMatchFdLivePoll') === true &&
       this.config.get<boolean>('enableMatchLiveFastPoll') === true
     );
+  }
+
+  private afNearWindowPollEnabled() {
+    return this.enabled() && this.config.get<boolean>('enableMatchFdLivePoll') === true;
+  }
+
+  private currentSeasonYear(): number {
+    return new Date().getFullYear();
   }
 
   private async logCron(
@@ -112,44 +145,72 @@ export class CronService {
     }
   }
 
-  /** 每天 03:00 — 五大联赛赛程（有 API Key 时尝试） */
+  private async quotaAllows(minRemaining = 5): Promise<boolean> {
+    const snap = await this.afQuota.snapshot();
+    if (snap.remaining < minRemaining) {
+      await this.logCron(
+        'af-quota-guard',
+        false,
+        `skip: used=${snap.used} limit=${snap.limit}`,
+        429,
+      );
+      return false;
+    }
+    return true;
+  }
+
+  /** 每天 03:00 — 五大联赛赛程（API-Football fixtures） */
   @Cron('0 3 * * *')
   async syncTopFiveMatches() {
     if (!this.enabled()) return;
-    for (const code of ['PL', 'PD', 'SA', 'BL1', 'FL1'] as const) {
-      try {
-        await this.footballData.syncMatchesByCode(code);
-        await this.logCron(`sync-matches-${code}`, true, 'ok', 200);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : String(e);
-        this.log.warn(`${code}: ${msg}`);
-        await this.logCron(`sync-matches-${code}`, false, msg, undefined);
-      }
+    if (!(await this.quotaAllows(20))) return;
+    const season = this.currentSeasonYear();
+    try {
+      const out = await this.apiFootballIngest.syncFixtures({
+        competitionCodes: ['PL', 'PD', 'SA', 'BL1', 'FL1'],
+        season,
+        delayBetweenRequestsMs: 1400,
+      });
+      await this.logCron('sync-af-fixtures-top5', true, JSON.stringify(out).slice(0, 500), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`sync-af-fixtures-top5: ${msg}`);
+      await this.logCron('sync-af-fixtures-top5', false, msg, undefined);
     }
   }
 
-  /** 每天 03:30 — 欧冠 */
+  /** 每天 03:30 — 欧冠赛程 */
   @Cron('30 3 * * *')
   async syncClMatches() {
     if (!this.enabled()) return;
+    if (!(await this.quotaAllows(10))) return;
+    const season = this.currentSeasonYear();
     try {
-      await this.footballData.syncMatchesByCode('CL');
-      await this.logCron('sync-matches-CL', true, 'ok', 200);
+      const out = await this.apiFootballIngest.syncFixtures({
+        competitionCodes: ['CL'],
+        season,
+        delayBetweenRequestsMs: 1400,
+      });
+      await this.logCron('sync-af-fixtures-CL', true, JSON.stringify(out).slice(0, 500), 200);
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
-      this.log.warn(`CL: ${msg}`);
-      await this.logCron('sync-matches-CL', false, msg, undefined);
+      this.log.warn(`sync-af-fixtures-CL: ${msg}`);
+      await this.logCron('sync-af-fixtures-CL', false, msg, undefined);
     }
   }
 
-  /** 每天 04:00 — 积分榜（五大 + 欧冠；单场失败不影响其他联赛） */
+  /** 每天 04:00 — 积分榜 Redis 预热（AF 拉取写入缓存，C 端读 BFF） */
   @Cron('0 4 * * *')
   async syncStandings() {
     if (!this.enabled()) return;
+    if (!(await this.quotaAllows(12))) return;
+    const season = this.currentSeasonYear();
+    const ttl = this.config.get<number>('cacheLeaguesStandingsTtlSec') ?? 1800;
     for (const code of ['PL', 'PD', 'SA', 'BL1', 'FL1', 'CL'] as const) {
       try {
-        await this.footballData.syncStandings(code);
-        await this.logCron(`sync-standings-${code}`, true, 'ok', 200);
+        const pack = await this.leaguesStandings.standingsForCode(code, season, 'api_football');
+        await this.redis.setJson(`leagues:standings:${code}:${season}`, pack, ttl);
+        await this.logCron(`sync-standings-${code}`, true, `rows=${pack.rows.length}`, 200);
       } catch (e) {
         const msg = e instanceof Error ? e.message : String(e);
         this.log.warn(`standings ${code}: ${msg}`);
@@ -158,21 +219,18 @@ export class CronService {
     }
   }
 
-  /**
-   * 约每 10 秒 — 仅「LIVE + 已开球仍 SCHEDULED」场次拉 FD / API-Football，保证赛中数据十秒级刷新（不落 ApiLog；上一轮未完成则跳过）。
-   * 真正「亚秒」需上游 WebSocket/推送；此处为轮询上界 + 上游响应时间。
-   */
+  /** 约每 10 秒 — 仅 AF LIVE 场次高频刷新（默认关，ENABLE_MATCH_LIVE_FAST_POLL=true） */
   @Cron(CronExpression.EVERY_10_SECONDS)
   async pollLiveMatchStatusHighFrequency() {
     if (!this.matchLiveFastPollEnabled()) return;
     if (this.liveStatusPollRunning) return;
+    if (!(await this.quotaAllows(2))) return;
     this.liveStatusPollRunning = true;
     try {
-      const out = await this.footballData.pollLiveMatchStatusNearWindow();
-      const n = out.footballData.attempted + out.apiFootball.attempted;
-      if (n > 0) {
+      const out = await this.apiFootballIngest.pollLiveFixtureStatuses();
+      if (out.attempted > 0) {
         this.log.debug(
-          `live-match-poll FD ${out.footballData.succeeded}/${out.footballData.attempted} AF ${out.apiFootball.succeeded}/${out.apiFootball.attempted}`,
+          `live-match-poll AF ${out.succeeded}/${out.attempted} skip=${out.skipped}`,
         );
       }
     } catch (e) {
@@ -183,20 +241,17 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 5 分钟 — 广域近窗（开球前后大窗口），与上项高频任务互补；覆盖即将开赛等低频场景。
-   * 需 ENABLE_CRON_SYNC=true，且未设置 ENABLE_MATCH_FD_LIVE_POLL=false。
-   */
+  /** 每 5 分钟 — 广域近窗 AF 比分/状态（ENABLE_MATCH_FD_LIVE_POLL=true 时启用，历史 env 名保留） */
   @Cron('*/5 * * * *')
-  async pollFdRecentMatchStatus() {
-    if (!this.enabled()) return;
-    if (this.config.get<boolean>('enableMatchFdLivePoll') !== true) return;
+  async pollAfRecentMatchStatus() {
+    if (!this.afNearWindowPollEnabled()) return;
+    if (!(await this.quotaAllows(5))) return;
     try {
-      const out = await this.footballData.pollRecentMatchStatusNearWindow();
+      const out = await this.apiFootballIngest.pollRecentFixtureStatuses();
       await this.logCron(
         'near-window-match-status-poll',
         true,
-        `FD attempted=${out.footballData.attempted} ok=${out.footballData.succeeded} fail=${out.footballData.failed}; AF attempted=${out.apiFootball.attempted} ok=${out.apiFootball.succeeded} fail=${out.apiFootball.failed}`,
+        `AF attempted=${out.attempted} ok=${out.succeeded} fail=${out.failed} skip=${out.skipped}`,
         200,
       );
     } catch (e) {
@@ -206,10 +261,6 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 10 分钟 — 公开来源分阶段抓取（需 ENABLE_CRON_SYNC + ENABLE_PUBLIC_SOURCE_FETCH）。
-   * 开球前约 48h / 8h / 2h 各一次；完场后若行在约 45 分钟内更新且尚未 post 阶段则补一次。
-   */
   @Cron('*/10 * * * *')
   async scheduledPublicSourcesIngest() {
     if (!this.publicSourcesScheduleEnabled()) return;
@@ -229,10 +280,6 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 20 分钟 — 自动预测 / 情报管线（需 ENABLE_CRON_SYNC + AUTO_INTEL_CRON_MODE=prediction|full）。
-   * 对「未来 lookahead 小时内、尚无 MatchPrediction」的 SCHEDULED/LIVE 场次批量处理，避免逐场点 Admin。
-   */
   @Cron('*/20 * * * *')
   async autoIntelBatchTick() {
     if (!this.enabled()) return;
@@ -252,10 +299,25 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 30 分钟（:10 与 :40）— 赛前 AI 报告草稿（需 ENABLE_CRON_SYNC + AUTO_AI_REPORT_CRON）。
-   * 与 auto-intel 错开分钟，减轻同一时刻外部请求峰值。
-   */
+  @Cron('0 */6 * * *')
+  async syncAfPredictionsNearWindow() {
+    if (!this.enabled()) return;
+    try {
+      const out = await this.autoIntel.runAfPredictionsNearWindowTick();
+      if (!out) return;
+      await this.logCron(
+        'af-predictions-near-window',
+        out.failed.length === 0,
+        `candidates=${out.candidates} ok=${out.succeeded} fail=${out.failed.length}`,
+        out.failed.length ? 207 : 200,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`af-predictions-near-window: ${msg}`);
+      await this.logCron('af-predictions-near-window', false, msg, undefined);
+    }
+  }
+
   @Cron('10,40 * * * *')
   async autoAiReportDraftTick() {
     if (!this.enabled()) return;
@@ -275,12 +337,121 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 10 分钟（:05）— T-24h/T-1h 赛前球队/球员快照 + 赔率（需 ENABLE_AF_PRE_MATCH_CRON=true）。
-   */
   @Cron('5,15,25,35,45,55 * * * *')
+  private afSyncCronEnabled() {
+    return (
+      this.enabled() && this.config.get<boolean>('enableAfSyncCron') === true
+    );
+  }
+
+  /** B5：LIVE 场次赛中赔率序列（ENABLE_AF_ODDS_LIVE_SYNC） */
+  @Cron('*/2 * * * *')
+  async scheduledAfOddsLive() {
+    if (!this.afSyncCronEnabled()) return;
+    if (this.config.get<boolean>('enableAfOddsLiveSync') !== true) return;
+    const intervalSec = this.config.get<number>('afOddsLiveIntervalSec') ?? 120;
+    const minGapMs = Math.max(60, intervalSec) * 1000;
+    const lockKey = 'cron:af-odds-live:last';
+    const last = await this.redis.getString(lockKey);
+    if (last && Date.now() - parseInt(last, 10) < minGapMs) return;
+    if (!(await this.quotaAllows(3))) return;
+    try {
+      await this.oddsLiveSync.syncOddsMetaIfStale();
+      const out = await this.oddsLiveSync.syncLiveOddsWindow();
+      await this.redis.setString(lockKey, String(Date.now()), 3600);
+      await this.logCron(
+        'af-odds-live',
+        true,
+        `attempted=${out.attempted} ok=${out.ok}`,
+        200,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`af-odds-live: ${msg}`);
+      await this.logCron('af-odds-live', false, msg, undefined);
+    }
+  }
+
+  /** B4：低优先级档案同步（周更） */
+  @Cron('30 3 * * 0')
+  async scheduledAfCatalogLowPriority() {
+    if (!this.afSyncCronEnabled()) return;
+    if (!(await this.quotaAllows(5))) return;
+    try {
+      const out = await this.afCatalog.syncTransfersBatch({ maxTeams: 15 });
+      await this.logCron(
+        'af-catalog-low',
+        true,
+        JSON.stringify(out).slice(0, 500),
+        200,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`af-catalog-low: ${msg}`);
+      await this.logCron('af-catalog-low', false, msg, undefined);
+    }
+  }
+
+  /** v2：联赛 AF catalog（积分榜 + B2 端点） */
+  @Cron('15 4 * * *')
+  async scheduledLeagueAfCatalog() {
+    if (!this.afSyncCronEnabled()) return;
+    if (!(await this.quotaAllows(8))) return;
+    const season = this.config.get<number>('afSyncSeason') ?? 2025;
+    try {
+      const rows = await this.prisma.competition.findMany({
+        where: { externalId: { startsWith: 'af-l-' } },
+        select: { code: true },
+        take: 30,
+      });
+      let ok = 0;
+      for (const row of rows) {
+        if (!row.code) continue;
+        try {
+          await this.afSync.syncLeagueCatalog(row.code, season);
+          ok++;
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : String(e);
+          this.log.warn(`league-af-catalog ${row.code}: ${msg}`);
+        }
+      }
+      await this.logCron(
+        'league-af-catalog',
+        true,
+        `competitions=${rows.length} ok=${ok} season=${season}`,
+        200,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`league-af-catalog: ${msg}`);
+      await this.logCron('league-af-catalog', false, msg, undefined);
+    }
+  }
+
+  @Cron('25 */6 * * *')
+  async scheduledAfRawBundlePreMatch() {
+    if (!this.afSyncCronEnabled()) return;
+    if (!(await this.quotaAllows(15))) return;
+    try {
+      const out = await this.afSync.syncPreMatchWindow({
+        lookaheadHours: 240,
+        maxMatches: 20,
+      });
+      await this.logCron(
+        'af-raw-bundle-pre-match',
+        out.failed === 0,
+        `attempted=${out.attempted} ok=${out.ok} failed=${out.failed}`,
+        out.failed ? 207 : 200,
+      );
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`af-raw-bundle-pre-match: ${msg}`);
+    }
+  }
+
   async scheduledAfPreMatchWindows() {
     if (!this.afPreMatchCronEnabled()) return;
+    if (!(await this.quotaAllows(10))) return;
     try {
       const out = await this.apiFootballIngest.runScheduledPreMatchWindows();
       if (out.attempted > 0) {
@@ -298,12 +469,10 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 6 小时（:15）— 近窗 FINISHED 的 `af-f-*` 写满 MatchFacts（需 ENABLE_AF_MATCH_FACTS_CRON=true）。
-   */
   @Cron('15 */6 * * *')
   async scheduledAfMatchFactsEnrich() {
     if (!this.afMatchFactsCronEnabled()) return;
+    if (!(await this.quotaAllows(20))) return;
     try {
       const out = await this.apiFootballIngest.runScheduledAfMatchFactsEnrich();
       await this.logCron(
@@ -319,17 +488,16 @@ export class CronService {
     }
   }
 
-  /**
-   * 每 30 秒 — LIVE 场次增量 events/statistics（AF + FD；需 ENABLE_AF_LIVE_FACTS_CRON，默认开）。
-   */
+  /** 每 30 秒 tick；实际拉取间隔由 AF_LIVE_FACTS_INTERVAL_SEC（默认 90s）节流 */
   @Cron('*/30 * * * * *')
   async scheduledLiveFactsIngest() {
     if (!this.afLiveFactsCronEnabled()) return;
+    if (!(await this.quotaAllows(8))) return;
     if (this.liveFactsIngestRunning) return;
     this.liveFactsIngestRunning = true;
     try {
       const out = await this.liveFactsIngest.runLiveFactsTick({
-        minIntervalSec: this.config.get<number>('afLiveFactsIntervalSec') ?? 30,
+        minIntervalSec: this.config.get<number>('afLiveFactsIntervalSec') ?? 90,
       });
       if (out.attempted > 0) {
         await this.logCron(
@@ -348,7 +516,58 @@ export class CronService {
     }
   }
 
-  /** 每 2 分钟 — 开球前 5 分钟锁定 active 预测（需 ENABLE_PREDICTION_LOCK_CRON，默认随 CRON 开启） */
+  /** 每 60 秒 tick；球员统计默认 120s 间隔 */
+  @Cron(CronExpression.EVERY_MINUTE)
+  async scheduledLivePlayersIngest() {
+    if (!this.afLivePlayersCronEnabled()) return;
+    if (!(await this.quotaAllows(6))) return;
+    if (this.livePlayersIngestRunning) return;
+    this.livePlayersIngestRunning = true;
+    try {
+      const out = await this.liveFactsIngest.runLivePlayersTick({
+        minIntervalSec: this.config.get<number>('afLivePlayersIntervalSec') ?? 120,
+      });
+      if (out.attempted > 0) {
+        await this.logCron(
+          'live-players-ingest',
+          out.failed === 0,
+          `attempted=${out.attempted} ok=${out.succeeded} fail=${out.failed}`,
+          out.failed ? 207 : 200,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`live-players-ingest: ${msg}`);
+      await this.logCron('live-players-ingest', false, msg, undefined);
+    } finally {
+      this.livePlayersIngestRunning = false;
+    }
+  }
+
+  /** 每 10 分钟刷新 LIVE 涉及联赛的积分榜物化 */
+  @Cron('*/10 * * * *')
+  async scheduledLiveStandingsTick() {
+    if (!this.liveStandingsTickEnabled()) return;
+    if (!(await this.quotaAllows(8))) return;
+    try {
+      const out = await this.liveStandingsTick.runTick({
+        minIntervalSec: this.config.get<number>('liveStandingsTickIntervalSec') ?? 600,
+      });
+      if (out.leagues.length > 0) {
+        await this.logCron(
+          'live-standings-tick',
+          true,
+          `leagues=${out.leagues.join(',')}`,
+          200,
+        );
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      this.log.warn(`live-standings-tick: ${msg}`);
+      await this.logCron('live-standings-tick', false, msg, undefined);
+    }
+  }
+
   @Cron('*/2 * * * *')
   async scheduledPredictionLock() {
     if (!this.predictionLockCronEnabled()) return;
@@ -370,7 +589,6 @@ export class CronService {
     }
   }
 
-  /** 每 45 分钟 — FINISHED 场次生成赛后复盘 + 可选文字直播叙事（需 ENABLE_POST_MATCH_REPORT_CRON） */
   @Cron('25,55 * * * *')
   async scheduledPostMatchReports() {
     if (!this.postMatchReportCronEnabled()) return;
@@ -391,7 +609,6 @@ export class CronService {
     }
   }
 
-  /** 每天 05:00 — FINISHED 且未对账的冻结预测补跑 grading */
   @Cron('0 5 * * *')
   async scheduledPredictionGrading() {
     if (!this.predictionGradingCronEnabled()) return;
@@ -415,7 +632,66 @@ export class CronService {
     }
   }
 
-  /** 每天 04:30 — 焦点战天气 */
+  @Cron('15 */2 * * *')
+  async wcPreMatchT48() {
+    if (!this.worldCupCron.enabled()) return;
+    try {
+      const out = await this.worldCupCron.runPreMatchT48();
+      await this.logCron('wc-pre-match-t48', true, JSON.stringify(out).slice(0, 200), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.logCron('wc-pre-match-t48', false, msg, undefined);
+    }
+  }
+
+  @Cron('5 */1 * * *')
+  async wcPreMatchT24() {
+    if (!this.worldCupCron.enabled()) return;
+    try {
+      const out = await this.worldCupCron.runPreMatchT24();
+      await this.logCron('wc-pre-match-t24', true, JSON.stringify(out).slice(0, 200), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.logCron('wc-pre-match-t24', false, msg, undefined);
+    }
+  }
+
+  @Cron('*/15 * * * *')
+  async wcPreMatchT1() {
+    if (!this.worldCupCron.enabled()) return;
+    try {
+      const out = await this.worldCupCron.runPreMatchT1();
+      await this.logCron('wc-pre-match-t1', true, JSON.stringify(out).slice(0, 200), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.logCron('wc-pre-match-t1', false, msg, undefined);
+    }
+  }
+
+  @Cron('*/3 * * * *')
+  async wcLiveTick() {
+    if (!this.worldCupCron.enabled()) return;
+    try {
+      const out = await this.worldCupCron.runLiveTick();
+      await this.logCron('wc-live-tick', true, JSON.stringify(out).slice(0, 200), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.logCron('wc-live-tick', false, msg, undefined);
+    }
+  }
+
+  @Cron('40 5 * * *')
+  async wcPostMatch() {
+    if (!this.worldCupCron.enabled()) return;
+    try {
+      const out = await this.worldCupCron.runPostMatch();
+      await this.logCron('wc-post-match', true, JSON.stringify(out).slice(0, 200), 200);
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.logCron('wc-post-match', false, msg, undefined);
+    }
+  }
+
   @Cron('30 4 * * *')
   async syncFeaturedWeather() {
     if (!this.enabled()) return;

@@ -11,13 +11,19 @@ import {
 } from '@prisma/client';
 import { ODDS_DISCLAIMER } from '../api-football/af-pre-match-mapper.util';
 import { MatchOddsSnapshotService } from '../api-football/match-odds-snapshot.service';
+import { MatchInjuriesService } from '../matches/match-injuries.service';
 import { RequestUser } from '../common/types/request-user.type';
+import {
+  extractPostMatchTacticalLong,
+  extractPreMatchIntelLong,
+} from '../ai-report/long-form-extract.util';
 import { PostMatchStructuredV1Schema } from '../ai-report/schemas/structured-report.schema';
 import { MatchLiveService } from '../match-live/match-live.service';
 import { parseMatchEventsStorage } from '../match-live/match-events-storage.util';
 import {
   MATCH_INTEL_INCLUDE,
   mapMatchShellForPhase,
+  type MatchIntelL10n,
   mapPredictionDetailForPhase,
   mapPredictionPreviewForPhase,
   mapTeamSnapshot,
@@ -27,6 +33,9 @@ import { computeLiveStatusSyncHint } from '../matches/match-status-clock.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { RedisService } from '../redis/redis.service';
 import { UnlockService } from '../unlock/unlock.service';
+import { DisplayNameService } from '../localization/display-name.service';
+import { FootballDictionaryService } from '../localization/football-dictionary.service';
+import { LocalizationSeedLoader } from '../localization/localization-seed.loader';
 import {
   resolveIntelUnlocked,
 } from './match-intel-access.util';
@@ -46,7 +55,19 @@ export class MatchPhaseService {
     private readonly unlock: UnlockService,
     private readonly live: MatchLiveService,
     private readonly oddsSnapshots: MatchOddsSnapshotService,
+    private readonly matchInjuries: MatchInjuriesService,
+    private readonly displayName: DisplayNameService,
+    private readonly footballDict: FootballDictionaryService,
+    private readonly seedLoader: LocalizationSeedLoader,
   ) {}
+
+  private intelL10n(): MatchIntelL10n {
+    return {
+      displayName: this.displayName,
+      dict: this.footballDict,
+      seeds: this.seedLoader,
+    };
+  }
 
   private links(matchId: string): MatchPhaseResponseV1['meta']['links'] {
     return {
@@ -56,13 +77,22 @@ export class MatchPhaseService {
     };
   }
 
-  private async loadMatchRow(matchId: string): Promise<MatchIntelRow> {
+  private async loadMatchRow(
+    matchId: string,
+  ): Promise<MatchIntelRow & { matchFacts: { supplementaryFacts: unknown; injuriesJson: unknown } | null }> {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
-      include: MATCH_INTEL_INCLUDE,
+      include: {
+        ...MATCH_INTEL_INCLUDE,
+        matchFacts: {
+          select: { supplementaryFacts: true, injuriesJson: true },
+        },
+      },
     });
     if (!match) throw new NotFoundException('Match not found');
-    return match as MatchIntelRow;
+    return match as MatchIntelRow & {
+      matchFacts: { supplementaryFacts: unknown; injuriesJson: unknown } | null;
+    };
   }
 
   private narrativeFromReport(
@@ -76,8 +106,19 @@ export class MatchPhaseService {
       structuredContentJson: unknown;
     } | null | undefined,
     isUnlocked: boolean,
+    phase: 'pre' | 'post',
   ): MatchPhaseNarrative | null {
     if (!report) return null;
+
+    const preMatchIntelLong =
+      phase === 'pre'
+        ? extractPreMatchIntelLong(report.structuredContentJson, isUnlocked)
+        : null;
+    const tacticalLongForm =
+      phase === 'post'
+        ? extractPostMatchTacticalLong(report.structuredContentJson, isUnlocked)
+        : null;
+
     if (!isUnlocked) {
       return {
         reportType: report.reportType,
@@ -86,6 +127,8 @@ export class MatchPhaseService {
         freeSummary: report.freeSummary.slice(0, 280),
         dashboardSummary: report.dashboardSummary?.slice(0, 120) ?? null,
         disclaimer: report.disclaimer,
+        preMatchIntelLong: preMatchIntelLong ?? undefined,
+        tacticalLongForm: tacticalLongForm ?? undefined,
       };
     }
     let structuredSummary = null;
@@ -103,6 +146,8 @@ export class MatchPhaseService {
       dashboardSummary: report.dashboardSummary,
       disclaimer: report.disclaimer,
       structuredSummary,
+      preMatchIntelLong: preMatchIntelLong ?? undefined,
+      tacticalLongForm: tacticalLongForm ?? undefined,
     };
   }
 
@@ -149,8 +194,29 @@ export class MatchPhaseService {
     const preview = mapPredictionPreviewForPhase(match);
     const detail = isUnlocked ? mapPredictionDetailForPhase(match) : null;
 
+    let homeInjuries: import('./match-phase.types').MatchPhaseInjuryItem[] = [];
+    let awayInjuries: import('./match-phase.types').MatchPhaseInjuryItem[] = [];
+    let injuriesAvail: 'present' | 'partial' | 'missing' = 'missing';
+    try {
+      const inj = await this.matchInjuries.forMatch(matchId);
+      homeInjuries = inj.homeInjuries;
+      awayInjuries = inj.awayInjuries;
+      injuriesAvail =
+        inj.items.length > 0 ? 'present' : 'missing';
+    } catch {
+      injuriesAvail = 'missing';
+    }
+
+    const h2h = match.headToHead;
+
+    // v2: 下线 match-detail-pre-unlocked 合成 UI（momentum/heatmap/自建 markets）
+    const ui = undefined;
+
     return {
       schema: MATCH_PHASE_SCHEMA_V1,
+      deprecated: true,
+      deprecatedMessage:
+        '请迁移至 GET /matches/:id/detail-v2；本接口将于 90 天后下线',
       phase: 'pre',
       meta: {
         matchId,
@@ -163,24 +229,38 @@ export class MatchPhaseService {
         recommendedPollSec: 30,
         links: this.links(matchId),
       },
-      match: mapMatchShellForPhase(match),
+      match: mapMatchShellForPhase(match, this.intelL10n()),
       facts: {
         teamSnapshots: {
           home: mapTeamSnapshot(homeSnap),
           away: mapTeamSnapshot(awaySnap),
         },
         playerSnapshotCount: match.playerSnapshots.length,
+        homeForm: homeSnap?.recentForm ?? null,
+        awayForm: awaySnap?.recentForm ?? null,
+        h2h:
+          h2h ?
+            {
+              lastMeetingsCount: h2h.lastMeetingsCount,
+              homeWins: h2h.homeWins,
+              draws: h2h.draws,
+              awayWins: h2h.awayWins,
+              summary: h2h.summary,
+            }
+          : null,
+        homeInjuries,
+        awayInjuries,
         dataAvailability: {
           teamSnapshots: hasTeamSnap ? 'present' : 'missing',
           prediction: pred ? 'present' : 'missing',
           preMatchReport: preReport ? 'present' : 'missing',
+          injuries: injuriesAvail,
         },
       },
       model: {
         predictionPreview: preview,
         predictionDetail: detail,
-        predictionMarkets:
-          isUnlocked ? (pred?.predictionMarkets ?? null) : null,
+        predictionMarkets: null,
         oddsDisclaimer: ODDS_DISCLAIMER,
         oddsSnapshots: preOdds.map((s) => ({
           phase: s.phase,
@@ -188,7 +268,8 @@ export class MatchPhaseService {
           markets: s.markets,
         })),
       },
-      narrative: this.narrativeFromReport(preReport, isUnlocked),
+      narrative: this.narrativeFromReport(preReport, isUnlocked, 'pre'),
+      ui,
     };
   }
 
@@ -220,7 +301,7 @@ export class MatchPhaseService {
         recommendedPollSec: 10,
         links: this.links(matchId),
       },
-      match: mapMatchShellForPhase(match),
+      match: mapMatchShellForPhase(match, this.intelL10n()),
       facts: { live: livePayload },
       model: {
         predictionPreview: mapPredictionPreviewForPhase(match),
@@ -230,7 +311,7 @@ export class MatchPhaseService {
         predictionMarkets: null,
         oddsDisclaimer: livePayload.oddsDisclaimer,
       },
-      narrative: this.narrativeFromReport(liveNarrative, isUnlocked),
+      narrative: this.narrativeFromReport(liveNarrative, isUnlocked, 'pre'),
     };
   }
 
@@ -295,6 +376,9 @@ export class MatchPhaseService {
 
     return {
       schema: MATCH_PHASE_SCHEMA_V1,
+      deprecated: true,
+      deprecatedMessage:
+        '请迁移至 GET /matches/:id/detail-v2；本接口将于 90 天后下线',
       phase: 'post',
       meta: {
         matchId,
@@ -307,22 +391,25 @@ export class MatchPhaseService {
           oddsSnapshots: `/matches/${matchId}/odds-snapshots`,
         },
       },
-      match: mapMatchShellForPhase(row),
+      match: mapMatchShellForPhase(row, this.intelL10n()),
       facts: {
         htHome: facts?.htHome ?? null,
         htAway: facts?.htAway ?? null,
         ftHome: facts?.ftHome ?? match.homeScore,
         ftAway: facts?.ftAway ?? match.awayScore,
         eventsCount: events.length,
+        events,
         keyMetrics: liveSnap.keyMetrics,
-        dataAvailability: liveSnap.meta.dataAvailability,
+        dataAvailability: {
+          ...liveSnap.meta.dataAvailability,
+          narrative: postReport ? 'present' : 'missing',
+        },
       },
       model: {
         predictionPreview: mapPredictionPreviewForPhase(row),
         predictionDetail:
           isUnlocked && locked ? mapPredictionDetailForPhase(row) : null,
-        predictionMarkets:
-          isUnlocked && locked ? (locked.predictionMarkets ?? null) : null,
+        predictionMarkets: null,
         oddsDisclaimer: ODDS_DISCLAIMER,
         grading:
           locked?.grading
@@ -333,7 +420,7 @@ export class MatchPhaseService {
               }
             : null,
       },
-      narrative: this.narrativeFromReport(postReport, isUnlocked),
+      narrative: this.narrativeFromReport(postReport, isUnlocked, 'post'),
     };
   }
 }

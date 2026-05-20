@@ -10,6 +10,8 @@ import {
   LLM_DATA_STEWARD_ADDENDUM,
   LLM_MATCH_REPORT_USER_PREAMBLE,
 } from './llm-dossier-policy';
+import { extractAfTeamComparison } from '../match-af-raw-bundle/af-predictions-comparison.util';
+import { DisplayNameService } from '../localization/display-name.service';
 import type { DataAvailabilityStatus, MatchLlmDossier } from './match-llm-dossier.types';
 
 const EXCERPT_LEN = 480;
@@ -24,15 +26,30 @@ function snapStatus(
   row: Record<string, unknown> | null | undefined,
 ): DataAvailabilityStatus {
   if (!row) return 'missing';
+  const att = row.attackRating;
+  const def = row.defenseRating;
+  const hasRatings =
+    att != null && def != null && typeof att === 'number' && typeof def === 'number';
   const rf = row.recentForm;
   const gf = row.goalsForAvg;
   const ga = row.goalsAgainstAvg;
   const xg = row.xgAvg ?? row.xgaAvg;
+  if (!hasRatings) {
+    if (
+      (typeof rf === 'string' && rf.length > 0) ||
+      gf != null ||
+      ga != null ||
+      xg != null
+    ) {
+      return 'partial';
+    }
+    return 'partial';
+  }
   if ((typeof rf === 'string' && rf.length > 0) || gf != null || ga != null || xg != null) {
     if (typeof rf === 'string' && rf.length >= 3 && (gf != null || ga != null)) return 'present';
     return 'partial';
   }
-  return 'partial';
+  return 'present';
 }
 
 @Injectable()
@@ -43,6 +60,7 @@ export class MatchLlmDossierService {
     private readonly prisma: PrismaService,
     private readonly footballData: FootballDataService,
     private readonly publicSources: PublicSourcesService,
+    private readonly displayName: DisplayNameService,
   ) {}
 
   /**
@@ -107,6 +125,12 @@ export class MatchLlmDossierService {
     });
     if (!m) throw new NotFoundException('Match not found');
 
+    const bundle = await this.prisma.matchAfRawBundle.findUnique({
+      where: { matchId },
+      select: { predictionsJson: true },
+    });
+    const afTeamComparison = extractAfTeamComparison(bundle?.predictionsJson ?? null);
+
     const homeSnap = m.teamSnapshots.find((s) => s.isHome);
     const awaySnap = m.teamSnapshots.find((s) => !s.isHome);
 
@@ -161,6 +185,7 @@ export class MatchLlmDossierService {
       'database.playerSnapshots': playerSnaps,
       'database.playerIntelligence': playerIntel,
       'publicSources.scrapes': pub,
+      'apiFootball.teamComparison': afTeamComparison.available ? 'present' : 'missing',
     };
 
     const publicSourceDigests = src.map((r) => ({
@@ -193,6 +218,10 @@ export class MatchLlmDossierService {
           } as Record<string, unknown>)
         : null;
 
+    const homeDn = this.displayName.resolveTeam(m.homeTeam);
+    const awayDn = this.displayName.resolveTeam(m.awayTeam);
+    const compDn = m.competition ? this.displayName.resolveCompetition(m.competition) : null;
+
     const layers: MatchLlmDossier['layers'] = {
       footballData: {
         externalId: m.externalId,
@@ -202,7 +231,7 @@ export class MatchLlmDossierService {
         homeScore: m.homeScore,
         awayScore: m.awayScore,
         competitionCode: m.competition?.code ?? null,
-        competitionNameCn: m.competition?.nameCn ?? null,
+        competitionNameCn: compDn?.displayName ?? m.competition?.nameCn ?? null,
         round: m.round,
       },
       teams: {
@@ -210,15 +239,18 @@ export class MatchLlmDossierService {
           id: m.homeTeam.id,
           nameCn: m.homeTeam.nameCn,
           nameEn: m.homeTeam.nameEn,
-          eloRating: m.homeTeam.eloRating,
+          displayName: homeDn.displayName,
+          translationStatus: homeDn.translationStatus,
         },
         away: {
           id: m.awayTeam.id,
           nameCn: m.awayTeam.nameCn,
           nameEn: m.awayTeam.nameEn,
-          eloRating: m.awayTeam.eloRating,
+          displayName: awayDn.displayName,
+          translationStatus: awayDn.translationStatus,
         },
       },
+      afTeamComparison,
       teamSnapshots: {
         home: snapToObj(homeSnap),
         away: snapToObj(awaySnap),
@@ -281,7 +313,7 @@ export class MatchLlmDossierService {
       JSON.stringify(dossier.dataAvailability, null, 2),
       '',
       '【比赛要点】',
-      `${dossier.layers.teams.home.nameCn} vs ${dossier.layers.teams.away.nameCn}；开球 ${dossier.layers.footballData.kickoffTime}；FD externalId=${dossier.layers.footballData.externalId ?? '无'}；赛况 ${dossier.layers.footballData.status}`,
+      `${dossier.layers.teams.home.displayName} vs ${dossier.layers.teams.away.displayName}；开球 ${dossier.layers.footballData.kickoffTime}；FD externalId=${dossier.layers.footballData.externalId ?? '无'}；赛况 ${dossier.layers.footballData.status}`,
       '',
       '【公开来源摘录（最多6条）】',
       ...dossier.layers.publicSourceDigests.slice(0, 6).map(

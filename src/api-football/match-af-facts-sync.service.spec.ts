@@ -29,7 +29,10 @@ describe('MatchAfFactsSyncService', () => {
     const matchUpdate = jest.fn().mockResolvedValue({});
     const prisma = {
       match: {
-        findUnique: jest.fn().mockResolvedValue(match),
+        findUnique: jest
+          .fn()
+          .mockResolvedValueOnce(match)
+          .mockResolvedValue({ id: match.id, city: null, venueName: null }),
         update: matchUpdate,
       },
       matchFacts: {
@@ -49,8 +52,25 @@ describe('MatchAfFactsSyncService', () => {
       sleep: jest.fn().mockResolvedValue(undefined),
     };
 
-    const svc = new MatchAfFactsSyncService(prisma as never, api as never);
-    return { svc, prisma, api, upsert, matchUpdate };
+    const afPlayers = {
+      syncPlayersByMatchId: jest.fn().mockResolvedValue(undefined),
+    };
+    const intelFreshness = {
+      refreshIntelContentHash: jest.fn().mockResolvedValue('test-hash'),
+    };
+    const l10nHook = {
+      onRefereeSeen: jest.fn().mockResolvedValue(undefined),
+      onMatchUpsert: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const svc = new MatchAfFactsSyncService(
+      prisma as never,
+      api as never,
+      afPlayers as never,
+      intelFreshness as never,
+      l10nHook as never,
+    );
+    return { svc, prisma, api, upsert, matchUpdate, intelFreshness };
   }
 
   it('skips when FINISHED facts already complete', async () => {
@@ -73,8 +93,9 @@ describe('MatchAfFactsSyncService', () => {
     const { svc, upsert } = buildSvc({ facts: null });
     const out = await svc.syncByMatchId('m1', { force: true });
     expect(out.detail.skipped).toBeUndefined();
-    expect(upsert).toHaveBeenCalledTimes(1);
-    const data = upsert.mock.calls[0][0];
+    expect(upsert).toHaveBeenCalled();
+    const data = upsert.mock.calls.find((c) => c[0]?.create?.rawAfFixture != null)?.[0];
+    expect(data).toBeDefined();
     expect(data.create.primaryProvider).toBe(DataSourceType.API_FOOTBALL);
     expect(data.create.rawAfFixture).toBeDefined();
     expect(data.create.afLastSyncedAt).toBeInstanceOf(Date);

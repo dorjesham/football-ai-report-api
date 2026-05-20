@@ -24,11 +24,16 @@ import { LIVE_LONG_FOR_SYNC_PRIORITY_MINUTES } from '../matches/match-status-clo
 import {
   asRecord,
   extractAfFixtureMatchFields,
+  extractAfLeagueRoundFields,
+  extractAfLiveClock,
 } from './af-fixture-match-fields.util';
+import { syncMatchOfficialsFromAfFixture } from './sync-match-officials-from-af.util';
+import type { LiveMetaJson } from '../match-live/live-event.types';
 import {
   buildWcHistoricalHeritageZhFromAfStats,
   shrinkJsonForWcProfile,
 } from '../common/utils/wc2026-af-heritage-zh.util';
+import { LocalizationPostIngestHook } from '../localization/localization-post-ingest.hook';
 
 const TOURNAMENT_CODE_MAP: Record<string, string> = {
   PL: 'PL',
@@ -117,6 +122,7 @@ export class ApiFootballIngestService {
     private readonly preMatchSnapshots: MatchAfPreMatchSnapshotService,
     private readonly oddsSnapshots: MatchOddsSnapshotService,
     private readonly weather: WeatherService,
+    private readonly l10nHook: LocalizationPostIngestHook,
   ) {}
 
   private async upsertTeamFromAf(node: Record<string, unknown> | null) {
@@ -134,10 +140,11 @@ export class ApiFootballIngestService {
         : logoRaw
       : null;
     const ext = `af-t-${id}`;
-    return this.prisma.team.upsert({
+    const team = await this.prisma.team.upsert({
       where: { externalId: ext },
       create: {
         externalId: ext,
+        apiFootballTeamId: id,
         nameCn: nameEn,
         nameEn,
         shortName: nameEn.slice(0, 32),
@@ -146,11 +153,20 @@ export class ApiFootballIngestService {
       },
       update: {
         nameEn,
+        apiFootballTeamId: id,
         shortName: nameEn.slice(0, 32),
         logoUrl,
         dataSource: DataSourceType.API_FOOTBALL,
       },
     });
+    await this.l10nHook.onTeamUpsert({
+      id: team.id,
+      nameEn: team.nameEn,
+      nameCn: team.nameCn,
+      externalId: team.externalId,
+      apiFootballTeamId: team.apiFootballTeamId,
+    });
+    return team;
   }
 
   /**
@@ -215,7 +231,7 @@ export class ApiFootballIngestService {
         const pack = await this.api.getFixturesPage({
           league: leagueId,
           season,
-          page,
+          ...(page > 1 ? { page } : {}),
         });
         pages = page;
         if (page === 1) {
@@ -223,6 +239,13 @@ export class ApiFootballIngestService {
             results: pack.results,
             errorsText: pack.errorsText,
           };
+        }
+        if (
+          page > 1 &&
+          pack.errorsText &&
+          /page/i.test(pack.errorsText)
+        ) {
+          break;
         }
         fixtureApiRowsTotal += pack.items.length;
         for (const rawItem of pack.items) {
@@ -247,6 +270,7 @@ export class ApiFootballIngestService {
           const homeScore = fields.homeScore;
           const awayScore = fields.awayScore;
           const ext = `af-f-${fid}`;
+          const roundFields = extractAfLeagueRoundFields(rawItem);
           await this.prisma.match.upsert({
             where: { externalId: ext },
             create: {
@@ -259,6 +283,13 @@ export class ApiFootballIngestService {
               kickoffTime: fields.kickoffTime,
               status: st,
               stadium: fields.stadium,
+              city: fields.city ?? undefined,
+              venueName: fields.venueName ?? undefined,
+              venueApiFootballId: fields.venueApiFootballId ?? undefined,
+              round: roundFields.round ?? undefined,
+              matchday: roundFields.matchday ?? undefined,
+              stage: roundFields.stage ?? undefined,
+              groupName: roundFields.groupName ?? undefined,
               homeScore: st === MatchStatus.FINISHED ? homeScore : null,
               awayScore: st === MatchStatus.FINISHED ? awayScore : null,
               dataSource: DataSourceType.API_FOOTBALL,
@@ -267,6 +298,13 @@ export class ApiFootballIngestService {
               kickoffTime: fields.kickoffTime,
               status: st,
               stadium: fields.stadium ?? undefined,
+              city: fields.city ?? undefined,
+              venueName: fields.venueName ?? undefined,
+              venueApiFootballId: fields.venueApiFootballId ?? undefined,
+              round: roundFields.round ?? undefined,
+              matchday: roundFields.matchday ?? undefined,
+              stage: roundFields.stage ?? undefined,
+              groupName: roundFields.groupName ?? undefined,
               homeScore: st === MatchStatus.FINISHED ? homeScore : null,
               awayScore: st === MatchStatus.FINISHED ? awayScore : null,
               dataSource: DataSourceType.API_FOOTBALL,
@@ -275,6 +313,7 @@ export class ApiFootballIngestService {
           totalUpserted += 1;
         }
         if (pack.paging.current >= pack.paging.total) break;
+        if (page === 1 && pack.paging.total <= 1) break;
         if (delay > 0) await this.api.sleep(delay);
       }
       (summary.leagues as Record<string, unknown>)[code] = {
@@ -286,6 +325,11 @@ export class ApiFootballIngestService {
         fixtureApiResults: firstPageFixtureMeta?.results,
         fixtureApiErrorsText: firstPageFixtureMeta?.errorsText,
       };
+      if (firstPageFixtureMeta?.errorsText && totalUpserted === 0) {
+        throw new BadRequestException(
+          `API-Football fixtures 拉取失败 (${code} league=${leagueId} season=${season}): ${firstPageFixtureMeta.errorsText}`,
+        );
+      }
       if (delay > 0) await this.api.sleep(delay);
     }
     return summary;
@@ -309,6 +353,8 @@ export class ApiFootballIngestService {
       if (!fields) {
         throw new Error('fixture response empty or unparsable');
       }
+      const roundFields = extractAfLeagueRoundFields(item);
+      const clock = extractAfLiveClock(item);
       const hs =
         fields.homeScore != null ? Math.trunc(fields.homeScore) : null;
       const as =
@@ -321,9 +367,57 @@ export class ApiFootballIngestService {
           homeScore: hs,
           awayScore: as,
           stadium: fields.stadium ?? undefined,
+          round: roundFields.round ?? undefined,
+          matchday: roundFields.matchday ?? undefined,
+          stage: roundFields.stage ?? undefined,
+          groupName: roundFields.groupName ?? undefined,
           dataSource: DataSourceType.API_FOOTBALL,
         },
       });
+
+      const facts = await this.prisma.matchFacts.findUnique({
+        where: { matchId: row.id },
+        select: { liveMetaJson: true },
+      });
+      const prevMeta = (facts?.liveMetaJson ?? {}) as LiveMetaJson;
+      const liveMeta: LiveMetaJson = {
+        ...prevMeta,
+        clock,
+        lastHomeScore: hs,
+        lastAwayScore: as,
+      };
+      await this.prisma.matchFacts.upsert({
+        where: { matchId: row.id },
+        create: {
+          matchId: row.id,
+          liveMetaJson: liveMeta as Prisma.InputJsonValue,
+          primaryProvider: DataSourceType.API_FOOTBALL,
+        },
+        update: {
+          liveMetaJson: liveMeta as Prisma.InputJsonValue,
+          minuteRegulation: clock.elapsed ?? undefined,
+        },
+      });
+
+      const officialsIntervalMs = 15 * 60_000;
+      const lastOff = prevMeta.lastOfficialsSyncedAt
+        ? new Date(prevMeta.lastOfficialsSyncedAt).getTime()
+        : 0;
+      if (
+        Date.now() - lastOff >= officialsIntervalMs ||
+        fields.status === MatchStatus.LIVE
+      ) {
+        await syncMatchOfficialsFromAfFixture(this.prisma, row.id, fid, item);
+        const meta2: LiveMetaJson = {
+          ...liveMeta,
+          lastOfficialsSyncedAt: new Date().toISOString(),
+        };
+        await this.prisma.matchFacts.update({
+          where: { matchId: row.id },
+          data: { liveMetaJson: meta2 as Prisma.InputJsonValue },
+        });
+      }
+
       if (
         prev?.status !== MatchStatus.FINISHED &&
         fields.status === MatchStatus.FINISHED
@@ -676,19 +770,27 @@ export class ApiFootballIngestService {
               profile: profilePatch,
               dataSource: DataSourceType.API_FOOTBALL,
             };
+            let playerId: string;
             if (existing) {
-              await this.prisma.player.update({
+              const updated = await this.prisma.player.update({
                 where: { id: existing.id },
                 data: baseData,
               });
+              playerId = updated.id;
             } else {
-              await this.prisma.player.create({
+              const created = await this.prisma.player.create({
                 data: {
                   ...baseData,
                   externalId: extPlayerId,
                 },
               });
+              playerId = created.id;
             }
+            await this.l10nHook.onPlayerUpsert({
+              id: playerId,
+              nameEn,
+              externalId: extPlayerId,
+            });
             playersUpserted += 1;
           }
           if (pack.paging.current >= pack.paging.total) break;
@@ -765,6 +867,73 @@ export class ApiFootballIngestService {
     return { attempted: rows.length, enriched, failed };
   }
 
+  /** WC 联赛球队 upsert 为 `af-t-*`（Bootstrap teams_af 步） */
+  async syncTeamsAfForLeague(opts: {
+    competitionCode?: string;
+    season: number;
+    delayMs?: number;
+  }): Promise<{ upserted: number; season: number }> {
+    const code = opts.competitionCode ?? 'WC';
+    const leagueId = leagueIdForCode(code);
+    if (leagueId == null) {
+      throw new BadRequestException(`No league id for ${code}`);
+    }
+    const delay = Math.min(10_000, Math.max(0, opts.delayMs ?? 400));
+    const pack = await this.api.getTeamsInLeague(leagueId, opts.season);
+    let upserted = 0;
+    for (const wrap of pack.items) {
+      const un = unwrapAfTeamRow(wrap);
+      if (!un) continue;
+      const teamNode = un.teamNode;
+      const name =
+        typeof teamNode.name === 'string' && teamNode.name.trim() ?
+          teamNode.name.trim()
+        : `Team ${un.apiTeamId}`;
+      const logo =
+        typeof teamNode.logo === 'string' && teamNode.logo.trim() ?
+          teamNode.logo.trim()
+        : undefined;
+      const country =
+        typeof teamNode.country === 'string' && teamNode.country.trim() ?
+          teamNode.country.trim()
+        : undefined;
+      const override = await this.prisma.afTeamNameOverride.findUnique({
+        where: { apiFootballTeamId: un.apiTeamId },
+      });
+      const nameCn = override?.nameCn ?? name;
+      const team = await this.prisma.team.upsert({
+        where: { externalId: `af-t-${un.apiTeamId}` },
+        create: {
+          externalId: `af-t-${un.apiTeamId}`,
+          apiFootballTeamId: un.apiTeamId,
+          nameCn,
+          nameEn: name,
+          logoUrl: logo,
+          country,
+          dataSource: DataSourceType.API_FOOTBALL,
+        },
+        update: {
+          apiFootballTeamId: un.apiTeamId,
+          nameCn,
+          nameEn: name,
+          logoUrl: logo,
+          country,
+          dataSource: DataSourceType.API_FOOTBALL,
+        },
+      });
+      await this.l10nHook.onTeamUpsert({
+        id: team.id,
+        nameEn: team.nameEn,
+        nameCn: team.nameCn,
+        externalId: team.externalId,
+        apiFootballTeamId: team.apiFootballTeamId,
+      });
+      upserted += 1;
+      if (delay > 0) await this.api.sleep(delay);
+    }
+    return { upserted, season: opts.season };
+  }
+
   /**
    * 世界杯：对 `af-t-*` 国家队写入 `wc2026Profile.apiFootballTeamStats`、自动生成 `historicalHeritageZh`，
    * 并可选写入 `apiFootballTeamCard`、补 `founded`（库内为空时）。
@@ -822,30 +991,38 @@ export class ApiFootballIngestService {
         } catch {
           cardNode = null;
         }
-        const prev =
+        const prevManual =
           dbTeam.wc2026Profile &&
           typeof dbTeam.wc2026Profile === 'object' &&
           !Array.isArray(dbTeam.wc2026Profile) ?
-            { ...(dbTeam.wc2026Profile as Record<string, unknown>) }
+            (dbTeam.wc2026Profile as Record<string, unknown>).manual
+          : undefined;
+        const manual =
+          prevManual && typeof prevManual === 'object' && !Array.isArray(prevManual) ?
+            { ...(prevManual as Record<string, unknown>) }
           : {};
-        prev.apiFootballTeamStats = {
-          season: opts.season,
-          leagueId,
-          ingestedAt: new Date().toISOString(),
-          statistics: shrinkJsonForWcProfile(statistics),
+        const profile: Record<string, unknown> = {
+          source: 'AF',
+          af: {
+            teamCard: cardNode ?
+              shrinkJsonForWcProfile({
+                id: cardNode.id,
+                name: cardNode.name,
+                code: cardNode.code,
+                country: cardNode.country,
+                national: cardNode.national,
+                founded: cardNode.founded,
+                logo: cardNode.logo,
+              })
+            : null,
+            statistics: shrinkJsonForWcProfile(statistics),
+            ingestedAt: new Date().toISOString(),
+            season: opts.season,
+            leagueId,
+          },
+          manual,
+          historicalHeritageZh: buildWcHistoricalHeritageZhFromAfStats(statistics),
         };
-        prev.historicalHeritageZh = buildWcHistoricalHeritageZhFromAfStats(statistics);
-        if (cardNode) {
-          prev.apiFootballTeamCard = shrinkJsonForWcProfile({
-            id: cardNode.id,
-            name: cardNode.name,
-            code: cardNode.code,
-            country: cardNode.country,
-            national: cardNode.national,
-            founded: cardNode.founded,
-            logo: cardNode.logo,
-          });
-        }
         const foundedRaw = cardNode?.founded;
         const foundedNum =
           typeof foundedRaw === 'number' ?
@@ -860,7 +1037,7 @@ export class ApiFootballIngestService {
         await this.prisma.team.update({
           where: { id: dbTeam.id },
           data: {
-            wc2026Profile: prev as Prisma.InputJsonValue,
+            wc2026Profile: profile as Prisma.InputJsonValue,
             ...(dbTeam.founded == null &&
             Number.isFinite(foundedNum) &&
             foundedNum >= 1800 &&
@@ -877,53 +1054,6 @@ export class ApiFootballIngestService {
       if (delay > 0) await this.api.sleep(delay);
     }
     return { attempted, updated, failed, skippedNoLocalTeam };
-  }
-
-  /**
-   * 世界杯一键：赛程（WC league=1）→ 全队列阵容 → **国家队 wc2026Profile + 历史底蕴摘要** → 单场线审/教练/场地。
-   * 需有效 `API_FOOTBALL_API_KEY`；2026 世界杯赛季参数通常为 `season=2026`（以 api-sports 控制台为准）。
-   */
-  async importWorldCupFullBundle(opts: {
-    season: number;
-    syncFixtures?: boolean;
-    syncSquads?: boolean;
-    syncWcProfiles?: boolean;
-    enrichMatches?: boolean;
-    maxMatchesForEnrich?: number;
-    maxTeamsForWcProfiles?: number;
-    delayBetweenRequestsMs?: number;
-  }): Promise<Record<string, unknown>> {
-    const delay = Math.min(15_000, Math.max(0, opts.delayBetweenRequestsMs ?? 1500));
-    const out: Record<string, unknown> = { season: opts.season };
-    if (opts.syncFixtures !== false) {
-      out.fixtures = await this.syncFixtures({
-        competitionCodes: ['WC'],
-        season: opts.season,
-        delayBetweenRequestsMs: delay,
-      });
-    }
-    if (opts.syncSquads !== false) {
-      out.squads = await this.syncSquads({
-        competitionCodes: ['WC'],
-        season: opts.season,
-        delayBetweenRequestsMs: delay,
-        maxTeamsPerLeague: 56,
-      });
-    }
-    if (opts.syncWcProfiles !== false) {
-      out.wcProfiles = await this.syncWc2026TeamProfilesFromApiFootball({
-        season: opts.season,
-        delayMs: delay,
-        maxTeams: opts.maxTeamsForWcProfiles ?? 56,
-      });
-    }
-    if (opts.enrichMatches !== false) {
-      out.enrichment = await this.enrichWcMatchesFromApiFootball({
-        maxMatches: opts.maxMatchesForEnrich ?? 56,
-        delayMs: delay,
-      });
-    }
-    return out;
   }
 
   /**

@@ -232,7 +232,10 @@ describe('MatchesService.getMatchIntel / getMatchDetail (解锁契约)', () => {
   } as AiReport;
 
   beforeEach(() => {
-    prisma = { match: { findUnique: jest.fn() } };
+    prisma = {
+      match: { findUnique: jest.fn() },
+      matchAfRawBundle: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
     unlock = { hasPaidUnlock: jest.fn(), canAccessPaidIntel: jest.fn() };
     unlock.canAccessPaidIntel.mockImplementation(async (uid: string | undefined, mid: string) => {
       if (!uid) return false;
@@ -265,7 +268,21 @@ describe('MatchesService.getMatchIntel / getMatchDetail (解锁契约)', () => {
       { listForMatch: jest.fn() } as never,
       redis as never,
       matchCacheInvalidation as never,
+      { forMatch: jest.fn() } as never,
+      { generate: jest.fn() } as never,
     );
+  });
+
+  it('intel paid detail 无 predictionMarkets（v2 下线）', async () => {
+    prisma.match.findUnique.mockResolvedValue(baseRow([published]));
+    unlock.canAccessPaidIntel.mockResolvedValue(true);
+    const r = await service.getMatchIntel('m1', {
+      id: 'u1',
+      openid: 'o1',
+      role: UserRole.USER,
+    });
+    expect(r.paid?.dashboard.detail?.predictionMarkets).toBeNull();
+    expect(r.paid?.dashboard.detail?.homeMatchPower).toBeNull();
   });
 
   it('未登录：未解锁，intel.paid 为 null', async () => {

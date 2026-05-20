@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { clamp } from '../common/utils/clamp';
@@ -22,7 +23,10 @@ export type OlsPowerSyncResult = {
 export class PowerRatingService {
   private readonly log = new Logger(PowerRatingService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
+  ) {}
 
   resolveTeamTprKind(
     tournament: { type: string } | null | undefined,
@@ -38,13 +42,13 @@ export class PowerRatingService {
 
   buildTeamTprInput(args: {
     kind: 'national' | 'club';
-    team: { eloRating: number; wc2026Profile?: Prisma.JsonValue | null };
+    team: { wc2026Profile?: Prisma.JsonValue | null };
     snap: {
       leagueRank: number | null;
       points: number | null;
       recentForm: string | null;
-      attackRating: number;
-      defenseRating: number;
+      attackRating: number | null;
+      defenseRating: number | null;
       injuryImpact: number;
       fatigueIndex: number;
     } | null | undefined;
@@ -60,7 +64,7 @@ export class PowerRatingService {
       : undefined;
     return {
       kind: args.kind,
-      eloRating: args.team.eloRating,
+      eloRating: 1500,
       leagueRank: s?.leagueRank ?? null,
       points: s?.points ?? null,
       recentForm: s?.recentForm ?? null,
@@ -100,6 +104,14 @@ export class PowerRatingService {
       },
     });
     if (!match) return null;
+
+    if (this.config.get<boolean>('enableOls') !== true) return null;
+    if (
+      match.homeTeam.externalId?.startsWith('af-t-') ||
+      match.awayTeam.externalId?.startsWith('af-t-')
+    ) {
+      return null;
+    }
 
     const kind = this.resolveTeamTprKind(match.tournament, match.homeTeam, match.awayTeam);
     const homeSnap = match.teamSnapshots.find((x) => x.isHome);

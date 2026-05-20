@@ -1,0 +1,79 @@
+{
+  "matchStatus": {
+    "NS": "未开始",
+    "TBD": "待定",
+    "PST": "推迟",
+    "CANC": "取消",
+    "ABD": "中止",
+    "AWD": "判罚",
+    "WO": "弃权",
+    "LIVE": "进行中",
+    "1H": "上半场",
+    "HT": "中场",
+    "2H": "下半场",
+    "ET": "加时",
+    "BT": "加时休息",
+    "P": "点球大战",
+    "FT": "已结束",
+    "AET": "加时结束",
+    "PEN": "点球决胜",
+    "SUSP": "暂停",
+    "INT": "中断",
+    "BREAK": "休息",
+    "SCHEDULED": "未开始",
+    "FINISHED": "已结束"
+  },
+  "positions": {
+    "Goalkeeper": "门将",
+    "Defender": "后卫",
+    "Midfielder": "中场",
+    "Attacker": "前锋",
+    "G": "门将",
+    "D": "后卫",
+    "M": "中场",
+    "F": "前锋"
+  },
+  "events": {
+    "Goal": "进球",
+    "Normal Goal": "进球",
+    "Own Goal": "乌龙球",
+    "Penalty": "点球",
+    "Missed Penalty": "点球未进",
+    "Yellow Card": "黄牌",
+    "Red Card": "红牌",
+    "subst": "换人",
+    "Substitution": "换人",
+    "Var": "VAR",
+    "Card upgrade": "卡牌升级"
+  },
+  "statistics": {
+    "Shots on Goal": "射正",
+    "Shots off Goal": "射偏",
+    "Total Shots": "射门",
+    "Blocked Shots": "被封堵射门",
+    "Shots insidebox": "禁区内射门",
+    "Shots outsidebox": "禁区外射门",
+    "Fouls": "犯规",
+    "Corner Kicks": "角球",
+    "Offsides": "越位",
+    "Ball Possession": "控球率",
+    "Yellow Cards": "黄牌",
+    "Red Cards": "红牌",
+    "Goalkeeper Saves": "扑救",
+    "Total passes": "传球",
+    "Passes accurate": "传球成功",
+    "Passes %": "传球成功率",
+    "expected_goals": "预期进球",
+    "goals_prevented": "阻止进球"
+  },
+  "lineupRoles": {
+    "Substitute": "替补",
+    "Starting XI": "首发"
+  },
+  "oddsMarkets": {
+    "Match Winner": "胜平负",
+    "Goals Over/Under": "大小球",
+    "Both Teams Score": "双方进球",
+    "Double Chance": "双重机会"
+  }
+}

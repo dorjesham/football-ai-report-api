@@ -96,3 +96,31 @@ export function needsAfLiveFactsSync(
   }
   return { needed: false, reason: 'within min interval' };
 }
+
+/** LIVE 场次：按间隔拉取 AF /fixtures/players */
+export function needsAfLivePlayersSync(
+  match: AfFactsSyncCheckMatch,
+  facts: { liveMetaJson?: unknown } | null,
+  opts?: { force?: boolean; minIntervalSec?: number },
+): NeedsAfFactsSyncResult {
+  if (opts?.force === true) {
+    return { needed: true, reason: 'force=true' };
+  }
+  if (!isMatchInLiveFactsWindow(match)) {
+    return {
+      needed: false,
+      reason: `not in live window (status=${match.status})`,
+    };
+  }
+  const intervalMs = Math.max(30, opts?.minIntervalSec ?? 120) * 1000;
+  const meta = (facts?.liveMetaJson ?? {}) as { lastPlayersSyncedAt?: string };
+  const lastStr = meta.lastPlayersSyncedAt;
+  if (!lastStr) {
+    return { needed: true, reason: 'lastPlayersSyncedAt missing' };
+  }
+  const last = new Date(lastStr);
+  if (Date.now() - last.getTime() >= intervalMs) {
+    return { needed: true, reason: 'players interval elapsed' };
+  }
+  return { needed: false, reason: 'within players min interval' };
+}

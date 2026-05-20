@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import { DataSourceType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { parseAfFixtureIdFromExternalId } from './af-fixture-match-fields.util';
+import {
+  extractAfLiveClock,
+  parseAfFixtureIdFromExternalId,
+} from './af-fixture-match-fields.util';
+import { appendLiveStatsTimelinePoint } from '../match-live/live-stats-timeline.util';
 import { ApiFootballService } from './api-football.service';
 import {
   isMatchInLiveFactsWindow,
@@ -74,6 +78,9 @@ export class MatchAfFactsLiveSyncService {
 
     const started = Date.now();
     if (delay > 0) await this.api.sleep(delay);
+    const fixturePack = await this.api.getFixtureById(fid);
+    const clock = extractAfLiveClock(fixturePack.item);
+    if (delay > 0) await this.api.sleep(delay);
     const ev = await this.api.getFixtureEvents(fid);
     if (delay > 0) await this.api.sleep(delay);
     const stats = await this.api.getFixtureStatistics(fid);
@@ -96,6 +103,7 @@ export class MatchAfFactsLiveSyncService {
       ...prevMeta,
       seq,
       lastPublishAt: now.toISOString(),
+      clock,
     };
 
     const teamStatsPayload = {
@@ -105,6 +113,12 @@ export class MatchAfFactsLiveSyncService {
         ?.footballData,
     };
 
+    const timelineJson = appendLiveStatsTimelinePoint(
+      existingFacts?.liveStatsTimelineJson,
+      clock.elapsed,
+      teamStatsPayload,
+    );
+
     await this.prisma.matchFacts.upsert({
       where: { matchId },
       create: {
@@ -112,6 +126,8 @@ export class MatchAfFactsLiveSyncService {
         events: eventsStorage as unknown as Prisma.InputJsonValue,
         teamStats: teamStatsPayload as Prisma.InputJsonValue,
         liveMetaJson: liveMeta as Prisma.InputJsonValue,
+        liveStatsTimelineJson: timelineJson as Prisma.InputJsonValue,
+        minuteRegulation: clock.elapsed ?? undefined,
         afLiveLastSyncedAt: now,
         afLastSyncedAt: now,
         primaryProvider: DataSourceType.API_FOOTBALL,
@@ -121,6 +137,8 @@ export class MatchAfFactsLiveSyncService {
         events: eventsStorage as unknown as Prisma.InputJsonValue,
         teamStats: teamStatsPayload as Prisma.InputJsonValue,
         liveMetaJson: liveMeta as Prisma.InputJsonValue,
+        liveStatsTimelineJson: timelineJson as Prisma.InputJsonValue,
+        minuteRegulation: clock.elapsed ?? undefined,
         afLiveLastSyncedAt: now,
         afLastSyncedAt: now,
         lastSyncedAt: now,

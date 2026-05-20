@@ -1,0 +1,90 @@
+[
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "33",
+    "nameEn": "Manchester United",
+    "nameCn": "曼联",
+    "shortNameCn": "曼联",
+    "aliases": ["曼彻斯特联"]
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "40",
+    "nameEn": "Liverpool",
+    "nameCn": "利物浦",
+    "shortNameCn": "利物浦"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "42",
+    "nameEn": "Arsenal",
+    "nameCn": "阿森纳",
+    "shortNameCn": "阿森纳"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "49",
+    "nameEn": "Chelsea",
+    "nameCn": "切尔西",
+    "shortNameCn": "切尔西"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "50",
+    "nameEn": "Manchester City",
+    "nameCn": "曼城",
+    "shortNameCn": "曼城"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "541",
+    "nameEn": "Real Madrid",
+    "nameCn": "皇家马德里",
+    "shortNameCn": "皇马",
+    "aliases": ["皇马"]
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "529",
+    "nameEn": "Barcelona",
+    "nameCn": "巴塞罗那",
+    "shortNameCn": "巴萨",
+    "aliases": ["巴萨"]
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "85",
+    "nameEn": "Paris Saint Germain",
+    "nameCn": "巴黎圣日耳曼",
+    "shortNameCn": "巴黎",
+    "aliases": ["大巴黎", "PSG"]
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "157",
+    "nameEn": "Bayern Munich",
+    "nameCn": "拜仁慕尼黑",
+    "shortNameCn": "拜仁"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "489",
+    "nameEn": "AC Milan",
+    "nameCn": "AC米兰",
+    "shortNameCn": "米兰"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "496",
+    "nameEn": "Juventus",
+    "nameCn": "尤文图斯",
+    "shortNameCn": "尤文"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "505",
+    "nameEn": "Inter",
+    "nameCn": "国际米兰",
+    "shortNameCn": "国米"
+  }
+]

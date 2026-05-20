@@ -30,26 +30,45 @@ export class SocialGuideService {
   async generate(matchId: string) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
-      include: { homeTeam: true, awayTeam: true },
+      include: { homeTeam: true, awayTeam: true, activePrediction: true },
     });
     if (!match) throw new NotFoundException('Match not found');
+
+    const pred = match.activePrediction;
+    const homeWin = pred?.homeWinProbability ?? 50;
+    const awayWin = pred?.awayWinProbability ?? 30;
+    const draw = pred?.drawProbability ?? 20;
+    const homeSupportPct = Math.min(80, Math.round(homeWin + draw * 0.25));
+    const awaySupportPct = Math.min(75, Math.round(awayWin + draw * 0.25));
+    const rawOutput = {
+      homeSupportPct,
+      awaySupportPct,
+      topics: [
+        `#${match.homeTeam.nameCn}`,
+        `#${match.awayTeam.nameCn}`,
+        '赛前热度',
+        '理性观赛',
+      ],
+    };
 
     return this.prisma.socialGuide.upsert({
       where: { matchId },
       create: {
         matchId,
-        oneLiner: `${match.homeTeam.nameCn} 对阵 ${match.awayTeam.nameCn}：赛前观察点合集（演示）。`,
+        oneLiner: `${match.homeTeam.nameCn} 对阵 ${match.awayTeam.nameCn}：赛前观察点合集。`,
         keyMoments: ['开场节奏', '中场调整', '尾声体能'],
         shareCopy: '分享给朋友：理性看球，娱乐为主。',
-        posterTitle: '赛前情报卡（演示）',
+        posterTitle: '赛前情报卡',
         shortVideoScript: '开场钩子→数据亮点→免责声明',
-        momentsCopy: '朋友圈文案示例：关注球队近况与伤病，不构成投注建议。',
-        xiaohongshuTitle: '赛前看点速览｜足球情报（演示）',
+        momentsCopy: '关注球队近况与伤病，不构成投注建议。',
+        xiaohongshuTitle: `赛前看点速览｜${match.homeTeam.nameCn} vs ${match.awayTeam.nameCn}`,
+        rawOutput: rawOutput as object,
         dataQuality: DataQuality.AI_GENERATED,
         dataSource: DataSourceType.DEEPSEEK,
       },
       update: {
-        oneLiner: `${match.homeTeam.nameCn} 对阵 ${match.awayTeam.nameCn}：赛前观察点合集（演示）。`,
+        oneLiner: `${match.homeTeam.nameCn} 对阵 ${match.awayTeam.nameCn}：赛前观察点合集。`,
+        rawOutput: rawOutput as object,
       },
     });
   }

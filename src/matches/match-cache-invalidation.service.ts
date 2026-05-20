@@ -12,6 +12,12 @@ export class MatchCacheInvalidationService {
     private readonly redis: RedisService,
   ) {}
 
+  /** 赛后阶段页（完赛详情）Redis 缓存 */
+  async invalidatePostMatchPhase(matchId: string): Promise<void> {
+    await this.redis.del(`matches:phase:post:anon:${matchId}`);
+    await this.redis.delPattern(`matches:phase:post:user:*:${matchId}`);
+  }
+
   /** 管理端改场次、换快照等：清匿名/全用户本场次、列表与赛事赛程缓存 */
   async invalidateAfterMatchDataChange(matchId: string): Promise<void> {
     await this.redis.del(
@@ -21,6 +27,7 @@ export class MatchCacheInvalidationService {
     await this.redis.delPattern(`matches:intel:user:*:${matchId}`);
     await this.redis.delPattern(`matches:detail:user:*:${matchId}`);
     await this.redis.delPattern('matches:list:*');
+    await this.invalidatePostMatchPhase(matchId);
     const row = await this.prisma.match.findUnique({
       where: { id: matchId },
       select: { tournament: { select: { code: true } } },

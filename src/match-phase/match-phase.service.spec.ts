@@ -66,6 +66,13 @@ describe('MatchPhaseService', () => {
         disclaimer: 'd',
       }),
     };
+    const matchInjuries = {
+      forMatch: jest.fn().mockResolvedValue({
+        homeInjuries: [],
+        awayInjuries: [],
+        items: [],
+      }),
+    };
     const service = new MatchPhaseService(
       prisma as never,
       config as never,
@@ -73,6 +80,7 @@ describe('MatchPhaseService', () => {
       unlock as never,
       live as never,
       oddsSnapshots as never,
+      matchInjuries as never,
     );
     return { service, prisma, live, ...overrides };
   }
@@ -84,6 +92,45 @@ describe('MatchPhaseService', () => {
     expect(out.schema).toBe('match-phase-v1');
     expect(out.phase).toBe('pre');
     expect(out.meta.recommendedPollSec).toBe(30);
+  });
+
+  it('buildPreMatch exposes form, h2h and injuries in facts', async () => {
+    const { service, prisma } = svc();
+    prisma.match.findUnique.mockResolvedValue({
+      ...baseMatch,
+      teamSnapshots: [
+        {
+          isHome: true,
+          recentForm: 'WWDLW',
+          leagueRank: 1,
+          points: 30,
+          goalsFor: 20,
+          goalsAgainst: 5,
+        },
+        {
+          isHome: false,
+          recentForm: 'LDWWL',
+          leagueRank: 4,
+          points: 22,
+          goalsFor: 15,
+          goalsAgainst: 12,
+        },
+      ],
+      headToHead: {
+        lastMeetingsCount: 5,
+        homeWins: 2,
+        draws: 1,
+        awayWins: 2,
+        summary: '近5次主队2胜',
+      },
+    });
+    const out = await service.buildPreMatch('m1', null);
+    const facts = out.facts as import('./match-phase.types').MatchPhasePreFacts;
+    expect(facts.homeForm).toBe('WWDLW');
+    expect(facts.awayForm).toBe('LDWWL');
+    expect(facts.h2h?.homeWins).toBe(2);
+    expect(facts.homeInjuries).toEqual([]);
+    expect(facts.dataAvailability?.injuries).toBe('missing');
   });
 
   it('buildPostMatch rejects non-FINISHED', async () => {

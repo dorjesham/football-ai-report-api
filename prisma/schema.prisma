@@ -12,6 +12,16 @@ enum UserRole {
   ADMIN
 }
 
+/** 运维后台控制台角色（仅 User.role = ADMIN） */
+enum AdminConsoleRole {
+  SUPER_ADMIN
+  OPS_ADMIN
+  CONTENT_ADMIN
+  FINANCE_ADMIN
+  READONLY
+  DEVELOPER
+}
+
 enum BrowseHistoryType {
   ANALYSIS
   POSTER
@@ -185,6 +195,7 @@ model User {
   nickname               String?
   avatarUrl              String?
   role                   UserRole  @default(USER)
+  adminConsoleRole       AdminConsoleRole?
   /**
    * 社交分享海报：每位用户终身一次免费（消耗后 true）
    */
@@ -221,6 +232,7 @@ model User {
   feedbacks       UserFeedback[]
   browseHistories UserBrowseHistory[]
   notifications   UserNotification[]
+  generatedAssets UserGeneratedAsset[]
 }
 
 /**
@@ -238,7 +250,7 @@ model AuthPhoneOtp {
 }
 
 /**
- * 用户关注的 2026 世界杯国家队（externalId 前缀 wc26-）
+ * 用户关注的 2026 世界杯国家队（externalId 前缀 af-t-）
  */
 model UserTeamFollow {
   id        String   @id @default(cuid())
@@ -393,6 +405,7 @@ model Competition {
   code              String?
   nameCn            String
   nameEn            String
+  shortNameCn       String?
   country           String?
   seasonName        String?
   currentMatchday   Int?
@@ -409,9 +422,69 @@ model Competition {
   season           Season?               @relation(fields: [seasonId], references: [id])
   matches          Match[]
   providerMappings DataProviderMapping[]
+  standings        CompetitionStanding[]
+  playerMetrics    PlayerSeasonMetric[]
 
   @@index([tournamentId, seasonId])
   @@index([apiSportsLeagueId])
+}
+
+/**
+ * 物化积分榜（C 端 GET /leagues/standings 只读此表）
+ */
+model CompetitionStanding {
+  id            String   @id @default(cuid())
+  competitionId String
+  seasonYear    Int
+  groupName     String   @default("")
+  rank          Int
+  teamId        String
+  points        Int?
+  played        Int?
+  won           Int?
+  draw          Int?
+  lost          Int?
+  goalsFor      Int?
+  goalsAgainst  Int?
+  goalDiff      Int?
+  form          String?
+  extra         Json?
+  syncedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([competitionId, seasonYear, teamId, groupName], map: "cs_season_team_grp_uq")
+  @@index([competitionId, seasonYear], map: "cs_comp_season_idx")
+}
+
+/**
+ * 物化球员榜指标（C 端 GET /rankings/players?source=db）
+ */
+model PlayerSeasonMetric {
+  id            String   @id @default(cuid())
+  competitionId String
+  seasonYear    Int
+  playerId      String
+  teamId        String?
+  metric        String
+  value         Float
+  rank          Int?
+  goals         Int?
+  assists       Int?
+  extra         Json?
+  syncedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  player      Player      @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team        Team?       @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([competitionId, seasonYear, playerId, metric], map: "psm_season_player_metric_uq")
+  @@index([competitionId, seasonYear, metric], map: "psm_comp_season_metric_idx")
 }
 
 model DataProviderMapping {
@@ -432,25 +505,35 @@ model DataProviderMapping {
   @@index([provider, providerCompetitionCode])
 }
 
+model AfTeamNameOverride {
+  id                String   @id @default(cuid())
+  apiFootballTeamId Int      @unique
+  nameCn            String
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
 model Team {
   id              String         @id @default(cuid())
   externalId      String?        @unique
+  /** API-Football numeric team id (denormalized from af-t-{id}) */
+  apiFootballTeamId Int?
   nameCn          String
   nameEn          String
+  shortNameCn     String?
   shortName       String?
   logoUrl         String?
   country         String?
   founded         Int?
   venue           String?
   website         String?
-  eloRating       Int            @default(1500)
   dataSource      DataSourceType @default(UNKNOWN)
   /**
    * 2026 世界杯小组赛档位 A–L（仅世界杯种子队使用）
    */
   wcGroup         String?
   /**
-   * 2026 世界杯扩展档案：FIFA 排名、Elo、近半年国际赛等（与 worldcup2026_teams.json 对齐）
+   * 2026 世界杯扩展档案：AF team card / statistics + 可选 manual 白名单字段
    */
   wc2026Profile   Json?
   /**
@@ -471,6 +554,8 @@ model Team {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([apiFootballTeamId])
+
   players               Player[]
   homeMatches           Match[]               @relation("MatchHomeTeam")
   awayMatches           Match[]               @relation("MatchAwayTeam")
@@ -478,6 +563,10 @@ model Team {
   playerSnapshotsOnTeam PlayerMatchSnapshot[] @relation("PlayerSnapshotTeam")
   playerIntelAsTeam     PlayerIntelligence[]  @relation("IntelTeam")
   userFollows           UserTeamFollow[]
+  competitionStandings  CompetitionStanding[]
+  playerSeasonMetrics   PlayerSeasonMetric[]
+  afTransferRaws        AfTransferRaw[]
+  afTrophyRaw           AfTrophyRaw?
 
   @@index([wcGroup])
 }
@@ -488,6 +577,7 @@ model Player {
   externalId         String?
   nameCn             String
   nameEn             String
+  shortNameCn        String?
   /**
    * 头像 URL：抓取 JSON 中的图片字段或常量表手工映射
    */
@@ -528,6 +618,10 @@ model Player {
   team          Team                  @relation(fields: [teamId], references: [id])
   snapshots     PlayerMatchSnapshot[]
   intelligences PlayerIntelligence[]
+  seasonMetrics PlayerSeasonMetric[]
+  matchStats    MatchPlayerMatchStat[]
+  afTrophyRaw   AfTrophyRaw?
+  afSidelinedRaw AfSidelinedRaw?
 
   @@index([teamId])
   @@index([fbrefSeasonTag])
@@ -555,6 +649,7 @@ model Match {
   awayTeamId               String
   stadium                  String?
   city                     String?
+  cityCn                   String?
   country                  String?
   kickoffTime              DateTime
   status                   MatchStatus    @default(SCHEDULED)
@@ -603,6 +698,14 @@ model Match {
    * 当前对外展示的预测版本（C 端 intel / detail 读此指针）
    */
   activePredictionId       String?        @unique
+  /**
+   * 情报内容指纹（bundle/snapshot/prediction/weather 等稳定 hash）
+   */
+  intelContentHash         String?
+  intelContentHashAt       DateTime?
+  venueName                String?
+  venueNameCn              String?
+  venueApiFootballId       Int?
   createdAt                DateTime       @default(now())
   updatedAt                DateTime       @updatedAt
 
@@ -620,6 +723,7 @@ model Match {
   predictionGradings MatchPredictionGrading[]
   playerIntelligence PlayerIntelligence[]
   tacticalScenarios  TacticalScenario[]
+  tacticalSandbox    MatchTacticalSandbox?
   fantasyAdvice      FantasyAdvice?
   headToHead         HeadToHeadInsight?
   socialGuide        SocialGuide?
@@ -629,10 +733,13 @@ model Match {
   sourceRecords      SourceRecord[]
   pipelineRuns       MatchPipelineRun[]
   matchFacts         MatchFacts?
+  afRawBundle        MatchAfRawBundle?
   oddsSnapshots      MatchOddsSnapshot[]
+  oddsLiveSnapshots  MatchOddsLiveSnapshot[]
   favoriteUsers      UserMatchFavorite[]
   reminderUsers      UserMatchReminder[]
   browseHistories    UserBrowseHistory[]
+  playerMatchStats   MatchPlayerMatchStat[]
 
   @@index([kickoffTime])
   @@index([isFeatured])
@@ -711,6 +818,14 @@ model MatchFacts {
    * 赛中元数据：比分快照、seq、合成事件状态等
    */
   liveMetaJson Json?
+  /**
+   * 赛中技术统计时间轴（live-stats-timeline-v1）
+   */
+  liveStatsTimelineJson Json?
+  /**
+   * 可选 LLM 润色文字直播（ENABLE_LIVE_COMMENTARY_LLM）
+   */
+  liveCommentaryEnrichedJson Json?
 
   /**
    * 多源参考层（FD/StatsBomb/公开源等）；不覆盖 canonical teamStats/events/lineups，除非 Admin 确认合并。
@@ -722,6 +837,10 @@ model MatchFacts {
    * 多来源外部 id：{ "FOOTBALL_DATA": "123", "OPENFOOTBALL": "...", "API_FOOTBALL": "12345" }
    */
   externalRefs    Json?
+  /**
+   * 物化伤停（ingest 写入；GET /matches/:id/injuries 只读）
+   */
+  injuriesJson    Json?
 
   primaryProvider   DataSourceType  @default(UNKNOWN)
   structureProvider DataSourceType?
@@ -738,6 +857,159 @@ model MatchFacts {
   updatedAt DateTime @updatedAt
 }
 
+/** API-Football 单场 Raw JSON 权威层（1:1 Match） */
+model MatchAfRawBundle {
+  id        String @id @default(cuid())
+  matchId   String @unique
+  fixtureId Int    @unique
+  schemaVersion Int @default(1)
+
+  fixtureJson        Json?
+  lineupsJson        Json?
+  eventsJson         Json?
+  statisticsJson     Json?
+  playersJson        Json?
+  injuriesJson       Json?
+  predictionsJson    Json?
+  oddsLatestJson     Json?
+  h2hJson            Json?
+
+  homeCoachJson      Json?
+  awayCoachJson      Json?
+
+  homeTeamStatsJson  Json?
+  awayTeamStatsJson  Json?
+
+  homeSquadJson      Json?
+  awaySquadJson      Json?
+
+  standingsSnapshotJson  Json?
+  topScorersSnapshotJson Json?
+
+  availabilityJson Json?
+  fetchedAtJson    Json?
+  lastErrorJson    Json?
+  endpointHashes   Json?
+
+  finalized   Boolean   @default(false)
+  finalizedAt DateTime?
+  syncedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([fixtureId])
+  @@index([syncedAt])
+}
+
+model AfSyncLog {
+  id           String    @id @default(cuid())
+  endpoint     String
+  paramsJson   Json?
+  matchId      String?
+  fixtureId    Int?
+  httpStatus   Int?
+  status       String
+  responseSize Int?
+  errorMessage String?   @db.Text
+  costCount    Int       @default(1)
+  durationMs   Int?
+  startedAt    DateTime
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+
+  @@index([endpoint, createdAt])
+  @@index([matchId])
+  @@index([fixtureId])
+}
+
+model LeagueAfCache {
+  id                 String   @id @default(cuid())
+  competitionCode    String
+  season             Int
+  standingsJson      Json?
+  topscorersJson     Json?
+  topAssistsJson     Json?
+  topYellowCardsJson Json?
+  topRedCardsJson    Json?
+  fixtureRoundsJson  Json?
+  injuriesJson       Json?
+  updatedAt          DateTime @updatedAt
+
+  @@unique([competitionCode, season])
+}
+
+/** B4：球队转会 Raw（AF GET /transfers） */
+model AfTransferRaw {
+  id          String   @id @default(cuid())
+  teamId      String
+  apiTeamId   Int
+  season      Int
+  payloadJson Json
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team Team @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, season])
+  @@index([apiTeamId, season])
+}
+
+/** B4：荣誉 Raw（球队或球员，二选一） */
+model AfTrophyRaw {
+  id          String   @id @default(cuid())
+  teamId      String?  @unique
+  playerId    String?  @unique
+  apiEntityId Int?
+  payloadJson Json
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  team   Team?   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player Player? @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+/** B4：球员长期缺阵 Raw（AF GET /sidelined） */
+model AfSidelinedRaw {
+  id          String   @id @default(cuid())
+  playerId    String   @unique
+  apiPlayerId Int?
+  payloadJson Json
+  syncedAt    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+}
+
+/** B5：赛中赔率时间序列（AF GET /odds/live，允许多条） */
+model MatchOddsLiveSnapshot {
+  id                   String         @id @default(cuid())
+  matchId              String
+  apiFootballFixtureId Int
+  provider             DataSourceType @default(API_FOOTBALL)
+  capturedAt           DateTime       @default(now())
+  marketsJson          Json
+  rawOdds              Json?
+  createdAt            DateTime       @default(now())
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([matchId, capturedAt])
+}
+
+/** B5：赔率元数据（bookmakers / bets 字典） */
+model AfOddsMetaCache {
+  id          String   @id @default(cuid())
+  kind        String   @unique
+  payloadJson Json
+  updatedAt   DateTime @updatedAt
+}
+
 /**
  * 批量入库/爬虫任务审计（重试、丢弃原因写入 resultSummary）
  */
@@ -745,13 +1017,44 @@ model IngestJobRun {
   id            String    @id @default(cuid())
   kind          String
   status        String    @default("RUNNING")
+  bundleId      String?
+  parentJobId   String?
+  progressPct   Int       @default(0)
+  stepLabel     String?
   params        Json?
   resultSummary Json?
   errorMessage  String?   @db.Text
   startedAt     DateTime  @default(now())
   finishedAt    DateTime?
 
+  items IngestJobItem[]
+
   @@index([kind, startedAt])
+  @@index([bundleId, startedAt], map: "ingest_bundle_started_idx")
+  @@index([bundleId, status], map: "ingest_bundle_status_idx")
+}
+
+/** 批量任务内单场执行明细（任务中心每场错误表） */
+model IngestJobItem {
+  id           String    @id @default(cuid())
+  jobId        String
+  matchId      String?
+  itemType     String    @default("match")
+  status       String    @default("PENDING")
+  currentStep  String?
+  retryCount   Int       @default(0)
+  errorCode    String?
+  errorMessage String?   @db.Text
+  metadataJson Json?
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  job IngestJobRun @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId, status])
+  @@index([matchId, createdAt])
 }
 
 model MatchPipelineRun {
@@ -811,8 +1114,9 @@ model TeamMatchSnapshot {
   goalsAgainstAvg   Float?
   xgAvg             Float?
   xgaAvg            Float?
-  attackRating      Float          @default(50)
-  defenseRating     Float          @default(50)
+  attackRating      Float?
+  defenseRating     Float?
+  contentHash       String?
   injuryImpact      Float          @default(0)
   fatigueIndex      Float          @default(0)
   formation         String?
@@ -832,6 +1136,42 @@ model TeamMatchSnapshot {
   team  Team  @relation(fields: [teamId], references: [id])
 
   @@unique([matchId, teamId])
+}
+
+/**
+ * API-Football GET /fixtures/players 物化（赛中/完赛同步）
+ */
+model MatchPlayerMatchStat {
+  id           String   @id @default(cuid())
+  matchId      String
+  afPlayerId   Int
+  playerId     String?
+  teamSide     String   @db.VarChar(8)
+  playerName   String
+  playerNameEn String?
+  position     String?
+  minutes      Int?
+  rating       Float?
+  goals        Int?
+  assists      Int?
+  shots        Int?
+  shotsOn      Int?
+  passes       Int?
+  keyPasses    Int?
+  tackles      Int?
+  duelsWon     Int?
+  saves        Int?
+  yellowCards  Int?
+  redCards     Int?
+  rawJson      Json?
+  syncedAt     DateTime @default(now())
+
+  match  Match   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player Player? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([matchId, afPlayerId])
+  @@index([matchId])
+  @@index([playerId])
 }
 
 model PlayerMatchSnapshot {
@@ -937,6 +1277,7 @@ model WeatherSnapshot {
    * 主场历史同期/同月等上下文（统计或 AI 归纳），结构见 `VenueHistoricalContextJson`
    */
   venueHistoricalContext Json?
+  contentHash            String?
   dataQuality            DataQuality    @default(UNKNOWN)
   dataSource             DataSourceType @default(QWEATHER)
   createdAt              DateTime       @default(now())
@@ -1033,6 +1374,20 @@ model PlayerIntelligence {
   team   Team   @relation("IntelTeam", fields: [teamId], references: [id])
 
   @@unique([matchId, playerId])
+}
+
+model MatchTacticalSandbox {
+  id          String   @id @default(cuid())
+  matchId     String   @unique
+  phase       String
+  schema      String   @default("tactical-sandbox-v2")
+  contentJson Json
+  rawInput    Json?
+  rawOutput   Json?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  match Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
 }
 
 model TacticalScenario {
@@ -1154,7 +1509,22 @@ model AiReport {
   sourceSummary         Json?
   disclaimer            String       @db.Text
   modelName             String?
+  inputHash             String?
+  promptVersion         String?
+  sourceDataUpdatedAt   DateTime?
+  sourceIntelHash       String?
+  isStale               Boolean      @default(false)
+  staleReason           String?
+  staleDetectedAt       DateTime?
+  forcedPublish         Boolean      @default(false)
+  forcedPublishReason   String?
+  forcedPublishByUserId String?
+  source                String?      @default("deepseek")
   status                ReportStatus @default(DRAFT)
+  /**
+   * 发布唯一键：`${matchId}:${reportType}`，仅 PUBLISHED 时设置；保证同场同类型仅一份对外可见
+   */
+  publishedKey          String?      @unique
   rawInput              Json?
   rawOutput             Json?
   contentWarnings       Json?
@@ -1167,6 +1537,7 @@ model AiReport {
   prediction   MatchPrediction?   @relation(fields: [predictionId], references: [id], onDelete: SetNull)
   oddsSnapshot MatchOddsSnapshot? @relation(fields: [oddsSnapshotId], references: [id], onDelete: SetNull)
 
+  @@unique([matchId, reportType, inputHash])
   @@index([matchId, status])
   @@index([matchId, reportType, status])
 }
@@ -1252,4 +1623,78 @@ model ApiLog {
   success    Boolean
   message    String?  @db.Text
   createdAt  DateTime @default(now())
+}
+
+/** AF API 日配额快照（运维图表） */
+model AfQuotaDailySnapshot {
+  id        String   @id @default(cuid())
+  date      String   @unique
+  used      Int      @default(0)
+  limit     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/** 用户生成素材（海报/文案等） */
+model UserGeneratedAsset {
+  id           String   @id @default(cuid())
+  userId       String
+  assetType    String
+  matchId      String?
+  title        String?
+  url          String?
+  metadataJson Json?
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([matchId, createdAt])
+}
+
+/** 全站实体中文翻译（权威记录；实体 nameCn 为 approved 回写缓存） */
+model EntityTranslation {
+  id             String    @id @default(cuid())
+  entityType     String
+  entityId       String?
+  externalSource String?  @db.VarChar(32)
+  externalId     String?  @db.VarChar(64)
+  locale         String    @default("zh-CN")
+  field          String    @default("name")
+  sourceText     String?
+  translatedText String
+  shortText      String?
+  aliasJson      Json?
+  metadataJson   Json?
+  source         String
+  status         String
+  confidence     Float?
+  locked         Boolean   @default(false)
+  updatedBy      String?
+  approvedBy     String?
+  approvedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@unique([entityType, externalId, locale, field], map: "et_ext_locale_field_uq")
+  @@index([entityType, entityId])
+  @@index([status, source])
+}
+
+/** Admin 运维后台操作审计 */
+model AdminAuditLog {
+  id           String   @id @default(cuid())
+  operatorId   String?
+  operatorName String?
+  action       String
+  targetType   String?
+  targetId     String?
+  beforeJson   Json?
+  afterJson    Json?
+  ip           String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([operatorId, createdAt])
 }

@@ -1,15 +1,29 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { AiReportType, ReportStatus, UserRole } from '@prisma/client';
+import {
+  aiReportPromptVersion,
+  bundleSourceDataUpdatedAt,
+  computeAiReportInputHash,
+} from './ai-report-input-hash.util';
+import { MatchLlmBundleInputService } from '../match-af-raw-bundle/match-llm-bundle-input.service';
 import { LLM_DATA_STEWARD_ADDENDUM } from '../match-llm-dossier/llm-dossier-policy';
 import { MatchLlmDossierService } from '../match-llm-dossier/match-llm-dossier.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { DeepseekService } from './deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
+import { PreMatchIntelLongService } from './pre-match-intel-long.service';
 import { DEFAULT_AI_DISCLAIMER } from '../common/constants/disclaimer.constant';
 import { validateReportBeforePublish, sanitizeAiReportText } from '../common/utils/content-safety';
 import { RequestUser } from '../common/types/request-user.type';
+import { upsertPreMatchDraft } from './ai-report-draft-persistence.util';
 
 const AI_REPORT_BASE_SYSTEM =
-  '你是一名足球赛前情报分析助手。你只能根据输入的结构化数据生成中文分析报告。不得编造任何真实数据。不得提供投注建议。不得承诺赛果。必须输出合法 JSON。缺少数据时必须写“暂无可靠公开数据”。所有预测类内容必须明确属于“模型估算”或“AI推演”。';
+  '你是一名足球赛前情报分析助手。你只能根据输入的结构化数据生成中文分析报告。不得编造任何真实数据。不得提供投注建议。不得承诺赛果。必须输出合法 JSON。缺少数据时必须写“暂无可靠公开数据”。所有预测类内容必须明确属于“模型估算”或“AI推演”。' +
+  '禁止写 ELO、eloRating 或数据库默认球队评分；实力对比仅引用 layers.afTeamComparison（API-Football）与 layers.prediction，无 AF 对比时写「暂无 API-Football 官方对比数据」。';
 
 const AI_REPORT_JSON_KEYS =
   'JSON 顶层必须包含且不得为空的字段：freeSummary（中文 120–450 字，面向球迷；禁止「占位」「运维」「待补充」等元话语）、disclaimer（免责声明字符串）。' +
@@ -26,8 +40,11 @@ const AI_REPORT_SYSTEM_WITH_STEWARD = `${AI_REPORT_BASE_SYSTEM}\n\n${AI_REPORT_J
 export class AiReportService {
   constructor(
     private readonly prisma: PrismaService,
+    private readonly config: ConfigService,
     private readonly deepseek: DeepseekService,
     private readonly dossier: MatchLlmDossierService,
+    private readonly bundleInput: MatchLlmBundleInputService,
+    private readonly preMatchIntelLong: PreMatchIntelLongService,
   ) {}
 
   /**
@@ -35,7 +52,11 @@ export class AiReportService {
    */
   async generate(
     matchId: string,
-    opts?: { skipExternalPreparation?: boolean },
+    opts?: {
+      skipExternalPreparation?: boolean;
+      generateLongForm?: boolean;
+      forceRegenerate?: boolean;
+    },
   ) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
@@ -51,6 +72,52 @@ export class AiReportService {
     });
     if (!match) throw new NotFoundException('Match not found');
 
+    const bundleRow = await this.prisma.matchAfRawBundle.findUnique({
+      where: { matchId },
+    });
+    const homeSnap = match.teamSnapshots.find((s) => s.isHome);
+    const awaySnap = match.teamSnapshots.find((s) => !s.isHome);
+    const weather = await this.prisma.weatherSnapshot.findUnique({
+      where: { matchId },
+    });
+    const inputHash = computeAiReportInputHash({
+      fixtureJson: bundleRow?.fixtureJson,
+      injuriesJson: bundleRow?.injuriesJson,
+      predictionsJson: bundleRow?.predictionsJson,
+      lineupsJson: bundleRow?.lineupsJson,
+      statisticsJson: bundleRow?.statisticsJson,
+      playersJson: bundleRow?.playersJson,
+      oddsLatestJson: bundleRow?.oddsLatestJson,
+      h2hJson: bundleRow?.h2hJson,
+      homeSnapshotHash: homeSnap?.contentHash ?? null,
+      awaySnapshotHash: awaySnap?.contentHash ?? null,
+      weatherSnapshotHash: weather?.contentHash ?? null,
+      activePredictionInputsHash: match.activePrediction?.inputsHash ?? null,
+    });
+    const promptVersion = aiReportPromptVersion();
+
+    const forceRegenerate = opts?.forceRegenerate === true;
+    if (
+      !forceRegenerate &&
+      this.config.get<boolean>('enableAfRawBundle') !== false
+    ) {
+      const existing = await this.prisma.aiReport.findFirst({
+        where: {
+          matchId,
+          reportType: AiReportType.PRE_MATCH,
+          inputHash,
+          status: ReportStatus.PUBLISHED,
+        },
+        orderBy: { updatedAt: 'desc' },
+      });
+      if (existing) {
+        return { ...existing, reused: true };
+      }
+    }
+
+    const bundlePayload = await this.bundleInput.buildForMatch(matchId);
+    const bundlePrompt = this.bundleInput.formatForPrompt(bundlePayload);
+
     const enriched = opts?.skipExternalPreparation
       ? await this.dossier.buildDossier(matchId)
       : await this.dossier.prepareEnrichedDossier(matchId, {
@@ -58,10 +125,15 @@ export class AiReportService {
           skipPublicFetch: false,
           publicFetchForce: false,
         });
-    const userPrompt = this.dossier.formatForMatchReportPrompt(enriched, 14_000);
+    const userPrompt = [
+      this.dossier.formatForMatchReportPrompt(enriched, 10_000),
+      '\n\n--- API-Football Bundle（事实边界）---\n',
+      bundlePrompt,
+    ].join('');
 
     const rawInput = {
       dossier: enriched,
+      afBundle: bundlePayload,
       matchCore: {
         id: match.id,
         kickoffTime: match.kickoffTime,
@@ -96,10 +168,12 @@ export class AiReportService {
 
     const pred = match.activePrediction;
 
-    const report = await this.prisma.aiReport.create({
+    const { report, reused } = await upsertPreMatchDraft(this.prisma, {
+      matchId,
+      inputHash,
+      mode: forceRegenerate ? 'forceRegenerate' : 'generate',
       data: {
         matchId,
-        reportType: AiReportType.PRE_MATCH,
         predictionId: pred?.id ?? null,
         oddsSnapshotId: pred?.oddsSnapshotId ?? null,
         freeSummary: sum.text,
@@ -115,19 +189,25 @@ export class AiReportService {
         socialGuide: parsed.socialGuide as object,
         sourceSummary: parsed.sourceSummary as object,
         disclaimer: parsed.disclaimer || DEFAULT_AI_DISCLAIMER,
-        status: ReportStatus.DRAFT,
+        promptVersion,
+        source: 'deepseek',
+        sourceDataUpdatedAt: bundleSourceDataUpdatedAt(bundleRow?.syncedAt ?? null),
         rawInput: rawInput as object,
         rawOutput: parsed as object,
         contentWarnings: contentWarnings.length ? contentWarnings : undefined,
       },
     });
 
-    await this.prisma.match.update({
-      where: { id: matchId },
-      data: { reportStatus: ReportStatus.DRAFT },
-    });
+    const wantLong = opts?.generateLongForm === true;
+    if (wantLong) {
+      try {
+        await this.preMatchIntelLong.attachToReport(report.id);
+      } catch {
+        /* 长文失败不阻断短摘要 */
+      }
+    }
 
-    return report;
+    return { ...report, reused };
   }
 
   async publish(matchId: string, user: RequestUser) {

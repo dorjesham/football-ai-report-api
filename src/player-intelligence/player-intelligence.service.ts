@@ -2,7 +2,7 @@ import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DataQuality, DataSourceType, RiskLevel } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { z } from 'zod';
-import { DeepseekService } from '../ai-report/deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { LLM_DATA_STEWARD_ADDENDUM } from '../match-llm-dossier/llm-dossier-policy';
 import { MatchLlmDossierService } from '../match-llm-dossier/match-llm-dossier.service';
 import { shouldUseDeepseekMock } from '../common/utils/deepseek-env.util';

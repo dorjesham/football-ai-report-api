@@ -1,3 +1,5 @@
+> **内容已合并至 [Web前端对接文档-完整版.md](./Web前端对接文档-完整版.md)**。下文保留备查。
+
 # Web 前端对接回复（Batch 1 + §2）
 
 > **日期**：2026-05-17（登录改造 2026-05-17）  
@@ -16,7 +18,9 @@
 | 登录文档 | **[登录注册对接说明.md](./登录注册对接说明.md)** |
 | 比赛详情 | **[Web比赛详情对接说明.md](./Web比赛详情对接说明.md)**（多接口组合、勿调 Admin） |
 | 数据管线 | [docs/比赛数据管线运维说明.md](./docs/比赛数据管线运维说明.md) |
-| 积分榜 / 球员榜 | **[Web积分榜球员榜对接说明.md](./Web积分榜球员榜对接说明.md)**（`GET /leagues/standings`、`GET /rankings/players`） |
+| 积分榜 / 球员榜 | **[Web积分榜球员榜对接说明.md](./Web积分榜球员榜对接说明.md)**（`GET /leagues/standings`、`GET /rankings/players?source=auto`） |
+| 赛程工具 / 侧边栏计数 | **[Web赛程工具对接说明.md](./Web赛程工具对接说明.md)**（`GET /teams/:id/upcoming-schedule`、`GET /competitions/match-counts`） |
+| 业务缺口状态 | **[Web 前端 — 业务侧缺口文档.md](./Web%20前端%20—%20业务侧缺口文档.md)** 顶部「后端交付状态」表 |
 
 ---
 

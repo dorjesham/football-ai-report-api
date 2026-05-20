@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { DataQuality, DataSourceType } from '@prisma/client';
 import axios from 'axios';
 import { z } from 'zod';
-import { DeepseekService } from '../ai-report/deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { LLM_DATA_STEWARD_ADDENDUM } from '../match-llm-dossier/llm-dossier-policy';
 import { MatchLlmDossierService } from '../match-llm-dossier/match-llm-dossier.service';
 import { shouldUseDeepseekMock } from '../common/utils/deepseek-env.util';

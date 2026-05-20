@@ -3,13 +3,61 @@ import { MatchStatus, Team } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateCompetitionDto } from './dto/create-competition.dto';
 import { UpdateCompetitionDto } from './dto/update-competition.dto';
+import { MatchPresentationEnricherService } from '../localization/match-presentation-enricher.service';
 
 @Injectable()
 export class CompetitionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly presentation: MatchPresentationEnricherService,
+  ) {}
 
-  findAll(filters: { tournamentId?: string; seasonId?: string }) {
-    return this.prisma.competition.findMany({
+  async matchCounts(filters: {
+    from?: Date;
+    to?: Date;
+    status?: MatchStatus;
+    tournamentId?: string;
+    seasonId?: string;
+  }) {
+    const where = {
+      ...(filters.tournamentId ? { tournamentId: filters.tournamentId } : {}),
+      ...(filters.seasonId ? { seasonId: filters.seasonId } : {}),
+      ...(filters.status ? { status: filters.status } : {}),
+      ...(filters.from || filters.to ?
+        {
+          kickoffTime: {
+            ...(filters.from ? { gte: filters.from } : {}),
+            ...(filters.to ? { lte: filters.to } : {}),
+          },
+        }
+      : {}),
+    };
+    const grouped = await this.prisma.match.groupBy({
+      by: ['competitionId'],
+      where,
+      _count: { _all: true },
+    });
+    const compIds = grouped.map((g) => g.competitionId);
+    const comps = await this.prisma.competition.findMany({
+      where: { id: { in: compIds } },
+      select: { id: true, code: true, nameCn: true, nameEn: true },
+    });
+    const byId = new Map(comps.map((c) => [c.id, c]));
+    return {
+      from: filters.from?.toISOString() ?? null,
+      to: filters.to?.toISOString() ?? null,
+      status: filters.status ?? null,
+      items: grouped.map((g) => ({
+        competitionId: g.competitionId,
+        code: byId.get(g.competitionId)?.code ?? null,
+        nameCn: byId.get(g.competitionId)?.nameCn ?? null,
+        matchCount: g._count._all,
+      })),
+    };
+  }
+
+  async findAll(filters: { tournamentId?: string; seasonId?: string }) {
+    const rows = await this.prisma.competition.findMany({
       where: {
         tournamentId: filters.tournamentId,
         seasonId: filters.seasonId,
@@ -17,6 +65,14 @@ export class CompetitionsService {
       include: { tournament: true, season: true },
       orderBy: { nameCn: 'asc' },
     });
+    return rows.map((c) =>
+      this.presentation.enrichCompetition({
+        nameCn: c.nameCn,
+        nameEn: c.nameEn,
+        code: c.code,
+        apiSportsLeagueId: c.apiSportsLeagueId,
+      }),
+    );
   }
 
   async findOne(id: string) {
@@ -25,7 +81,15 @@ export class CompetitionsService {
       include: { tournament: true, season: true },
     });
     if (!c) throw new NotFoundException('Competition not found');
-    return c;
+    return {
+      ...c,
+      ...this.presentation.enrichCompetition({
+        nameCn: c.nameCn,
+        nameEn: c.nameEn,
+        code: c.code,
+        apiSportsLeagueId: c.apiSportsLeagueId,
+      }),
+    };
   }
 
   create(dto: CreateCompetitionDto) {
@@ -89,20 +153,29 @@ export class CompetitionsService {
       country: r.country,
       wcGroup: r.wcGroup,
       founded: r.founded,
-      eloRating: r.eloRating,
       wc2026Profile: slim ? this.slimProfile(r.wc2026Profile) : r.wc2026Profile,
     };
   }
 
+  private wcTeamsWhere(competitionId: string) {
+    return {
+      OR: [
+        { externalId: { startsWith: 'af-t-' } },
+        { homeMatches: { some: { competitionId } } },
+        { awayMatches: { some: { competitionId } } },
+      ],
+    };
+  }
+
   /**
-   * 2026 世界杯 48 强（种子 externalId 前缀 `wc26-`）。
+   * 2026 世界杯国家队（AF `af-t-*` 或已关联本届 WC 赛程）。
    * `?slim=1` 时省略 `recentInternational.matches` 以减小体积。
    */
   async listWorldCup2026Teams(competitionId: string, slim?: boolean) {
     await this.assertWorldCupCompetition(competitionId);
 
     const rows = await this.prisma.team.findMany({
-      where: { externalId: { startsWith: 'wc26-' } },
+      where: this.wcTeamsWhere(competitionId),
       orderBy: [{ wcGroup: 'asc' }, { nameCn: 'asc' }],
     });
 
@@ -117,7 +190,7 @@ export class CompetitionsService {
   ) {
     await this.assertWorldCupCompetition(competitionId);
     const row = await this.prisma.team.findFirst({
-      where: { id: teamId, externalId: { startsWith: 'wc26-' } },
+      where: { id: teamId, ...this.wcTeamsWhere(competitionId) },
     });
     if (!row) {
       throw new NotFoundException(
@@ -134,7 +207,7 @@ export class CompetitionsService {
   async getWorldCup2026TeamSchedule(competitionId: string, teamId: string) {
     await this.assertWorldCupCompetition(competitionId);
     const team = await this.prisma.team.findFirst({
-      where: { id: teamId, externalId: { startsWith: 'wc26-' } },
+      where: { id: teamId, ...this.wcTeamsWhere(competitionId) },
     });
     if (!team) {
       throw new NotFoundException(

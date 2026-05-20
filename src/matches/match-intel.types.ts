@@ -23,6 +23,7 @@ export interface MatchIntelMeta {
    * 权威状态以 **`GET /matches/:id` 的 `match.status`** 为准；本字段仅辅助轮询与 UI（勿单独用分钟数顶死「90'」）。
    */
   liveStatusSyncHint?: MatchIntelLiveStatusSyncHint | null;
+  statusCn?: string | null;
 }
 
 /** 与 `computeLiveStatusSyncHint` 对齐；不替代 Prisma `MatchStatus`。 */
@@ -66,11 +67,15 @@ export interface MatchIntelTeamSnapshot {
   dataSource: string;
 }
 
+export type TranslationStatus = 'approved' | 'draft' | 'fallback';
+
 export interface MatchIntelTeamBlock {
   side: 'home' | 'away';
   teamId: string;
   nameCn: string;
   nameEn: string | null;
+  displayName: string;
+  translationStatus: TranslationStatus;
   logoUrl: string | null;
   /**
    * OLS 本场基础 TPR（与胜率模型一致的分项）。
@@ -138,6 +143,8 @@ export interface MatchIntelRefereeRef {
   id: string;
   nameCn: string;
   nameEn: string | null;
+  displayName: string;
+  translationStatus: TranslationStatus;
   /** 头像 URL（库内或手工映射） */
   avatarUrl: string | null;
   country: string | null;
@@ -184,6 +191,8 @@ export interface MatchIntelPlayerRow {
   teamId: string;
   nameCn: string;
   nameEn: string | null;
+  displayName: string;
+  translationStatus: TranslationStatus;
   avatarUrl: string | null;
   /** OLS 球员 PPR */
   powerRating: number | null;

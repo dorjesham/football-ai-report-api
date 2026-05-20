@@ -1,3 +1,5 @@
+import type { AfTeamComparisonSummary } from '../match-af-raw-bundle/af-predictions-comparison.util';
+
 export type DataAvailabilityStatus = 'present' | 'partial' | 'missing';
 
 export type MatchLlmDossier = {
@@ -20,9 +22,23 @@ export type MatchLlmDossier = {
       round: string | null;
     };
     teams: {
-      home: { id: string; nameCn: string; nameEn: string | null; eloRating: number };
-      away: { id: string; nameCn: string; nameEn: string | null; eloRating: number };
+      home: {
+        id: string;
+        nameCn: string;
+        nameEn: string | null;
+        displayName: string;
+        translationStatus: string;
+      };
+      away: {
+        id: string;
+        nameCn: string;
+        nameEn: string | null;
+        displayName: string;
+        translationStatus: string;
+      };
     };
+    /** API-Football predictions.comparison / percent（非数据库 ELO） */
+    afTeamComparison: AfTeamComparisonSummary;
     teamSnapshots: {
       home: Record<string, unknown> | null;
       away: Record<string, unknown> | null;

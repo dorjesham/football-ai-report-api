@@ -25,6 +25,8 @@ export class AdminService {
     const [
       matchCount,
       todayMatches,
+      liveMatchCount,
+      afMatchCount,
       featured,
       publishedReports,
       draftReports,
@@ -35,6 +37,10 @@ export class AdminService {
       this.prisma.match.count(),
       this.prisma.match.count({
         where: { kickoffTime: { gte: today, lt: tomorrow } },
+      }),
+      this.prisma.match.count({ where: { status: MatchStatus.LIVE } }),
+      this.prisma.match.count({
+        where: { dataSource: 'API_FOOTBALL' as never },
       }),
       this.prisma.match.count({ where: { isFeatured: true } }),
       this.prisma.aiReport.count({ where: { status: ReportStatus.PUBLISHED } }),
@@ -64,6 +70,8 @@ export class AdminService {
     return {
       matchCount,
       todayMatches,
+      liveMatchCount,
+      afMatchCount,
       featuredMatchCount: featured,
       publishedReports,
       draftReports,
@@ -181,10 +189,10 @@ export class AdminService {
     });
   }
 
-  /** 更新世界杯种子队展示字段（`wc26-*`）；供 Admin JSON 与 AdminView 表单共用。 */
+  /** 更新世界杯国家队展示字段（`af-t-*`）；供 Admin JSON 与 AdminView 表单共用。 */
   async patchWc2026TeamDetail(teamId: string, dto: UpdateWc2026TeamDetailDto) {
     const team = await this.prisma.team.findFirst({
-      where: { id: teamId, externalId: { startsWith: 'wc26-' } },
+      where: { id: teamId, externalId: { startsWith: 'af-t-' } },
     });
     if (!team) {
       throw new NotFoundException('WC2026 national team not found');

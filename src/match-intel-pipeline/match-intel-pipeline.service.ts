@@ -6,20 +6,24 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PipelineRunStatus, Prisma } from '@prisma/client';
 import { AiReportService } from '../ai-report/ai-report.service';
-import { DeepseekService } from '../ai-report/deepseek.service';
+import { PreMatchIntelLongService } from '../ai-report/pre-match-intel-long.service';
+import { PostMatchTacticalLongService } from '../ai-report/post-match-tactical-long.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { shouldUseDeepseekMock } from '../common/utils/deepseek-env.util';
 import { FantasyService } from '../fantasy/fantasy.service';
 import { FootballDataService } from '../football-data/football-data.service';
 import { HeadToHeadService } from '../head-to-head/head-to-head.service';
 import { PlayerIntelligenceService } from '../player-intelligence/player-intelligence.service';
-import { PredictionService } from '../prediction/prediction.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { PublicSourcesService } from '../public-sources/public-sources.service';
 import { SocialGuideService } from '../social-guide/social-guide.service';
 import { TacticsService } from '../tactics/tactics.service';
 import { WeatherService } from '../weather/weather.service';
-import { MatchAfFactsSyncService } from '../api-football/match-af-facts-sync.service';
+import { AfSyncOrchestrator } from '../api-football/af-sync-orchestrator.service';
 import { MatchAfPreMatchSnapshotService } from '../api-football/match-af-pre-match-snapshot.service';
+import { MatchOddsSnapshotService } from '../api-football/match-odds-snapshot.service';
+import { resolvePreMatchPhase } from '../common/utils/pre-match-phase.util';
+import { MatchCacheInvalidationService } from '../matches/match-cache-invalidation.service';
 import {
   shouldRunAfMatchFactsSync,
   shouldRunFootballDataIntelSync,
@@ -35,6 +39,14 @@ export type MatchIntelPipelineOptions = {
   skipWeather?: boolean;
   skipDeepseekSmoke?: boolean;
   skipAiReport?: boolean;
+  /** v2：跳过 MatchPrediction 管线（官方预测改读 MatchAfRawBundle） */
+  skipPrediction?: boolean;
+  skipFantasy?: boolean;
+  skipHeadToHead?: boolean;
+  /** 仅跑 AF Raw 全量同步 */
+  afRawOnly?: boolean;
+  /** 仅跑 DeepSeek / 分析步骤 */
+  analysisOnly?: boolean;
 };
 
 export type PipelineStepRecord = {
@@ -64,7 +76,6 @@ export class MatchIntelPipelineService {
     private readonly footballData: FootballDataService,
     private readonly publicSources: PublicSourcesService,
     private readonly weather: WeatherService,
-    private readonly prediction: PredictionService,
     private readonly playerIntel: PlayerIntelligenceService,
     private readonly tactics: TacticsService,
     private readonly fantasy: FantasyService,
@@ -72,20 +83,58 @@ export class MatchIntelPipelineService {
     private readonly social: SocialGuideService,
     private readonly aiReport: AiReportService,
     private readonly deepseek: DeepseekService,
-    private readonly matchAfFacts: MatchAfFactsSyncService,
+    private readonly afSync: AfSyncOrchestrator,
     private readonly preMatchSnapshots: MatchAfPreMatchSnapshotService,
+    private readonly oddsSnapshots: MatchOddsSnapshotService,
+    private readonly cacheInvalidation: MatchCacheInvalidationService,
+    private readonly preMatchIntelLong: PreMatchIntelLongService,
+    private readonly postMatchTacticalLong: PostMatchTacticalLongService,
   ) {}
 
   /**
    * Phase C：按固定顺序跑满单场情报依赖的写入步骤；各步独立 try/catch，默认失败不阻断后续。
    * 结果写入 {@link MatchPipelineRun} 便于审计与联调。
    */
+  async runAfRawFull(matchId: string) {
+    return this.afSync.syncSingleMatchFull(matchId, { force: true });
+  }
+
+  async runAnalysisGenerate(
+    matchId: string,
+    opts?: Omit<MatchIntelPipelineOptions, 'afRawOnly' | 'analysisOnly'>,
+  ) {
+    return this.runFull(matchId, {
+      ...opts,
+      skipAfFacts: true,
+      skipAfPreMatchSnapshots: true,
+      skipPrediction: true,
+      skipFantasy: true,
+      skipHeadToHead: true,
+      skipFdIntel: true,
+      skipPublicSources: true,
+      skipWeather: true,
+      analysisOnly: true,
+    });
+  }
+
   async runFull(
     matchId: string,
     opts?: MatchIntelPipelineOptions,
   ): Promise<MatchIntelPipelineResult> {
     const m = await this.prisma.match.findUnique({ where: { id: matchId } });
     if (!m) throw new NotFoundException('Match not found');
+
+    if (opts?.afRawOnly) {
+      await this.runAfRawFull(matchId);
+      return {
+        runId: 'af-raw-only',
+        matchId,
+        status: PipelineRunStatus.SUCCEEDED,
+        deepseekReal: !shouldUseDeepseekMock(this.config),
+        steps: [{ id: 'af_raw_full', status: 'OK', durationMs: 0 }],
+        summary: 'af_raw_full only',
+      };
+    }
 
     const stopOnFailure = opts?.stopOnFailure === true;
     const deepseekReal = !shouldUseDeepseekMock(this.config);
@@ -161,7 +210,21 @@ export class MatchIntelPipelineService {
       run: () => Promise<unknown>;
     };
 
+    const analysisOnly = opts?.analysisOnly === true;
+
     const stepDefs: StepDef[] = [
+      {
+        id: 'af_raw_full',
+        optional: true,
+        skip: analysisOnly || opts?.skipAfFacts === true,
+        run: async () => {
+          if (this.config.get<boolean>('enableAfRawBundle') === false) {
+            return { stepDetail: JSON.stringify({ skipped: true, reason: 'bundle disabled' }) };
+          }
+          const out = await this.afSync.syncSingleMatchFull(matchId, { delayMs: 400 });
+          return { stepDetail: JSON.stringify({ fixtureId: out.fixtureId, endpoints: out.endpoints }) };
+        },
+      },
       {
         id: 'deepseek_smoke',
         optional: true,
@@ -175,49 +238,20 @@ export class MatchIntelPipelineService {
         },
       },
       {
-        id: 'af_match_facts',
-        optional: true,
-        skip: opts?.skipAfFacts === true,
-        run: async () => {
-          if (!shouldRunAfMatchFactsSync(m)) {
-            return {
-              stepDetail: JSON.stringify({
-                skipped: true,
-                reason: 'externalId not af-f-{id}',
-              }),
-            };
-          }
-          const key = this.config.get<string>('apiFootballApiKey')?.trim();
-          if (!key) {
-            this.log.warn(`[pipeline ${matchId}] af_match_facts: skip (no API_FOOTBALL_API_KEY)`);
-            return {
-              stepDetail: JSON.stringify({
-                skipped: true,
-                reason: 'no API_FOOTBALL_API_KEY',
-              }),
-            };
-          }
-          const out = await this.matchAfFacts.syncByMatchId(matchId, { delayMs: 400 });
-          this.log.log(`[pipeline ${matchId}] af_match_facts OK fixture=${out.fixtureId}`);
-          return {
-            stepDetail: JSON.stringify({
-              endpoints: ['fixture', 'lineups', 'events', 'statistics'],
-              statisticsEmpty: out.detail.statisticsRows === 0,
-              ...out.detail,
-            }),
-          };
-        },
-      },
-      {
         id: 'fd_intel',
         optional: true,
-        skip: opts?.skipFdIntel === true,
+        skip:
+          opts?.skipFdIntel === true ||
+          this.config.get<boolean>('enableFootballData') !== true,
         run: async () => {
-          if (!shouldRunFootballDataIntelSync(m)) {
-            this.log.warn(
-              `[pipeline ${matchId}] fd_intel: skip (non-Football-Data primary; use af_match_facts for af-f-*)`,
-            );
-            return;
+          const fdEnabled = this.config.get<boolean>('enableFootballData') === true;
+          if (!shouldRunFootballDataIntelSync(m, fdEnabled)) {
+            return {
+              stepDetail: JSON.stringify({
+                skipped: true,
+                reason: 'Football-Data disabled or non-FD match',
+              }),
+            };
           }
           await this.footballData.syncMatchIntelFromFootballData(matchId);
         },
@@ -250,12 +284,15 @@ export class MatchIntelPipelineService {
               stepDetail: JSON.stringify({ skipped: true, reason: 'no API_FOOTBALL_API_KEY' }),
             };
           }
+          const phase = resolvePreMatchPhase(new Date(), m.kickoffTime);
           const out = await this.preMatchSnapshots.syncByMatchId(matchId, {
             delayMs: 400,
             force: true,
+            phase,
           });
           return {
             stepDetail: JSON.stringify({
+              phase,
               teamSnapshots: out.teamSnapshots,
               playerSnapshots: out.playerSnapshots,
               warnings: out.warnings.slice(0, 5),
@@ -265,9 +302,35 @@ export class MatchIntelPipelineService {
         },
       },
       {
-        id: 'prediction',
-        optional: false,
-        run: () => this.prediction.generateForMatch(matchId).then(() => undefined),
+        id: 'odds_snapshots',
+        optional: true,
+        skip: opts?.skipAfPreMatchSnapshots === true,
+        run: async () => {
+          if (!shouldRunAfMatchFactsSync(m)) {
+            return {
+              stepDetail: JSON.stringify({ skipped: true, reason: 'non af-f-*' }),
+            };
+          }
+          const key = this.config.get<string>('apiFootballApiKey')?.trim();
+          if (!key) {
+            return {
+              stepDetail: JSON.stringify({ skipped: true, reason: 'no API_FOOTBALL_API_KEY' }),
+            };
+          }
+          const phase = resolvePreMatchPhase(new Date(), m.kickoffTime);
+          const results: Record<string, string> = {};
+          for (const p of ['T24', 'T1'] as const) {
+            try {
+              const out = await this.oddsSnapshots.captureByMatchId(matchId, p, {
+                force: p !== phase,
+              });
+              results[p] = out.skipped ? 'skipped' : 'ok';
+            } catch (e) {
+              results[p] = e instanceof Error ? e.message : String(e);
+            }
+          }
+          return { stepDetail: JSON.stringify({ primaryPhase: phase, results }) };
+        },
       },
       {
         id: 'player_intelligence',
@@ -281,12 +344,14 @@ export class MatchIntelPipelineService {
       },
       {
         id: 'fantasy',
-        optional: false,
+        optional: true,
+        skip: opts?.skipFantasy === true || analysisOnly,
         run: () => this.fantasy.generate(matchId).then(() => undefined),
       },
       {
         id: 'head_to_head',
-        optional: false,
+        optional: true,
+        skip: opts?.skipHeadToHead === true || analysisOnly,
         run: () => this.h2h.generate(matchId).then(() => undefined),
       },
       {
@@ -300,6 +365,18 @@ export class MatchIntelPipelineService {
         skip: opts?.skipAiReport === true,
         run: () =>
           this.aiReport.generate(matchId, { skipExternalPreparation: true }).then(() => undefined),
+      },
+      {
+        id: 'pre_match_intel_long',
+        optional: true,
+        skip: this.config.get<boolean>('enablePreMatchIntelLong') !== true,
+        run: () => this.preMatchIntelLong.generate(matchId, { skipExternalPreparation: true }).then(() => undefined),
+      },
+      {
+        id: 'post_match_tactical_long',
+        optional: true,
+        skip: this.config.get<boolean>('enablePostMatchTacticalLong') !== true,
+        run: () => this.postMatchTacticalLong.generate(matchId).then(() => undefined),
       },
     ];
 
@@ -341,6 +418,14 @@ export class MatchIntelPipelineService {
         steps: steps as unknown as Prisma.InputJsonValue,
       },
     });
+
+    try {
+      await this.cacheInvalidation.invalidateAfterMatchDataChange(matchId);
+    } catch (e) {
+      this.log.warn(
+        `[pipeline ${matchId}] cache invalidate failed: ${e instanceof Error ? e.message : String(e)}`,
+      );
+    }
 
     return {
       runId: runRow.id,

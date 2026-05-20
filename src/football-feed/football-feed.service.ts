@@ -89,6 +89,12 @@ export class FootballFeedService {
     });
   }
 
+  async fixturePlayers(dto: FootballFeedFixtureIdQueryDto) {
+    return this.af.passThroughGet('/fixtures/players', {
+      fixture: dto.fixture,
+    });
+  }
+
   async fixturesHeadToHead(dto: FootballFeedH2hQueryDto) {
     const base = this.leagueSeasonParams(dto);
     return this.af.passThroughGet('/fixtures/headtohead', {

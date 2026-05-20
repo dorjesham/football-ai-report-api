@@ -1,6 +1,6 @@
 {
-  "scheduledMatchId": null,
+  "scheduledMatchId": "cmpbfd6f901lap201oypcx4se",
   "liveMatchId": null,
   "finishedMatchId": null,
-  "_comment": "L2 人工签收：未开赛 / 进行中 / 已结束各一场，填 staging matchId"
+  "_comment": "L2 签收：未开赛 Chelsea vs Tottenham；勿用已结束的 Arsenal 场"
 }

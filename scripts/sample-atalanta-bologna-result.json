@@ -1,0 +1,445 @@
+{
+  "matchId": "cmpbfdfpb03xgp201hvi8qew8",
+  "startedAt": "2026-05-18T17:24:26.460Z",
+  "steps": [
+    {
+      "step": "A_af_facts_sync",
+      "ok": true,
+      "durationMs": 2128,
+      "summary": {
+        "fixtureId": 1378224,
+        "detail": {
+          "fixtureId": 1378224,
+          "lineupsSides": 2,
+          "eventsCount": 12,
+          "statisticsRows": 2,
+          "hasRawFixture": true,
+          "providerTag": "api-football-match-facts-v1",
+          "upstreamErrors": {
+            "lineups": "[]",
+            "events": "[]",
+            "statistics": "[]",
+            "fixture": "[]"
+          }
+        }
+      }
+    },
+    {
+      "step": "B_predictions_sync",
+      "ok": true,
+      "durationMs": 183,
+      "summary": {
+        "id": "cmpbh4sum0009pwzt76qu4uo8",
+        "matchId": "cmpbfdfpb03xgp201hvi8qew8",
+        "version": 1,
+        "lockedAt": null,
+        "inputsHash": "82f1ef1be108ee10833e8145012062ee",
+        "predictionMarkets": {
+          "schema": "prediction-markets-v1",
+          "markets": {
+            "1X2": {
+              "edge": null,
+              "model": {
+                "A": 10,
+                "D": 45,
+                "H": 45
+              },
+              "implied": null
+            },
+            "AH_0": {
+              "line": 0,
+              "powerDiff": 0,
+              "modelHomeCoverProb": 50
+            },
+            "OU_2_5": {
+              "line": 2.5,
+              "edgeOver": null,
+              "impliedOver": null,
+              "modelOverProb": 46
+            }
+          },
+          "oddsPhase": null,
+          "oddsSnapshotId": null
+        },
+        "oddsSnapshotId": null,
+        "homeWinProbability": 45,
+        "drawProbability": 45,
+        "awayWinProbability": 10,
+        "homeExpectedGoals": 1.35,
+        "awayExpectedGoals": 1.15,
+        "totalExpectedGoals": 2.5,
+        "totalGoalsTrend": "总进球趋势中性偏活跃",
+        "tempoIndex": 71,
+        "upsetIndex": 30,
+        "homeMatchPower": null,
+        "awayMatchPower": null,
+        "confidence": 73,
+        "modelVersion": "af-v1",
+        "factorBreakdown": {
+          "afRaw": {
+            "goals": {
+              "away": "-2.5",
+              "home": "-2.5"
+            },
+            "advice": "Double chance : Atalanta or draw",
+            "winner": {
+              "id": 499,
+              "name": "Atalanta",
+              "comment": "Win or draw"
+            },
+            "percent": {
+              "away": "10%",
+              "draw": "45%",
+              "home": "45%"
+            },
+            "under_over": null,
+            "win_or_draw": true
+          },
+          "winner": {
+            "id": 499,
+            "name": "Atalanta",
+            "comment": "Win or draw"
+          },
+          "warnings": [
+            "AF goals missing or invalid; using defaults for xG"
+          ],
+          "winOrDraw": true,
+          "modelVersion": "af-v1",
+          "winProbSource": "API_FOOTBALL"
+        },
+        "explanation": "Double chance : Atalanta or draw；倾向：Atalanta",
+        "dataQuality": "MODEL_ESTIMATED",
+        "dataSource": "API_FOOTBALL",
+        "createdAt": "2026-05-18T17:24:33.934Z",
+        "updatedAt": "2026-05-18T17:24:33.934Z"
+      }
+    },
+    {
+      "step": "C_prediction_grading",
+      "ok": true,
+      "durationMs": 4,
+      "summary": {
+        "skipped": true,
+        "reason": "not_locked",
+        "predictionId": "cmpbh4sum0009pwzt76qu4uo8"
+      }
+    },
+    {
+      "step": "D_post_match_report",
+      "ok": true,
+      "durationMs": 1440,
+      "summary": {
+        "id": "cmpbh4tyr000bpwztdq40qe80",
+        "matchId": "cmpbfdfpb03xgp201hvi8qew8",
+        "reportType": "POST_MATCH",
+        "predictionId": null,
+        "oddsSnapshotId": null,
+        "structuredContentJson": {
+          "motm": {
+            "teamSide": "home",
+            "rationale": [
+              {
+                "text": "暂无可靠球员事件数据。",
+                "pointers": [
+                  {
+                    "kind": "score",
+                    "field": "match"
+                  }
+                ]
+              }
+            ],
+            "playerName": "暂无"
+          },
+          "recap": [
+            {
+              "text": "终场比分 0-1。",
+              "pointers": [
+                {
+                  "kind": "score",
+                  "field": "match"
+                }
+              ]
+            },
+            {
+              "text": "半场 0-0。",
+              "pointers": [
+                {
+                  "kind": "score",
+                  "field": "ht"
+                }
+              ]
+            },
+            {
+              "text": "78' Bologna R. Orsolini 进球（Normal Goal）。",
+              "pointers": [
+                {
+                  "kind": "live_event",
+                  "eventId": "API_FOOTBALL|78|0|Goal|n|R. Orsolini|Normal Goal"
+                }
+              ]
+            }
+          ],
+          "schema": "post-match-analysis-v1",
+          "keyPlayers": [],
+          "turningPoints": [
+            {
+              "text": "78' Bologna — Goal（Normal Goal），R. Orsolini。",
+              "pointers": [
+                {
+                  "kind": "live_event",
+                  "eventId": "API_FOOTBALL|78|0|Goal|n|R. Orsolini|Normal Goal"
+                }
+              ]
+            }
+          ]
+        },
+        "factCheckJson": null,
+        "reviewedAt": null,
+        "reviewedByUserId": null,
+        "freeSummary": "终场比分定格。半场双方互交白卷。第78分钟，博洛尼亚取得进球。\n\n第78分钟，博洛尼亚攻入一球，打破僵局。\n\n暂无可靠球员事件数据。",
+        "dashboardSummary": "终场比分定格。半场双方互交白卷。第78分钟，博洛尼亚取得进球。",
+        "refereeAnalysis": null,
+        "weatherAnalysis": null,
+        "playerProfiles": null,
+        "tacticalScenarios": null,
+        "fantasyAdvice": null,
+        "historicalInsight": null,
+        "headToHeadInsight": null,
+        "expertVariables": null,
+        "socialGuide": null,
+        "sourceSummary": null,
+        "disclaimer": "本内容仅用于赛事回顾，不构成任何投注建议。",
+        "modelName": null,
+        "status": "DRAFT",
+        "rawInput": {
+          "structured": {
+            "motm": {
+              "teamSide": "home",
+              "rationale": [
+                {
+                  "text": "暂无可靠球员事件数据。",
+                  "pointers": [
+                    {
+                      "kind": "score",
+                      "field": "match"
+                    }
+                  ]
+                }
+              ],
+              "playerName": "暂无"
+            },
+            "recap": [
+              {
+                "text": "终场比分 0-1。",
+                "pointers": [
+                  {
+                    "kind": "score",
+                    "field": "match"
+                  }
+                ]
+              },
+              {
+                "text": "半场 0-0。",
+                "pointers": [
+                  {
+                    "kind": "score",
+                    "field": "ht"
+                  }
+                ]
+              },
+              {
+                "text": "78' Bologna R. Orsolini 进球（Normal Goal）。",
+                "pointers": [
+                  {
+                    "kind": "live_event",
+                    "eventId": "API_FOOTBALL|78|0|Goal|n|R. Orsolini|Normal Goal"
+                  }
+                ]
+              }
+            ],
+            "schema": "post-match-analysis-v1",
+            "keyPlayers": [],
+            "turningPoints": [
+              {
+                "text": "78' Bologna — Goal（Normal Goal），R. Orsolini。",
+                "pointers": [
+                  {
+                    "kind": "live_event",
+                    "eventId": "API_FOOTBALL|78|0|Goal|n|R. Orsolini|Normal Goal"
+                  }
+                ]
+              }
+            ]
+          }
+        },
+        "rawOutput": {
+          "sections": {
+            "motm": "暂无可靠球员事件数据。",
+            "recap": "终场比分定格。半场双方互交白卷。第78分钟，博洛尼亚取得进球。",
+            "keyPlayers": "",
+            "turningPoints": "第78分钟，博洛尼亚攻入一球，打破僵局。"
+          },
+          "disclaimer": "本内容仅用于赛事回顾，不构成任何投注建议。"
+        },
+        "contentWarnings": null,
+        "generatedAt": "2026-05-18T17:24:35.380Z",
+        "publishedAt": null,
+        "createdAt": "2026-05-18T17:24:35.380Z",
+        "updatedAt": "2026-05-18T17:24:35.380Z"
+      }
+    },
+    {
+      "step": "E_intel_full",
+      "ok": true,
+      "durationMs": 20485,
+      "summary": {
+        "runId": "cmpbh4tyy000dpwzt5aq3n742",
+        "matchId": "cmpbfdfpb03xgp201hvi8qew8",
+        "status": "PARTIAL",
+        "deepseekReal": true,
+        "deepseekSmoke": {
+          "ok": true,
+          "latencyMs": 844,
+          "model": "deepseek-chat"
+        },
+        "steps": [
+          {
+            "id": "deepseek_smoke",
+            "status": "OK",
+            "durationMs": 844
+          },
+          {
+            "id": "af_match_facts",
+            "status": "OK",
+            "durationMs": 3,
+            "detail": "{\"endpoints\":[\"fixture\",\"lineups\",\"events\",\"statistics\"],\"statisticsEmpty\":false,\"skipped\":true,\"reason\":\"facts complete (lineups/events/teamStats)\",\"fixtureId\":1378224}"
+          },
+          {
+            "id": "fd_intel",
+            "status": "SKIPPED",
+            "durationMs": 0,
+            "detail": "skipped by option"
+          },
+          {
+            "id": "public_sources",
+            "status": "OK",
+            "durationMs": 6810
+          },
+          {
+            "id": "weather",
+            "status": "FAILED",
+            "durationMs": 64,
+            "detail": "天气同步失败: HTTP 403 (https://devapi.qweather.com/geo/v2/city/lookup) — Invalid Host — An invalid or unauthorized API Host. — (https://dev.qweather.com/docs/resource/error-code/#invalid-host): Request failed with status code 403 当前 QWEATHER_BASE_URL 为公共域名，和风已要求使用控制台「设置」里的专属 API Host（https://*.qweatherapi.com）。请将 QWEATHER_BASE_URL 改为该地址并重启服务；QWEATHER_API_KEY 须为同一项目下的凭据。"
+          },
+          {
+            "id": "af_pre_match_snapshots",
+            "status": "OK",
+            "durationMs": 4553,
+            "detail": "{\"teamSnapshots\":2,\"playerSnapshots\":0,\"warnings\":[],\"leagueId\":135,\"season\":2026,\"injuriesCount\":16,\"standingsGroups\":0}"
+          },
+          {
+            "id": "prediction",
+            "status": "OK",
+            "durationMs": 184
+          },
+          {
+            "id": "player_intelligence",
+            "status": "OK",
+            "durationMs": 2
+          },
+          {
+            "id": "tactics",
+            "status": "OK",
+            "durationMs": 3518
+          },
+          {
+            "id": "fantasy",
+            "status": "OK",
+            "durationMs": 4448
+          },
+          {
+            "id": "head_to_head",
+            "status": "OK",
+            "durationMs": 5
+          },
+          {
+            "id": "social_guide",
+            "status": "OK",
+            "durationMs": 6
+          },
+          {
+            "id": "ai_report",
+            "status": "SKIPPED",
+            "durationMs": 0,
+            "detail": "skipped by option"
+          }
+        ],
+        "summary": "13 步：1 失败，2 跳过"
+      }
+    }
+  ],
+  "verification": {
+    "before": {
+      "externalId": "af-f-1378224",
+      "status": "FINISHED",
+      "score": "0-1",
+      "teams": "Atalanta vs Bologna",
+      "code": "SA",
+      "hasFacts": false,
+      "hasPrediction": false,
+      "aiReports": []
+    },
+    "after": {
+      "hasFacts": true,
+      "eventsCount": 12,
+      "dataAvailability": {
+        "events": "present",
+        "teamStats": "partial",
+        "narrative": "missing"
+      },
+      "narrativePresent": false,
+      "predictionModelVersion": "af-v1",
+      "grading": false,
+      "aiReports": [
+        {
+          "reportType": "POST_MATCH",
+          "status": "DRAFT"
+        }
+      ],
+      "tacticalCount": 3,
+      "playerIntelCount": 0,
+      "analysisPreview": {
+        "tacticsCount": 3,
+        "playerIntelCount": 0,
+        "hasPrediction": true
+      }
+    },
+    "postMatchSnippet": {
+      "phase": "post",
+      "eventsCount": 12,
+      "grading": false,
+      "narrativeSummary": null,
+      "note": "匿名 C 端仅展示 PUBLISHED 报告；DRAFT 时 narrative 为 missing"
+    },
+    "finalCendAfterPublish": {
+      "actions": [
+        "POST_MATCH DRAFT → PUBLISHED",
+        "locked activePrediction",
+        "re-graded prediction"
+      ],
+      "getPostMatchAnon": {
+        "eventsCount": 12,
+        "dataAvailability": {
+          "events": "present",
+          "teamStats": "partial",
+          "narrative": "present"
+        },
+        "hasNarrative": true,
+        "hasGrading": true,
+        "gradingHit1x2": false,
+        "gradingTopPick": "H",
+        "actualResult": "away_win_0-1"
+      }
+    }
+  }
+}

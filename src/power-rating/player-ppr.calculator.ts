@@ -29,13 +29,38 @@ export function mapFdPositionToGroup(position: string | null | undefined): Posit
   return 'DEFAULT';
 }
 
+function parsePositiveEuro(v: unknown): number | null {
+  if (typeof v === 'number' && Number.isFinite(v) && v > 0) return v;
+  if (typeof v === 'string' && v.trim()) {
+    const n = parseFloat(v.replace(/[^\d.]/g, ''));
+    if (Number.isFinite(n) && n > 0) return n;
+  }
+  return null;
+}
+
 export function extractMarketValueEuroFromProfile(profile: Prisma.JsonValue | null | undefined): number | null {
   if (profile == null || typeof profile !== 'object' || Array.isArray(profile)) return null;
   const root = profile as Record<string, unknown>;
+
+  const af = root.apiFootball as Record<string, unknown> | undefined;
+  const afSeasons = af?.seasons as Record<string, unknown> | undefined;
+  if (afSeasons && typeof afSeasons === 'object') {
+    for (const snap of Object.values(afSeasons)) {
+      if (!snap || typeof snap !== 'object') continue;
+      const s = snap as Record<string, unknown>;
+      const mv =
+        parsePositiveEuro(s.marketValue) ??
+        parsePositiveEuro(s.marketValueEuro) ??
+        parsePositiveEuro((s.player as Record<string, unknown> | undefined)?.marketValue);
+      if (mv != null) return mv;
+    }
+  }
+
   const fdSquad = root.fdSquad as Record<string, unknown> | undefined;
   const raw = fdSquad?.raw as Record<string, unknown> | undefined;
-  const mv = raw?.marketValue;
-  if (typeof mv === 'number' && Number.isFinite(mv) && mv > 0) return mv;
+  const fdMv = parsePositiveEuro(raw?.marketValue);
+  if (fdMv != null) return fdMv;
+
   return null;
 }
 

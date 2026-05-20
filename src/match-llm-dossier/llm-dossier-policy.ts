@@ -14,4 +14,6 @@ export const LLM_MATCH_REPORT_USER_PREAMBLE = `
 【任务】基于下方「分层事实材料」与 dataAvailability 生成赛前情报报告 JSON（字段与系统说明一致）。
 【优先级】footballData（FD 同步）> 数据库统计快照 > 公共来源摘录；缺失维度在对应文案中写「暂无可靠公开数据」或等价表述，勿用想象补全。
 【输出体裁】freeSummary 必须严格按系统说明的四段顺序撰写；各 JSON 子对象内先给一句结论、再列要点，避免段间重复与同义堆砌；禁止复述 JSON 键名或整段粘贴 layers 原文。
+【实力对比】禁止写「ELO」「eloRating」或引用数据库球队评分；走势/实力对比仅使用 layers.afTeamComparison（API-Football comparison 百分比）与 layers.prediction；若 afTeamComparison.available 为 false，须写「暂无 API-Football 官方对比数据」，不得用 1500 等默认值编造势均力敌。
+【队名】必须使用 layers.teams.*.displayName 作为中文队名；无 displayName 时保留 nameEn，禁止自行音译或编造译名。
 `.trim();

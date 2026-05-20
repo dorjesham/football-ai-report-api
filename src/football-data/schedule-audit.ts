@@ -20,10 +20,17 @@ export type FdMatchLite = {
   };
 };
 
-export function wcCodeFromTeamExternalId(ext: string | null | undefined): string | null {
+export function wcCodeFromTeamExternalId(
+  ext: string | null | undefined,
+  shortName?: string | null,
+): string | null {
   if (!ext) return null;
   const m = /^wc26-([A-Z0-9]{2,4})$/i.exec(ext.trim());
-  return m ? m[1].toUpperCase() : null;
+  if (m) return m[1].toUpperCase();
+  if (ext.startsWith('af-t-') && shortName?.trim()) {
+    return shortName.trim().toUpperCase();
+  }
+  return null;
 }
 
 export function mapFdMatchStatusToPrisma(raw: string | undefined): MatchStatus {
@@ -155,8 +162,8 @@ export async function auditWcScheduleVsFootballData(opts: {
   const dbMatches = await prisma.match.findMany({
     where: { competitionId },
     include: {
-      homeTeam: { select: { id: true, externalId: true, nameEn: true } },
-      awayTeam: { select: { id: true, externalId: true, nameEn: true } },
+      homeTeam: { select: { id: true, externalId: true, nameEn: true, shortName: true } },
+      awayTeam: { select: { id: true, externalId: true, nameEn: true, shortName: true } },
     },
     orderBy: { kickoffTime: 'asc' },
   });
@@ -168,8 +175,8 @@ export async function auditWcScheduleVsFootballData(opts: {
   let statusMismatch = 0;
 
   for (const m of dbMatches) {
-    const hc = wcCodeFromTeamExternalId(m.homeTeam.externalId);
-    const ac = wcCodeFromTeamExternalId(m.awayTeam.externalId);
+    const hc = wcCodeFromTeamExternalId(m.homeTeam.externalId, m.homeTeam.shortName);
+    const ac = wcCodeFromTeamExternalId(m.awayTeam.externalId, m.awayTeam.shortName);
     const pair = hc && ac ? `${hc}-${ac}` : `${m.homeTeam.nameEn} vs ${m.awayTeam.nameEn}`;
     let fd = hc && ac ? pairToFd.get(`${hc}-${ac}`) : undefined;
     let orderNote = '';
@@ -260,8 +267,8 @@ export async function auditWcScheduleVsFootballData(opts: {
 
   const fdOnlyPairs = new Set(pairToFd.keys());
   for (const m of dbMatches) {
-    const hc = wcCodeFromTeamExternalId(m.homeTeam.externalId);
-    const ac = wcCodeFromTeamExternalId(m.awayTeam.externalId);
+    const hc = wcCodeFromTeamExternalId(m.homeTeam.externalId, m.homeTeam.shortName);
+    const ac = wcCodeFromTeamExternalId(m.awayTeam.externalId, m.awayTeam.shortName);
     if (hc && ac) fdOnlyPairs.delete(`${hc}-${ac}`);
   }
 

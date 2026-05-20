@@ -15,6 +15,7 @@ describe('analysis-preview contract', () => {
     'head_to_head',
     'playerIntelligence',
     'playerIntelligenceCount',
+    'summary',
   ];
 
   function buildPreview(isUnlocked: boolean) {
@@ -42,6 +43,8 @@ describe('analysis-preview contract', () => {
         items: isUnlocked ?
             [{ id: 't1', title: '高位', scenarioType: 'PRESS', probability: 0.5 }]
           : [{ id: 't1', title: '高位', scenarioType: 'PRESS' }],
+        sandboxAvailable: false,
+        teaserTitle: '高位',
       },
       fantasy: isUnlocked ?
           { id: 'f1', captainRecommendation: 'A', dataQuality: 'AI_GENERATED' }
@@ -72,6 +75,7 @@ describe('analysis-preview contract', () => {
             ],
       },
       playerIntelligenceCount: 4,
+      summary: '模型倾向主队小优',
     };
   }
 

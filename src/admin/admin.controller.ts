@@ -10,18 +10,18 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { DeepseekService } from '../ai-report/deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
 import { ApiFootballService } from '../api-football/api-football.service';
 import { ApiFootballIngestService } from '../api-football/api-football-ingest.service';
+import { ApiFootballQuotaService } from '../api-football/api-football-quota.service';
 import { AutoIntelBatchService } from '../auto-intel/auto-intel-batch.service';
-import { MatchIntelPipelineService } from '../match-intel-pipeline/match-intel-pipeline.service';
+import { throwLegacyPipelineRetired } from '../common/errors/legacy-pipeline-retired.error';
 import { AdminService } from './admin.service';
 import { AutoIntelRunDto } from './dto/auto-intel-run.dto';
 import { StatsReportService } from '../stats/stats-report.service';
 import { CreateProviderMappingDto } from './dto/create-provider-mapping.dto';
-import { IntelPipelineRunDto } from './dto/intel-pipeline-run.dto';
 import { UpdateWc2026TeamDetailDto } from './dto/update-wc2026-team-detail.dto';
 
 @ApiTags('admin')
@@ -32,12 +32,12 @@ import { UpdateWc2026TeamDetailDto } from './dto/update-wc2026-team-detail.dto';
 export class AdminController {
   constructor(
     private readonly admin: AdminService,
-    private readonly intelPipeline: MatchIntelPipelineService,
     private readonly deepseek: DeepseekService,
     private readonly statsReport: StatsReportService,
     private readonly autoIntel: AutoIntelBatchService,
     private readonly apiFootball: ApiFootballService,
     private readonly apiFootballIngest: ApiFootballIngestService,
+    private readonly afQuota: ApiFootballQuotaService,
   ) {}
 
   @Get('dashboard')
@@ -106,20 +106,8 @@ export class AdminController {
     description:
       '依次：DeepSeek smoke → API-Football 单场事实 → FD intel → 公开来源 → 天气 → AF 赛前快照 → 预测 → …。默认单步失败不中断。',
   })
-  runIntelFullPipeline(
-    @Param('id') id: string,
-    @Body(new DefaultValuePipe({})) body: IntelPipelineRunDto,
-  ) {
-    return this.intelPipeline.runFull(id, {
-      stopOnFailure: body?.stopOnFailure,
-      skipAfFacts: body?.skipAfFacts,
-      skipAfPreMatchSnapshots: body?.skipAfPreMatchSnapshots,
-      skipFdIntel: body?.skipFdIntel,
-      skipPublicSources: body?.skipPublicSources,
-      skipWeather: body?.skipWeather,
-      skipDeepseekSmoke: body?.skipDeepseekSmoke,
-      skipAiReport: body?.skipAiReport,
-    });
+  runIntelFullPipeline() {
+    throwLegacyPipelineRetired();
   }
 
   @Get('deepseek/smoke')
@@ -138,40 +126,14 @@ export class AdminController {
     return this.apiFootball.getSubscriptionStatus();
   }
 
-  @Post('api-football/world-cup/import-bundle')
-  @HttpCode(200)
+  @Get('api-football/quota')
   @ApiOperation({
-    summary: '世界杯：API-Football 一键入库',
+    summary: 'API-Football 日配额（Redis 计数）',
     description:
-      '顺序：WC league=1 赛程同步 → 全队列球员 → 单场 lineups/场地/主教练/主裁写入 MatchFacts 与 Team.coachProfile。需 `API_FOOTBALL_API_KEY`；`season` 如 2026 以 api-sports 为准。',
+      '返回当日已用/上限/剩余；键 `football:af:quota:YYYY-MM-DD`（前缀见 REDIS_KEY_PREFIX）。',
   })
-  worldCupAfImportBundle(@Body() body: Record<string, unknown>) {
-    const season = Math.trunc(Number(body.season ?? 2026) || 2026);
-    const delayBetweenRequestsMs = Math.min(
-      15_000,
-      Math.max(0, Number(body.delayBetweenRequestsMs ?? 1500) || 1500),
-    );
-    const maxMatchesForEnrich = Math.min(
-      128,
-      Math.max(1, Number(body.maxMatchesForEnrich ?? 56) || 56),
-    );
-    const maxTeamsForWcProfiles = Math.min(
-      64,
-      Math.max(1, Number(body.maxTeamsForWcProfiles ?? body['max-teams-wc-profiles'] ?? 56) || 56),
-    );
-    return this.apiFootballIngest.importWorldCupFullBundle({
-      season,
-      syncFixtures: body.skipFixtures !== true && body['skip-fixtures'] !== '1',
-      syncSquads: body.skipSquads !== true && body['skip-squads'] !== '1',
-      syncWcProfiles:
-        body.skipWcProfiles !== true &&
-        body['skip-wc-profiles'] !== '1' &&
-        body.skipWcProfile !== true,
-      enrichMatches: body.skipEnrich !== true && body['skip-enrich'] !== '1',
-      maxMatchesForEnrich,
-      maxTeamsForWcProfiles,
-      delayBetweenRequestsMs,
-    });
+  getApiFootballQuota() {
+    return this.afQuota.snapshot();
   }
 
   @Patch('worldcup2026-teams/:teamId')
@@ -179,7 +141,7 @@ export class AdminController {
   @ApiOperation({
     summary: '更新 2026 世界杯国家队展示扩展字段',
     description:
-      '仅允许 `externalId` 前缀 `wc26-` 的 `Team`。写入 `wc2026Profile` 内运营键及可选 `founded`；FIFA/Elo/近期赛等仍由 seed 主 JSON 维护。',
+      '仅允许 `externalId` 前缀 `af-t-` 的 `Team`。写入 `wc2026Profile.manual` 运营键及可选 `founded`；事实数据来自 API-Football。',
   })
   patchWc2026Team(
     @Param('teamId') teamId: string,

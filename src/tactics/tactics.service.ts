@@ -1,26 +1,22 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DataQuality, DataSourceType } from '@prisma/client';
+import { DataQuality, DataSourceType, MatchStatus } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { z } from 'zod';
-import { DeepseekService } from '../ai-report/deepseek.service';
-import { LLM_DATA_STEWARD_ADDENDUM } from '../match-llm-dossier/llm-dossier-policy';
+import { DeepseekService } from '../deepseek/deepseek.service';
+import { buildTacticsSandboxV2SystemPrompt } from '../ai-report/prompts/tactics-sandbox-v2.system';
+import { TacticalSandboxV2Schema } from '../ai-report/schemas/tactics-sandbox-v2.schema';
 import { MatchLlmDossierService } from '../match-llm-dossier/match-llm-dossier.service';
 import { shouldUseDeepseekMock } from '../common/utils/deepseek-env.util';
 import { PrismaService } from '../prisma/prisma.service';
 
-const TacticsAiSchema = z.object({
-  scenarios: z.array(
-    z.object({
-      scenarioType: z.string(),
-      title: z.string(),
-      probability: z.number().min(0).max(100),
-      precondition: z.string(),
-      process: z.string(),
-      possibleScore: z.string().optional(),
-      timeline: z.string(),
-    }),
-  ).min(2).max(6),
-});
+type ScenarioRow = {
+  scenarioType: string;
+  title: string;
+  probability: number;
+  precondition: string;
+  process: string;
+  possibleScore?: string;
+  timeline: string;
+};
 
 @Injectable()
 export class TacticsService {
@@ -35,7 +31,7 @@ export class TacticsService {
 
   private buildFallbackScenarios(
     pred: { homeWinProbability: number; drawProbability: number; awayWinProbability: number } | null,
-  ) {
+  ): ScenarioRow[] {
     return [
       {
         scenarioType: 'HOME_ADV',
@@ -67,46 +63,8 @@ export class TacticsService {
     ];
   }
 
-  async generate(matchId: string) {
-    const match = await this.prisma.match.findUnique({
-      where: { id: matchId },
-      include: { activePrediction: true, teamSnapshots: true },
-    });
-    if (!match) throw new NotFoundException('Match not found');
-    const pred = match.activePrediction;
-
+  private async persistScenarios(matchId: string, scenarios: ScenarioRow[]) {
     await this.prisma.tacticalScenario.deleteMany({ where: { matchId } });
-
-    let scenarios = this.buildFallbackScenarios(pred);
-
-    if (!shouldUseDeepseekMock(this.config)) {
-      try {
-        const dossier = await this.dossier.buildDossier(matchId);
-        const dossierBlock = this.dossier.formatCompactForPrompt(dossier);
-        const system = [
-          '你是足球赛前战术沙盘助手。只输出合法 JSON 对象，含 scenarios 数组。',
-          '不得编造未提供的球队数据；dataAvailability 为 missing 的维度不得写出具体统计或名单。',
-          '不得提供投注建议或承诺赛果。中文输出。',
-          '',
-          LLM_DATA_STEWARD_ADDENDUM,
-        ].join('\n');
-        const user = `${dossierBlock}\n\n请根据以下结构化数据生成 2～5 条战术剧本（scenarios）：\n${JSON.stringify({
-          matchId: match.id,
-          prediction: pred,
-          teamSnapshots: match.teamSnapshots,
-        }).slice(0, 12000)}`;
-        const out = await this.deepseek.completeChatJson(system, user, TacticsAiSchema);
-        scenarios = out.scenarios.map((s) => ({
-          ...s,
-          possibleScore: s.possibleScore ?? '—',
-        }));
-      } catch (e) {
-        this.log.warn(
-          `DeepSeek 战术生成失败，使用占位剧本: ${e instanceof Error ? e.message : String(e)}`,
-        );
-      }
-    }
-
     const created = [];
     for (const s of scenarios) {
       created.push(
@@ -129,7 +87,85 @@ export class TacticsService {
     return created;
   }
 
-  list(matchId: string) {
-    return this.prisma.tacticalScenario.findMany({ where: { matchId } });
+  async generate(matchId: string) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      include: { activePrediction: true, teamSnapshots: true, homeTeam: true, awayTeam: true },
+    });
+    if (!match) throw new NotFoundException('Match not found');
+    const pred = match.activePrediction;
+    const phase =
+      match.status === MatchStatus.FINISHED ? 'post_match' : 'pre_match';
+
+    let scenarios = this.buildFallbackScenarios(pred);
+    let sandboxRecord: Awaited<ReturnType<typeof this.prisma.matchTacticalSandbox.upsert>> | null =
+      null;
+
+    const useV2 = this.config.get<boolean>('enableTacticsSandboxV2') !== false;
+
+    if (!shouldUseDeepseekMock(this.config)) {
+      try {
+        const dossier = await this.dossier.buildDossier(matchId);
+        const dossierBlock = this.dossier.formatCompactForPrompt(dossier);
+
+        if (useV2) {
+          const system = buildTacticsSandboxV2SystemPrompt(
+            phase as 'pre_match' | 'post_match',
+          );
+          const user = `${dossierBlock}\n\n【schema】输出 JSON 须含：asciiDiagrams[], inPossession, outOfPossession, transitions, keyMatchups[], attackPatterns[], defensivePlan, risksAndAdjustments[], conclusion, scenarios[]（2～5条，字段同 scenarioType/title/probability/precondition/process/timeline）。\n\n${JSON.stringify(
+            {
+              matchId: match.id,
+              phase,
+              home: match.homeTeam.nameCn,
+              away: match.awayTeam.nameCn,
+              prediction: pred,
+              teamSnapshots: match.teamSnapshots,
+            },
+          ).slice(0, 12000)}`;
+
+          const out = await this.deepseek.completeChatJson(system, user, TacticalSandboxV2Schema);
+          scenarios = out.scenarios.map((s) => ({
+            ...s,
+            possibleScore: s.possibleScore ?? '—',
+          }));
+
+          sandboxRecord = await this.prisma.matchTacticalSandbox.upsert({
+            where: { matchId },
+            create: {
+              matchId,
+              phase,
+              contentJson: out as object,
+              rawInput: { dossier: { matchId, phase } } as object,
+              rawOutput: out as object,
+            },
+            update: {
+              phase,
+              contentJson: out as object,
+              rawInput: { dossier: { matchId, phase } } as object,
+              rawOutput: out as object,
+            },
+          });
+        }
+      } catch (e) {
+        this.log.warn(
+          `DeepSeek 战术生成失败，使用占位剧本: ${e instanceof Error ? e.message : String(e)}`,
+        );
+      }
+    }
+
+    const legacy = await this.persistScenarios(matchId, scenarios);
+    return { legacy, sandbox: sandboxRecord };
+  }
+
+  async list(matchId: string) {
+    const [legacy, sandbox] = await Promise.all([
+      this.prisma.tacticalScenario.findMany({ where: { matchId } }),
+      this.prisma.matchTacticalSandbox.findUnique({ where: { matchId } }),
+    ]);
+    return { legacy, sandbox };
+  }
+
+  getSandbox(matchId: string) {
+    return this.prisma.matchTacticalSandbox.findUnique({ where: { matchId } });
   }
 }

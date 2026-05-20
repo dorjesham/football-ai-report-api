@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MatchStatus, Prisma } from '@prisma/client';
+import { ApiFootballQuotaService } from '../api-football/api-football-quota.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** 单次上游调用估算（fixture / events / statistics 等） */
@@ -13,6 +14,7 @@ export class ApiFootballCostEstimatorService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly afQuota: ApiFootballQuotaService,
   ) {}
 
   /**
@@ -30,12 +32,14 @@ export class ApiFootballCostEstimatorService {
     });
 
     const liveFactsInterval =
-      this.config.get<number>('afLiveFactsIntervalSec') ?? 30;
-    const liveFactsMax = this.config.get<number>('afLiveFactsMaxPerTick') ?? 24;
+      this.config.get<number>('afLiveFactsIntervalSec') ?? 90;
+    const liveFactsMax = this.config.get<number>('afLiveFactsMaxPerTick') ?? 4;
     const fastPollEnabled =
       this.config.get<boolean>('enableMatchLiveFastPoll') === true;
     const liveFactsCron =
       this.config.get<boolean>('enableAfLiveFactsCron') === true;
+    const nearWindowPoll =
+      this.config.get<boolean>('enableMatchFdLivePoll') === true;
 
     const ticksPerDay = liveFactsCron ? Math.floor(86400 / liveFactsInterval) : 0;
     const liveFactsPerDay =
@@ -45,33 +49,66 @@ export class ApiFootballCostEstimatorService {
       ? Math.floor(86400 / 10) * Math.min(liveCount, 40) * AF_CALLS_PER_FAST_POLL
       : 0;
 
-    const finishedPerDay = 120 * AF_CALLS_PER_FINISHED_FACTS;
+    const nearWindowPerDay = nearWindowPoll
+      ? Math.floor(86400 / 300) * Math.min(liveCount, 30) * AF_CALLS_PER_FAST_POLL
+      : 0;
+
+    const finishedMax = this.config.get<number>('afMatchFactsMaxPerTick') ?? 20;
+    const finishedPerDay =
+      (this.config.get<boolean>('enableAfMatchFactsCron') ? 4 : 0) *
+      finishedMax *
+      AF_CALLS_PER_FINISHED_FACTS;
+
+    const fixturesCronPerDay = this.config.get<boolean>('enableCronSync') ? 18 : 0;
+    const standingsCronPerDay = this.config.get<boolean>('enableCronSync') ? 12 : 0;
+
+    const projectedTotal =
+      liveFactsPerDay +
+      fastPollPerDay +
+      nearWindowPerDay +
+      finishedPerDay +
+      fixturesCronPerDay +
+      standingsCronPerDay;
+
+    const quota = await this.afQuota.snapshot();
+    const dailyLimit = quota.limit;
 
     const historical24h = await this.historicalUsage(24, opts?.competitionCode);
 
     return {
-      schema: 'api-football-cost-estimate-v1',
+      schema: 'api-football-cost-estimate-v2',
       assumptions: {
         liveFactsIntervalSec: liveFactsInterval,
         liveFactsMaxPerTick: liveFactsMax,
         liveFactsCronEnabled: liveFactsCron,
         fastPollEnabled,
+        nearWindowPollEnabled: nearWindowPoll,
         currentLiveAfMatches: liveCount,
+        dailyQuotaLimit: dailyLimit,
       },
+      quotaToday: quota,
       projectedDailyCalls: {
         liveFactsIngest: liveFactsPerDay,
         liveFastPoll: fastPollPerDay,
+        nearWindowPoll: nearWindowPerDay,
         finishedFactsEnrich: finishedPerDay,
-        total:
-          liveFactsPerDay + fastPollPerDay + finishedPerDay,
+        fixturesCron: fixturesCronPerDay,
+        standingsCron: standingsCronPerDay,
+        total: projectedTotal,
       },
+      overQuotaRisk: projectedTotal > dailyLimit * 0.9,
       historical24h,
       cacheMitigation: {
-        note: '读路径 Redis TTL 不减少 AF 写入；调高 CACHE_* 仅降低 DB/CPU。',
-        cacheMatchLiveTtlSec:
-          this.config.get<number>('cacheMatchLiveTtlSec') ?? 5,
-        cacheMatchPhasePreTtlSec:
-          this.config.get<number>('cacheMatchPhasePreTtlSec') ?? 30,
+        note: 'C 端应读 DB+Redis BFF；生产关闭 /football-feed 与 rankings AF 回退。',
+        enableFootballFeedPublic:
+          this.config.get<boolean>('enableFootballFeedPublic') === true,
+        enableRankingsAfFallback:
+          this.config.get<boolean>('enableRankingsAfFallback') === true,
+        cacheMatchLiveTtlSec: this.config.get<number>('cacheMatchLiveTtlSec') ?? 15,
+        cacheRankingsTopscorersTtlSec:
+          this.config.get<number>('cacheRankingsTopscorersTtlSec') ?? 21600,
+        cacheLeaguesStandingsTtlSec:
+          this.config.get<number>('cacheLeaguesStandingsTtlSec') ?? 1800,
       },
     };
   }

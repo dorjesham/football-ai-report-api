@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { mapPlayerMarketValueFields } from './player-market.util';
+import { buildPlayerSeasonStatsBlock } from './players-season-stats.util';
 
 @Injectable()
 export class PlayersPublicService {
@@ -45,6 +46,7 @@ export class PlayersPublicService {
       fbrefSeasonTag: p.fbrefSeasonTag,
       profileFieldKeys: profileKeys,
       ...mapPlayerMarketValueFields(p.profile),
+      seasonStats: buildPlayerSeasonStatsBlock(p.profile),
       team: p.team,
       updatedAt: p.updatedAt.toISOString(),
     };

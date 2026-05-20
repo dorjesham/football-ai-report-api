@@ -3,10 +3,19 @@ import { Type } from 'class-transformer';
 import { IsBoolean, IsIn, IsInt, IsOptional, Max, Min } from 'class-validator';
 
 export class AutoIntelRunDto {
-  @ApiPropertyOptional({ enum: ['prediction', 'full'], description: 'prediction=仅生成预测；full=Phase C 全管线（默认跳过 AI 报告草稿）' })
+  @ApiPropertyOptional({
+    enum: ['prediction', 'af_prediction', 'full'],
+    description:
+      'prediction=按 PREDICTION_PROVIDER；af_prediction=AF 优先+模型回退；full=Phase C 全管线',
+  })
   @IsOptional()
-  @IsIn(['prediction', 'full'])
-  mode?: 'prediction' | 'full';
+  @IsIn(['prediction', 'af_prediction', 'full'])
+  mode?: 'prediction' | 'af_prediction' | 'full';
+
+  @ApiPropertyOptional({ enum: ['af', 'model', 'auto'], description: 'mode=prediction 时生效' })
+  @IsOptional()
+  @IsIn(['af', 'model', 'auto'])
+  predictionProvider?: 'af' | 'model' | 'auto';
 
   @ApiPropertyOptional({ description: '向前看多少小时内开赛的比赛', minimum: 6, maximum: 168, default: 72 })
   @IsOptional()

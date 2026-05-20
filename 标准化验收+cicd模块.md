@@ -226,7 +226,7 @@ npm run ops:af-cost-report
 
 ## 5. L2 人工签收清单
 
-**固定样本**：staging 上 **3 场**（未开赛 / 进行中 / 已结束），写入 `fixtures/acceptance-matches.json`。
+**固定样本**：staging 上 **3 场**（未开赛 / 进行中 / 已结束），写入 `fixtures/acceptance-matches.json`。未开赛默认 **切尔西 vs 热刺** `cmpbfd6f901lap201oypcx4se`（勿用已结束的阿森纳场）。解锁详情 UI 验收：`scripts/acceptance-pre-match-unlocked.sh`（需 `ADMIN_JWT`）。
 
 | # | 检查项 | 接口 |
 |---|--------|------|

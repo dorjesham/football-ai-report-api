@@ -6,6 +6,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { MatchStatus, PrismaClient } from '@prisma/client';
+import type {
+  MatchPhaseLiveFacts,
+  MatchPhasePreFacts,
+} from '../src/match-phase/match-phase.types';
 import { failThreshold, isCiStrict } from './ci-strict.util';
 
 const prisma = new PrismaClient();
@@ -102,7 +106,7 @@ async function main() {
           matchId: m.id,
           phase: live.phase,
           bytes: JSON.stringify(live).length,
-          seq: live.facts.live.meta.seq,
+          seq: (live.facts as MatchPhaseLiveFacts).live.meta.seq,
         };
         results.push(row);
         console.log(JSON.stringify(row));
@@ -113,7 +117,7 @@ async function main() {
           matchId: m.id,
           phase: pre.phase,
           bytes: JSON.stringify(pre).length,
-          dataAvailability: pre.facts.dataAvailability,
+          dataAvailability: (pre.facts as MatchPhasePreFacts).dataAvailability,
         };
         results.push(row);
         console.log(JSON.stringify(row));

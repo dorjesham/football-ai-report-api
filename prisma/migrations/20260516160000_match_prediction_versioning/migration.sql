@@ -1,24 +1,33 @@
 -- MatchPrediction versioning + active pointer + grading table
--- (idempotent: columns may exist from a prior partial apply)
 
--- Backfill active pointer from existing 1:1 predictions
+-- 1) Add columns before backfill / indexes
+ALTER TABLE `Match` ADD COLUMN `activePredictionId` VARCHAR(191) NULL;
+
+ALTER TABLE `MatchPrediction`
+    ADD COLUMN `version` INTEGER NOT NULL DEFAULT 1,
+    ADD COLUMN `lockedAt` DATETIME(3) NULL,
+    ADD COLUMN `inputsHash` VARCHAR(191) NULL,
+    ADD COLUMN `predictionMarkets` JSON NULL,
+    ADD COLUMN `oddsSnapshotId` VARCHAR(191) NULL;
+
+-- 2) Backfill active pointer from existing 1:1 predictions
 UPDATE `Match` m
 INNER JOIN `MatchPrediction` p ON p.`matchId` = m.`id`
 SET m.`activePredictionId` = p.`id`
 WHERE m.`activePredictionId` IS NULL;
 
--- Replace unique on matchId with composite unique (keep FK index)
+-- 3) Replace unique on matchId with composite unique (keep FK index)
 CREATE INDEX `MatchPrediction_matchId_idx` ON `MatchPrediction`(`matchId`);
 ALTER TABLE `MatchPrediction` DROP INDEX `MatchPrediction_matchId_key`;
 CREATE UNIQUE INDEX `MatchPrediction_matchId_version_key` ON `MatchPrediction`(`matchId`, `version`);
 CREATE INDEX `MatchPrediction_matchId_createdAt_idx` ON `MatchPrediction`(`matchId`, `createdAt`);
 
--- FK oddsSnapshot + activePrediction
+-- 4) FK oddsSnapshot + activePrediction
 CREATE UNIQUE INDEX `Match_activePredictionId_key` ON `Match`(`activePredictionId`);
 ALTER TABLE `MatchPrediction` ADD CONSTRAINT `MatchPrediction_oddsSnapshotId_fkey` FOREIGN KEY (`oddsSnapshotId`) REFERENCES `MatchOddsSnapshot`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 ALTER TABLE `Match` ADD CONSTRAINT `Match_activePredictionId_fkey` FOREIGN KEY (`activePredictionId`) REFERENCES `MatchPrediction`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
--- Grading table
+-- 5) Grading table
 CREATE TABLE `MatchPredictionGrading` (
     `id` VARCHAR(191) NOT NULL,
     `matchId` VARCHAR(191) NOT NULL,

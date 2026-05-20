@@ -13,6 +13,7 @@ import {
   ReportStatus,
 } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { PREFERENCES_DEFAULTS } from './dto/preferences.dto';
 import { UserNotificationService } from '../user-notifications/user-notification.service';
 import {
   browseHistoryTypeToApi,
@@ -129,7 +130,19 @@ export class MeService {
     const row = await this.prisma.userPreferences.findUnique({
       where: { userId },
     });
-    return { data: (row?.data as Record<string, unknown>) ?? {} };
+    const raw =
+      row?.data && typeof row.data === 'object' && !Array.isArray(row.data) ?
+        (row.data as Record<string, unknown>)
+      : {};
+    return {
+      data: {
+        followedLeagues: Array.isArray(raw.followedLeagues) ? raw.followedLeagues : PREFERENCES_DEFAULTS.followedLeagues,
+        followedCompetitionIds: Array.isArray(raw.followedCompetitionIds) ?
+          raw.followedCompetitionIds
+        : PREFERENCES_DEFAULTS.followedCompetitionIds,
+        ...raw,
+      },
+    };
   }
 
   async patchPreferences(userId: string, partial: Record<string, unknown>) {

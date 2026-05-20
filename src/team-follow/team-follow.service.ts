@@ -11,7 +11,7 @@ export class TeamFollowService {
 
   private async assertWc2026NationalTeam(teamId: string) {
     const team = await this.prisma.team.findFirst({
-      where: { id: teamId, externalId: { startsWith: 'wc26-' } },
+      where: { id: teamId, externalId: { startsWith: 'af-t-' } },
     });
     if (!team) {
       throw new NotFoundException(

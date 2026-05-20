@@ -1,7 +1,17 @@
 # API 接口对接文档（完整版 · 以源码为准）
 
-> **生成说明**：根据仓库内 `src/**/*.controller.ts`、`src/app.module.ts`、全局 **`JwtAuthGuard`**、**`ResponseInterceptor`**、**`HttpExceptionFilter`**、`src/common/guards/admin.guard.ts` 等与 **2026-05-16** 代码一致整理。  
+> **版本**：2026-05-20 · 绿库 / detail-v2 / AI 发布 / 榜单中心  
+> **生成说明**：根据仓库内 `src/**/*.controller.ts`、`src/app.module.ts`、全局 **`JwtAuthGuard`**、**`ResponseInterceptor`**、**`HttpExceptionFilter`**、`src/common/guards/admin.guard.ts` 等与 **2026-05-20** 代码一致整理。  
+
+**修订说明（2026-05-20）**
+
+- 补齐 **`GET /rankings/leaderboards`**、**`/api/v2/*`** 路由母本；**`GET /matches/:matchId/detail-v2`** 与 v2 主路径等价说明。
+- 明确 C 端 **仅 `PUBLISHED` AI 报告**可见；`paidModules.aiReports` 三态（hasData / locked / data）。
+- **Deprecated（90 天）**：`intel`、`pre-match`、`post-match`、`analysis-preview`；**不含** `live` / `live/stream`。
+- 扩充下单前置（完赛免费、未发布 400）、三页 `narrative` 与 ADMIN 预览规则。
+- 行为变更须同步 [Web前端对接文档-完整版.md](./Web前端对接文档-完整版.md)、[小程序前端对接文档-完整版.md](./小程序前端对接文档-完整版.md) §5–§7、§9、§12。
 > **适用范围**：**Web / 小程序 / H5** 等 C 端 JSON 客户端对接；运维与 Admin 工具链；不含 Cron 内部逻辑（Cron 非 HTTP）。  
+> **分端主文档（请优先交付前端）**：**Web** → [Web前端对接文档-完整版.md](./Web前端对接文档-完整版.md)；**小程序** → [小程序前端对接文档-完整版.md](./小程序前端对接文档-完整版.md)。本文 §2 为路由母本，平台差异（登录/支付/SSE）见分端文档。  
 > **Web 全量接入**：路由全集以本文 **§2** 与 **`{API_ORIGIN}/docs`** 为准；接入顺序与 mock 替换清单见 **§2.5**；缺口追踪见 **`缺少的接口-web前端.md`**。  
 > **OpenAPI**：**非 production** 默认暴露 **`{API_ORIGIN}/docs`**（根路径 `/` 会 302 到 `/docs`）。**production** 默认 **不挂载** Swagger；需显式设置 **`ENABLE_SWAGGER_DOCS=true`** 后才有 `/docs`，此时 `/` 仍 302 到 `/docs`；未开启时 **`GET /`** 返回纯文本标识。  
 > **关联文档**：产品向叙述（Cron、轮询、`liveStatusSyncHint` 等）见 **`第二期前端对接规范文档.md`**；库表、环境变量、Cron 细则见 **`开发文档.md`**。
@@ -54,6 +64,7 @@
 | GET | `/seasons` | — |
 | GET | `/seasons/:id` | — |
 | GET | `/competitions` | `tournamentId?`, `seasonId?` |
+| GET | `/competitions/match-counts` | `from?`, `to?`（ISO）, `status?`, `tournamentId?`, `seasonId?`；按 `competitionId` 聚合 `matchCount`（侧边栏联赛计数） |
 | GET | `/competitions/:id/worldcup2026-schedule/:teamId` | 须在泛化 `:id` 之前注册（源码已排序） |
 | GET | `/competitions/:id/worldcup2026-teams/:teamId` | `slim?` = `1` / `true` 精简 |
 | GET | `/competitions/:id/worldcup2026-teams` | `slim?` |
@@ -62,21 +73,28 @@
 | GET | `/leagues/:code/standings` | `season?`, `source?`；BFF 规范化 api-sports 积分榜 |
 | GET | `/competitions/:id` | — |
 | GET | `/matches` | `tournamentId?`, `competitionId?`, `seasonId?`, `status?`；**无分页**；含 `liveStatusSyncHint`（见第二期规范 §4.5） |
-| GET | `/matches/:id/intel` | 可选 Bearer；付费多模块聚合 **`MatchIntelResponse`** |
-| GET | `/matches/:id/analysis-preview` | 可选 Bearer；**analysis-preview-v1**（战术/Fantasy/交锋/`playerIntelligence.items`、别名 `head_to_head`）；解锁边界与 `intel` 一致；见 **§2.7** |
-| GET | `/matches/:id/pre-match` | 可选 Bearer；赛前页 **`match-phase-v1`**（见 **§2.4**） |
-| GET | `/matches/:id/live` | 可选 Bearer；赛中页 **`match-phase-v1`**，`facts.live` 为 `match-live-v1` |
-| GET | `/matches/:id/post-match` | 可选 Bearer；赛后页，仅 **`status=FINISHED`** |
+| GET | `/matches/:matchId/detail-v2` | 可选 Bearer；**`match-detail-v2`**（与 **`GET /api/v2/matches/:matchId/detail`** 同体）；响应头含 `Deprecation`，新接入用 **§2.5.2** v2 路径 |
+| GET | `/matches/:id/intel` | 可选 Bearer；**`MatchIntelResponse`**；**Deprecated（90 天）** `deprecated: true`，无 `predictionMarkets`/OLS；迁移 **§2.5.1** |
+| GET | `/matches/:id/analysis-preview` | 可选 Bearer；**analysis-preview-v1**；**Deprecated（90 天）**；见 **§2.7** |
+| GET | `/matches/:id/pre-match` | 可选 Bearer；**match-phase-v1**；**Deprecated（90 天）**；见 **§2.4** |
+| GET | `/matches/:id/live` | 可选 Bearer；赛中页 **`match-phase-v1`**，`facts.live` 为 `match-live-v1`（**非 Deprecated**） |
+| GET | `/matches/:id/post-match` | 可选 Bearer；赛后页，仅 **`status=FINISHED`**；**Deprecated（90 天）** |
 | GET | `/matches/:id/live/stream` | **SSE** `text/event-stream`；Query `lastSeq?`；限流约 **30 次/分钟/IP**；网关需 `X-Accel-Buffering: no`、读超时 **≥120s** |
 | GET | `/matches/:id/odds-snapshots` | 赔率快照 T24/T1/LIVE + disclaimer；**非投注建议** |
+| GET | `/matches/:id/injuries` | 本场伤停 BFF（勿浏览器直连 `/football-feed/injuries`）；需 `externalId` 为 `af-f-*` |
 | GET | `/matches/:id` | 可选 Bearer；详情与解锁态 |
-| GET | `/rankings/players` | `competitionId?`, `metric?`（`powerRating` \| `fantasyPrice` \| `fbrefMinutes`）, `limit?`；含 `avatarUrl`、`marketValue`、`marketValueCurrency` |
-| GET | `/players/:id/summary` | 球员公开摘要；含 `marketValue`、`marketValueCurrency` |
+| GET | `/leagues/:code/injuries` | `season?`, `teamId?`（AF 联赛伤停，服务端代理） |
+| GET | `/rankings/players` | `competitionId?` 或 `code?`+`season?`, `metric?`, `limit?`, **`source?`**（`auto` \| `db` \| `api_football`，默认 `auto`）；`metric=powerRating` → **410**；项含 `rank`, `playerId`, 嵌套 `player` |
+| GET | `/rankings/leaderboards` | `codes?`（默认 `PL,PD,SA,BL1,FL1,CL,EL,UECL,WC`）、`season?`（默认 **2025**）、`wcSeason?`（默认 **2026**，仅 `code=WC`）；只读 DB 积分榜+射手榜聚合，见 **§2.5.3** |
+| GET | `/players/:id/summary` | 球员公开摘要；含 `marketValue`、`seasonStats`、`radarHints` |
+| GET | `/teams/:teamId/upcoming-schedule` | `days?`（默认 30）；未来赛程 + `difficulty` / `difficultyScore` |
 | GET | `/insights/upset-signals` | `from?`, `to?`, `limit?`, `minUpset?`（ISO 时间；默认近/后各约 14 天） |
+| GET | `/insights/champion-prediction` | `competitionId`（如 `seed-comp-wc`）；启发式冠军预测，`available: false` 时含 `reason` |
 | GET | `/cms/tools` | 工具入口配置（内置默认列表） |
 | GET | `/cms/materials` | `category?` |
-| GET | `/cms/reports` | `category?`, `type?`（`match` \| `season` \| `team` \| `player`）；报告发现页样例列表 |
-| GET | `/orders/pricing` | **V2 价目**（公开；类上 Swagger 可能仍显示 Bearer，以 **`@Public()`** 为准） |
+| GET | `/cms/reports` | `category?`, `type?`（`match` \| `season` \| `team` \| `player`）；报告发现页样例列表（`config/cms-reports.json`） |
+| GET | `/cms/membership-plans` | 与 `GET /orders/pricing` 同 payload（含 **`features`** 权益表） |
+| GET | `/orders/pricing` | **V2 价目** + **`features: { free, pro }`**（`config/pricing-features.json` 或 `PRICING_FEATURES_JSON`） |
 | GET | `/auth/captcha` | `provider: svg` → `{ captchaId, imageBase64 }`；`provider: geetest` → 极验 init 字段 |
 | POST | `/auth/register` | 至少 `email`/`username` 之一 + `password` + `captchaId`；SVG 用 `captchaCode`，Geetest 用 `lotNumber`/`captchaOutput`/`passToken`/`genTime` |
 | POST | `/auth/login` | `{ "identifier", "password" }`（邮箱或用户名） |
@@ -104,7 +122,7 @@
 | METHOD | 路径 | 说明 |
 |--------|------|------|
 | GET | `/matches/:id/unlock-status` | 当前用户本场是否视为已解锁 |
-| POST | `/orders/matches/:matchId/create` | 单场报告解锁订单；**须已发布报告**且未完赛等业务校验见 `OrdersService` |
+| POST | `/orders/matches/:matchId/create` | 单场解锁；**FINISHED** 直接 `isUnlocked`；否则须 **PUBLISHED** 报告，否则 **400** `报告尚未发布，暂不可购买解锁`；等价 **`POST /api/v2/matches/:matchId/unlock`**（需已绑手机，见 **§2.3**） |
 | POST | `/orders/membership/create` | Body：`{ "plan": "month" \| "quarter" \| "year" }` |
 | POST | `/orders/social-poster/matches/:matchId/create` | 社交海报付费订单 |
 | GET | `/orders/:orderNo` | 当前用户订单详情 |
@@ -144,13 +162,18 @@
 - **短信 OTP**：仅 **`bind`**、**`reset_password`**；默认 **关闭** `phone/register` 与 `phone/login-otp`（`AUTH_DISABLE_PHONE_*`）。联调 `ENABLE_SMS_OTP_DEBUG=true` 时 `send-code` 可带 **`devCode`**（**禁止生产**）。  
 - **微信支付 JSAPI**（小程序）：下单需用户 **`openid` 非空**；手机注册用户需先 **`POST /auth/bind-wechat`**。Web 若仅手机账号，支付链路以产品方案为准。  
 - **手机门禁**（`AUTH_REQUIRE_VERIFIED_PHONE=true`）：`POST/PATCH/DELETE /me/*` 与 `POST /orders/*/create` 需 **`phoneVerified`**；403 体 `code: PHONE_VERIFICATION_REQUIRED` → 引导 `POST /auth/bind-phone`。与 openid 门禁**同时**生效。  
-- **报告解锁**：`POST /orders/matches/:matchId/create` — 已完赛可能直接 `isUnlocked`；未发布报告 **400**；Pro / 已有解锁无新单等见 `OrdersService`。已购列表用 **`GET /me/report-unlocks`**（无 `/me/unlocks` 路径）。  
+- **报告解锁**（`OrdersService.createForMatch`）：  
+  1. `match.status === FINISHED` → `{ isUnlocked: true, order: null, payParams: null, hint: '已完赛场次对注册用户免费开放情报，无需购买解锁' }`。  
+  2. 否则须存在 `AiReport.status === PUBLISHED`，否则 **400** `报告尚未发布，暂不可购买解锁`。  
+  3. 已解锁 / Pro / 复用待支付单等见 `OrdersService`。  
+  **`POST /api/v2/matches/:matchId/unlock`** 行为相同，且受 **`@RequiresVerifiedPhone()`**（`AUTH_REQUIRE_VERIFIED_PHONE=true` 时须 `phoneVerified`）。  
+  已购列表：**`GET /me/report-unlocks`**（无 `/me/unlocks`）。  
 - **可选 Bearer 的读接口**：`intel`、`detail`、`analysis-preview`、**三页合同**（`pre-match` / `live` / `post-match`）均 `@Public()` 但读取可选 **`Authorization`**，解锁逻辑与 `UnlockService` 一致；带 Bearer 时部分 `matches` GET 可能 `Cache-Control: private, no-store` 且 `Vary: Authorization`。  
 - **深度分析 C 端**：采用 **`GET /matches/:id/analysis-preview`**（方案 B 聚合）；**不要**调用 **§3.6** Admin 的 `GET /matches/:id/tactics` 等。  
 - **比赛提醒**：`GET/POST/PATCH/DELETE /me/match-reminders` 为 **开赛前赛程提醒** CRUD；与 **`/me/notifications` 消息中心** 勿混用。  
 - **通知收件箱**：支付成功、海报生成成功等由服务端写入 `UserNotification`；前端只读列表 + 标已读。  
 - **Web 支付轮询**：`POST /orders/.../create` 返回 `payParams`（微信 JSAPI，需 `openid`）后，建议轮询 **`GET /orders/:orderNo`** 直至 `status=PAID`，再刷新 **`GET /matches/:id/unlock-status`**。  
-- **SSE**：`GET /matches/:id/live/stream` 为 **`@Public()`** 只读；浏览器 `EventSource` 无法带 `Authorization`；重连用 `?lastSeq=`。  
+- **SSE**：`GET /matches/:id/live/stream` 为 **`@Public()`** 只读；浏览器 `EventSource` 无法带 `Authorization`；重连用 `?lastSeq=`；事件形状见 **§2.8**。  
 - **数据库**：需执行 migration **`20260513140000_web_me_cms_feedback`** 与 **`20260516120000_web_browse_history_notifications`**（`UserBrowseHistory`、`UserNotification` 等）。
 
 ### 2.4 三页合同（`match-phase-v1`）
@@ -159,14 +182,152 @@
 
 | 路径 | 适用状态 | 说明 |
 |------|----------|------|
-| `GET /matches/:id/pre-match` | 赛前 | `facts`（球队快照）、`model`（预测/赔率 T24·T1）、`narrative`（PRE_MATCH 报告） |
+| `GET /matches/:id/pre-match` | 赛前 | `facts`：`teamSnapshots`、`homeForm`/`awayForm`、`h2h`、`homeInjuries`/`awayInjuries`；`model`（预测/赔率 T24·T1）；`narrative`（PRE_MATCH 报告） |
 | `GET /matches/:id/live` | 赛中 | `facts.live` 为 **`match-live-v1`**（比分、事件、统计、`keyMetricsAvailability`、`metricLabels`、文字直播等） |
-| `GET /matches/:id/post-match` | **`FINISHED`** | 终场事实、`model.grading`、`narrative` 赛后复盘（含可选 `structuredSummary`） |
-| `GET /matches/:id/live/stream` | 赛中 | SSE：首包全量快照，后续 **`live_patch`**（含 `seq`）；重连传 **`?lastSeq=`** |
+| `GET /matches/:id/post-match` | **`FINISHED`** | 终场事实、`facts.events[]`（与 `eventsCount` 一致）、`model.grading`、`narrative` 赛后复盘（含可选 `structuredSummary`） |
+| `GET /matches/:id/live/stream` | 赛中 | SSE：见 **§2.8** |
 
 **与列表轮询**：列表/卡片仍可用 **`GET /matches`**、**`GET /matches/:id`** 刷新比分；`status` 来自库表，非请求瞬间上游查询（Cron 写库，见 **`开发文档.md`** / 第二期 §4.5）。赛中事实增量依赖 **`ENABLE_AF_LIVE_FACTS_CRON`** 等环境开关。
 
 **赔率**：赛前/赛中展示盘口快照可读 **`GET /matches/:id/odds-snapshots`**（持久化 `MatchOddsSnapshot`）；勿将 `football-feed/odds` 代理当作唯一数据源。
+
+#### narrative 与报告状态
+
+| 观众 | `narrative` 选用规则 | 说明 |
+|------|----------------------|------|
+| 游客 / 普通登录用户 | **仅** `ReportStatus.PUBLISHED` | `pickPreMatchReport` / `pickTypedReport`（`match-report-picker.util.ts`） |
+| `role=ADMIN` 的 JWT | `DRAFT` → `REVIEW` → `PUBLISHED` | `meta.isAdminViewer: true`；后台预览，**勿**作 C 端线上默认 |
+| 未解锁 | `freeSummary` 截断（约 280 字）+ 可选 teaser | 全文需解锁或完赛免费（`FINISHED_FREE_ALL`） |
+| 已解锁 | 含 `structuredSummary`（赛后）等 | 与 `resolveIntelUnlocked` 一致 |
+
+- **`pre-match` / `post-match`**：响应含 `deprecated: true`、`deprecatedMessage`（迁移 detail-v2）；`model.predictionMarkets` 恒 **`null`**；原 **`ui`**（match-detail-pre-unlocked 合成块）已下线。  
+- **`live`**：**无** `deprecated`；赛中仍可用 REST + 可选 SSE。
+
+### 2.5.1 `GET /matches/:matchId/detail-v2` — 契约 `match-detail-v2`（v2 主接口）
+
+| 项 | 说明 |
+|----|------|
+| 主路径 | **`GET /api/v2/matches/:matchId/detail`**（推荐）；`GET /matches/:matchId/detail-v2` 同体 + Deprecation 头 |
+| 鉴权 | `@Public()`，可选 Bearer（影响 `access` / `paidModules.*.locked`） |
+| 绿库 | `externalId` 为 `af-f-*` 时访问可能触发服务端 `syncOnUserView`；`availability` 反映 AF bundle 覆盖 |
+| 免费 | `basic`、`freeModules.injuries`（含 type/reason）、`lineupsStatus` / `lineups` |
+| 付费 | `paidModules.predictions`（AF 整包）、`odds`、`tacticalScript`、`playerIntelligence`、`aiReports` |
+| 下线 | `predictionMarkets`、OLS 战力、`match-detail-pre-unlocked` 合成 UI；`intel.paid.dashboard.detail.predictionMarkets` 为 `null` |
+
+**Redis 缓存 tier**（键 `match-detail-v2:{matchId}:{tier}`，`PaywallService.cacheTier`）：
+
+| tier | 条件 |
+|------|------|
+| `guest` | 未登录 |
+| `free` | 已登录未解锁 |
+| `unlocked` | 已解锁或会员等 |
+| `admin` | `role=ADMIN` |
+
+**禁止** guest/free 命中 unlocked 缓存。
+
+**`paidModules.aiReports`**（`MatchDetailBffService`）：
+
+- 查询仅 `reportType=PRE_MATCH` 且 `status=PUBLISHED`（最多 3 条）。
+- `hasData: true`：存在已发布赛前报告；**不代表**用户已解锁。
+- `data`：仅当 `access.permissions.aiReports === true` 时为 `[{ id, reportType, freeSummary, source: 'deepseek' }]`；否则 **`data: null`**（即使 `hasData: true`）。
+- 运维仅有 DRAFT/REVIEW 时，C 端 `hasData: false`，且无法下单（见 **§2.3**）。
+
+**paywall**：`unlockType`、`unlockPrice`、`price`、`currency`、`display`、`buttonText`、`benefits[]`、`cta`。
+
+**环境变量（v2）**：
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `ENABLE_AF_RAW_BUNDLE` | `true` | AF 绿库 bundle 读路径 |
+| `ENABLE_OLS` | `false` | OLS 战力（已下线） |
+| `ENABLE_PREDICTION_MARKETS` | `false` | 合成预测市场块 |
+| `ENABLE_AF_FACTS_DUAL_WRITE` | `false` | 事实双写 |
+| `ENABLE_PIPELINE_LEGACY_PREDICTION` | `false` | 旧预测管线 |
+| `FINISHED_FREE_ALL` | `true` | 完赛登录用户视为已解锁 |
+
+**Rankings**：`GET /rankings/players?metric=powerRating` → **410**，请用 `goals` / `assists`。
+
+**Deprecated（90 天）**：`intel`、`pre-match`、`post-match`、`analysis-preview` 响应含 `deprecated: true` + `deprecatedMessage`；**不含** `live` / `live/stream`。
+
+**aiReports 节选**：
+
+未解锁、已有 PUBLISHED 报告：
+
+```json
+"paidModules": {
+  "aiReports": {
+    "locked": true,
+    "hasData": true,
+    "status": "present",
+    "title": "AI 深度分析",
+    "data": null
+  }
+}
+```
+
+已解锁且已发布：
+
+```json
+"paidModules": {
+  "aiReports": {
+    "locked": false,
+    "hasData": true,
+    "data": [
+      { "id": "...", "reportType": "PRE_MATCH", "freeSummary": "…", "source": "deepseek" }
+    ]
+  }
+}
+```
+
+无 PUBLISHED 报告：`hasData: false`，`status: "missing"`，`data: null`。
+
+### 2.5.2 API v2 前缀路由
+
+全局前缀 **`/api/v2`**（与根路径 v1 并存）。下列为 C 端主链接入路径（源码：`src/api-v2/*`）。
+
+| 方法 | 路径 | 鉴权 | 说明 |
+|------|------|------|------|
+| GET | `/api/v2/matches/:matchId/detail` | 公开 + 可选 Bearer | **`match-detail-v2`**，详情主接口 |
+| GET | `/api/v2/matches/:matchId/access` | 同上 | **`match-access-v1`**，首屏轻量权限 |
+| POST | `/api/v2/matches/:matchId/unlock` | JWT + 已绑手机 | 等同 `POST /orders/matches/:matchId/create` |
+| GET | `/api/v2/leagues/:code/standings` | 公开 | `season?`（默认 2025）；读 `LeagueAfCache`，未 sync → **404** |
+| GET | `/api/v2/leagues/:code/topscorers` | 公开 | 射手榜 |
+| GET | `/api/v2/leagues/:code/topassists` | 公开 | 助攻榜 |
+| GET | `/api/v2/leagues/:code/topyellowcards` | 公开 | 黄牌榜 |
+| GET | `/api/v2/leagues/:code/topredcards` | 公开 | 红牌榜 |
+| GET | `/api/v2/leagues/:code/rounds` | 公开 | 轮次 |
+| GET | `/api/v2/teams/:teamId/transfers` | 公开 | `season?`；B4，**不进 detail** |
+| GET | `/api/v2/teams/:teamId/trophies` | 公开 | 球队荣誉 |
+| GET | `/api/v2/players/:playerId/trophies` | 公开 | 球员荣誉 |
+| GET | `/api/v2/players/:playerId/sidelined` | 公开 | 缺阵史 |
+
+### 2.5.3 `GET /rankings/leaderboards` — 榜单中心
+
+| 项 | 说明 |
+|----|------|
+| 鉴权 | `@Public()` |
+| 数据源 | **只读 DB**（`CompetitionStanding` + 物化射手榜）；空表时 `groups`/`items` 可为 `[]`，前端需空态 |
+| Query | `codes?` 逗号/空格分隔，默认 `PL,PD,SA,BL1,FL1,CL,EL,UECL,WC`；`season?` 默认 **2025**；`wcSeason?` 默认 **2026**（仅 `code=WC` 的 `season` 字段用 `wcSeason`） |
+
+**响应顶层**：`season`、`wcSeason`、`leagues[]`。每项含 `code`、`season`、`competitionId`、`standings.groups[]`（`groupName`、`rows`）、`topscorers`（`metric: "goals"`、`items`）。
+
+```json
+{
+  "season": 2025,
+  "wcSeason": 2026,
+  "leagues": [
+    {
+      "code": "PL",
+      "season": 2025,
+      "competitionId": "seed-comp-pl",
+      "standings": { "groups": [{ "groupName": "", "rows": [] }] },
+      "topscorers": { "metric": "goals", "items": [] }
+    }
+  ]
+}
+```
+
+**选用建议**：榜单中心多联赛 Tab 用本接口；单场/单联赛详情仍可用 `GET /leagues/standings`、`GET /api/v2/leagues/:code/standings`。
 
 ### 2.5 Web 全量接入清单
 
@@ -192,7 +353,7 @@
 |-----------|------|------|
 | 收藏 | GET/POST/DELETE | `/me/favorite-matches*` |
 | 提醒 | GET/POST/PATCH/DELETE | `/me/match-reminders*` |
-| 设置 | GET/PATCH | `/me/preferences` |
+| 设置 | GET/PATCH | `/me/preferences`（`followedLeagues[]`、`followedCompetitionIds[]`，GET 空库补全 `[]`） |
 | 海报历史 | GET | `/me/social-posters` 或 `/me/orders?product=SOCIAL_POSTER` |
 | 已购报告 | GET | `/me/report-unlocks`（含 `title`/`freeSummary`） |
 | 浏览历史 | GET/POST | `/me/browse-history` |
@@ -206,15 +367,22 @@
 
 | 页面/能力 | 方法 | 路径 |
 |-----------|------|------|
+| 比赛详情 v2 | GET | `/api/v2/matches/:id/detail`、 `/api/v2/matches/:id/access` |
+| 榜单中心 | GET | `/rankings/leaderboards?season=2025&wcSeason=2026` |
 | 球员摘要 | GET | `/players/:id/summary`（含 `marketValue`、`marketValueCurrency`） |
 | 冷门信号 | GET | `/insights/upset-signals` |
-| 分析页只读 | GET | `/matches/:id/analysis-preview`（v1，见 §2.7） |
-| 三页合同 | GET | `.../pre-match`、`.../live`、`.../post-match`（+ 可选 SSE `.../live/stream`） |
+| 分析页只读 | GET | `/matches/:id/analysis-preview`（**Deprecated**，见 §2.7） |
+| 三页合同 | GET | `.../live`（主链）、`.../pre-match`/`post-match`（Deprecated）+ SSE `.../live/stream` |
 
 #### P3 — 运营与其它
 
 | 页面/能力 | 方法 | 路径 |
 |-----------|------|------|
+| 侧边栏联赛计数 | GET | `/competitions/match-counts` |
+| 赛程难度 | GET | `/teams/:teamId/upcoming-schedule?days=30` |
+| 会员权益表 | GET | `/orders/pricing` 或 `/cms/membership-plans`（`features`） |
+| 世界杯冠军预测 | GET | `/insights/champion-prediction?competitionId=` |
+| 伤停 BFF | GET | `/matches/:id/injuries`、`/leagues/:code/injuries` |
 | 工具入口 | GET | `/cms/tools` |
 | 创作者素材 | GET | `/cms/materials` |
 | 报告发现样例 | GET | `/cms/reports` |
@@ -227,14 +395,20 @@
 - [ ] `matchId` 使用接口返回的 **cuid**，勿自造 ID  
 - [ ] 公开只读与 JWT 接口混用时，按需带 `Authorization`  
 - [ ] 生产环境确认 migration 已 `deploy`  
-- [ ] 与 Swagger `/docs` 或本文档 diff 无遗漏（尤其 **§2.1** 三页与 `odds-snapshots`）
+- [ ] 与 Swagger `/docs` 或本文档 diff 无遗漏（尤其 **§2.1**、`/api/v2`、`leaderboards`）
 - [ ] 历史/通知页已接 **`/me/browse-history`**、**`/me/notifications`**（勿与 `match-reminders` 混用）
+- [ ] 测试场有 **PUBLISHED** AI 报告；未解锁时 `paidModules.aiReports.data === null`
+- [ ] 新详情页用 **`/api/v2/.../detail`**，勿以 Deprecated 的 `intel`/`pre-match` 作主接口
 
 ### 2.7 `GET /matches/:id/analysis-preview` — 契约 `analysis-preview-v1`
 
-可选 Bearer；`isUnlocked` 与 `GET /matches/:id/intel` 一致。付费长文仍仅走 **`intel`** 或三页 **`narrative`**。
+**Deprecated（90 天）**：响应含 `deprecated: true`、`deprecatedMessage`（迁移 **`GET /api/v2/matches/:id/detail`**）。
 
-**顶层字段**：`meta`, `matchId`, `status`, `kickoffTime`, `isUnlocked`, `prediction`, `tactics`, `fantasy`, `headToHead`, `head_to_head`, `playerIntelligence`, `playerIntelligenceCount`。
+可选 Bearer；`isUnlocked` 与 `GET /matches/:id/intel` 一致。付费长文仍仅走 detail-v2 或三页 **`narrative`**。
+
+**顶层字段**：`meta`, `matchId`, `status`, `kickoffTime`, `isUnlocked`, `prediction`, `tactics`, `fantasy`, `headToHead`, `head_to_head`, `playerIntelligence`, `playerIntelligenceCount`, 可选 **`summary`**。
+
+**`playerIntelligence.items[]`**：`player.avatarUrl` 与 **`player.photoUrl`** 同内容（别名）。
 
 **未解锁 teaser 示例**（节选）：
 
@@ -281,6 +455,19 @@
 与 **`freeLayer.predictionPreview.homeMatchPower` / `awayMatchPower`** 同源；未解锁时 preview 仍可展示概率与单场战力，`teams.matchPower` 与之一致便于同一卡片内对齐。
 
 若 OLS 同步失败，`factorBreakdown.ols` 可能为 `null`，此时 `teams.*.powerRating` 仅依赖 `Team` 表兜底。
+
+### 2.8 `GET /matches/:id/live/stream` — SSE 事件
+
+`Content-Type: text/event-stream`；每条 `data` 为 JSON 字符串（非统一 `{ success, data }` 包装）。
+
+| `type` | 时机 | `data` 形状 |
+|--------|------|-------------|
+| **`snapshot`** | 连接后首包 | 与 **`GET /matches/:id/live`** 的 `facts.live` 同源（完整 **`match-live-v1`**） |
+| **`live_patch`** | Redis 推送有新 seq | `{ "matchId", "seq", "at" }`（ISO 时间）；**不含**增量字段，客户端收到后应 **再拉** `GET .../live` 或复用 snapshot 合并策略 |
+
+Query **`lastSeq?`**：忽略 `seq <= lastSeq` 的 patch，用于断线重连。
+
+**与 REST 对齐**：`live_patch` 仅作「有更新」信号；展示用字段以 `match-live-v1` 为准（`events`, `commentary`, `teamStats`, `keyMetrics` 等）。赛中数据依赖 Cron **`ENABLE_AF_LIVE_FACTS_CRON`** 写入 `MatchFacts`。
 
 ---
 
@@ -419,6 +606,8 @@
 
 **控制器**：`FootballFeedController`（**`@Public()`**）。需配置 **`API_FOOTBALL_API_KEY`**；返回体一般为 api-sports 风格（`get` / `parameters` / `errors` / `results` / `paging` / `response`）。详细 Query 以 **`src/football-feed/dto/football-feed.query.dto.ts`** 与 **`/docs`** 为准。
 
+**生产（`NODE_ENV=production`）**：默认 **`ENABLE_FOOTBALL_FEED_PUBLIC=false`**，全部路由 **403**，文案提示改用 BFF（`/matches`、`/leagues/standings`、`/rankings/players?source=db` 等）。上游调用受 **`API_FOOTBALL_DAILY_QUOTA`** + Redis 日计数约束，仅 Cron/Admin 写入。
+
 | METHOD | 路径 |
 |--------|------|
 | GET | `/football-feed/fixtures` |
@@ -470,6 +659,7 @@
 ## 7. 文档维护
 
 - 接口增删改后，请同步更新本文档；**非 production** 或 **`ENABLE_SWAGGER_DOCS=true`** 时同步 **`/docs`** Swagger 注解。  
+- **C 端行为**（detail-v2、AI 发布、Deprecated、榜单、下单前置）须同步 **§2.4**、**§2.5.1–2.5.3** 及分端文档 [Web](./Web前端对接文档-完整版.md)、[小程序](./小程序前端对接文档-完整版.md) §5–§7、§9、§12。  
 - **Web 联调进度**同步 **`缺少的接口-web前端.md`** §5 勾选。  
 - 环境变量、Cron、Prisma 模型以 **`开发文档.md`** 与 **`prisma/schema.prisma`** 为准。  
 - 产品级说明、抽检清单可与 **`第二期前端对接规范文档.md`**、**`README.md`**、**`测试文档-完整版.md`** 交叉引用；生产无 `/docs` 时**以源码与本文档为准**。

@@ -59,23 +59,23 @@ export default () => ({
   enablePublicSourceFetch: process.env.ENABLE_PUBLIC_SOURCE_FETCH === 'true',
   enableCronSync: process.env.ENABLE_CRON_SYNC === 'true',
   /**
-   * 与 ENABLE_CRON_SYNC 同时为 true 时：定时**广域**近窗刷新比分/状态（约每 5 分钟）。
-   * — Football-Data：单场 GET /matches/{id}（`dataSource=FOOTBALL_DATA`）。
-   * — API-Football：GET /fixtures?id=（`externalId` 为 `af-f-*`）；未配置 API Key 时 AF 侧 attempted=0。
-   * 因赛程列表常只含未赛场次，开赛后若不再拉单场，库内会长期未更新。
-   * 设为 false 可关闭近窗轮询（同时关闭赛中高频任务，见 `enableMatchLiveFastPoll`）。
+   * 运行时是否允许调用 Football-Data API（AF-only 架构下默认 false）。
+   */
+  enableFootballData: process.env.ENABLE_FOOTBALL_DATA === 'true',
+  /**
+   * 与 ENABLE_CRON_SYNC 同时为 true 时：定时**广域**近窗刷新 `af-f-*` 比分/状态（约每 5 分钟）。
+   * 历史 env 名 `ENABLE_MATCH_FD_LIVE_POLL` 保留；默认 false（不再拉 FD）。
    */
   enableMatchFdLivePoll:
-    process.env.ENABLE_MATCH_FD_LIVE_POLL !== 'false' &&
+    process.env.ENABLE_MATCH_FD_LIVE_POLL === 'true' &&
     process.env.ENABLE_CRON_SYNC === 'true',
   /**
-   * 与 ENABLE_CRON_SYNC 且近窗轮询开启时：对「进行中 LIVE」与「已开球仍 SCHEDULED」的场次约每 10 秒拉上游（不落 ApiLog，防刷屏）。
-   * 设为 false 则仅保留每 5 分钟广域近窗任务（省第三方配额）。
+   * 与近窗轮询开启时：对 LIVE 场次约每 10 秒拉 AF 单场（极易爆配额，默认关）。
    */
   enableMatchLiveFastPoll:
-    process.env.ENABLE_MATCH_LIVE_FAST_POLL !== 'false' &&
+    process.env.ENABLE_MATCH_LIVE_FAST_POLL === 'true' &&
     process.env.ENABLE_CRON_SYNC === 'true' &&
-    process.env.ENABLE_MATCH_FD_LIVE_POLL !== 'false',
+    process.env.ENABLE_MATCH_FD_LIVE_POLL === 'true',
   /**
    * 与 ENABLE_CRON_SYNC 同时为 true：约每 6 小时对近窗 FINISHED 的 `af-f-*` 写满 MatchFacts
    * （lineups/events/statistics；已完整场次增量 skip）。
@@ -110,15 +110,49 @@ export default () => ({
   predictionGradingMaxPerTick: parseInt(process.env.PREDICTION_GRADING_MAX_PER_TICK || '100', 10),
   predictionGradingLookbackDays: parseInt(process.env.PREDICTION_GRADING_LOOKBACK_DAYS || '30', 10),
   /**
-   * 与 ENABLE_CRON_SYNC 同时为 true：赛中增量拉取 AF events/statistics 与 FD 单场详情（默认开）。
+   * 与 ENABLE_CRON_SYNC 同时为 true：赛中增量拉取 AF events/statistics（默认开）。
    */
   enableAfLiveFactsCron:
     process.env.ENABLE_AF_LIVE_FACTS_CRON !== 'false' &&
     process.env.ENABLE_CRON_SYNC === 'true',
-  afLiveFactsIntervalSec: parseInt(process.env.AF_LIVE_FACTS_INTERVAL_SEC || '30', 10),
-  afLiveFactsMaxPerTick: parseInt(process.env.AF_LIVE_FACTS_MAX_PER_TICK || '24', 10),
+  afLiveFactsIntervalSec: parseInt(process.env.AF_LIVE_FACTS_INTERVAL_SEC || '90', 10),
+  afLiveFactsMaxPerTick: parseInt(process.env.AF_LIVE_FACTS_MAX_PER_TICK || '4', 10),
   afLiveFactsDelayMs: parseInt(process.env.AF_LIVE_FACTS_DELAY_MS || '400', 10),
-  cacheMatchLiveTtlSec: parseInt(process.env.CACHE_MATCH_LIVE_TTL_SEC || '5', 10),
+  enableAfLivePlayersCron:
+    process.env.ENABLE_AF_LIVE_PLAYERS_CRON !== 'false' &&
+    process.env.ENABLE_CRON_SYNC === 'true',
+  afLivePlayersIntervalSec: parseInt(process.env.AF_LIVE_PLAYERS_INTERVAL_SEC || '120', 10),
+  afLivePlayersMaxPerTick: parseInt(process.env.AF_LIVE_PLAYERS_MAX_PER_TICK || '3', 10),
+  afLivePlayersDelayMs: parseInt(process.env.AF_LIVE_PLAYERS_DELAY_MS || '400', 10),
+  enableLiveStandingsTick:
+    process.env.ENABLE_LIVE_STANDINGS_TICK !== 'false' &&
+    process.env.ENABLE_CRON_SYNC === 'true',
+  liveStandingsTickIntervalSec: parseInt(
+    process.env.LIVE_STANDINGS_TICK_INTERVAL_SEC || '600',
+    10,
+  ),
+  enableLiveCommentaryLlm: process.env.ENABLE_LIVE_COMMENTARY_LLM === 'true',
+  /** Redis 日计数上限（留余量给 Admin）；键 `football:af:quota:YYYY-MM-DD` */
+  apiFootballDailyQuota: parseInt(process.env.API_FOOTBALL_DAILY_QUOTA || '7200', 10),
+  /** production 且 false 时 C 端 GET /football-feed/* 返回 403 */
+  enableFootballFeedPublic: process.env.ENABLE_FOOTBALL_FEED_PUBLIC === 'true',
+  /** GET /rankings/players 未传 source 时的默认（生产建议 db） */
+  rankingsDefaultSource:
+    (process.env.RANKINGS_DEFAULT_SOURCE || 'db').toLowerCase() as
+      | 'db'
+      | 'api_football'
+      | 'auto',
+  enableRankingsAfFallback: process.env.ENABLE_RANKINGS_AF_FALLBACK === 'true',
+  cacheRankingsTopscorersTtlSec: parseInt(
+    process.env.CACHE_RANKINGS_TOPSCORERS_TTL_SEC || '21600',
+    10,
+  ),
+  cacheLeaguesStandingsTtlSec: parseInt(
+    process.env.CACHE_LEAGUES_STANDINGS_TTL_SEC || '1800',
+    10,
+  ),
+  cacheMatchInjuriesTtlSec: parseInt(process.env.CACHE_MATCH_INJURIES_TTL_SEC || '600', 10),
+  cacheMatchLiveTtlSec: parseInt(process.env.CACHE_MATCH_LIVE_TTL_SEC || '15', 10),
   cacheMatchPhasePreTtlSec: parseInt(process.env.CACHE_MATCH_PHASE_PRE_TTL_SEC || '30', 10),
   cacheMatchPhasePostTtlSec: parseInt(process.env.CACHE_MATCH_PHASE_POST_TTL_SEC || '60', 10),
   enablePostMatchReportCron:
@@ -126,6 +160,60 @@ export default () => ({
     process.env.ENABLE_CRON_SYNC === 'true',
   postMatchReportMaxPerTick: parseInt(process.env.POST_MATCH_REPORT_MAX_PER_TICK || '6', 10),
   postMatchReportLookbackHours: parseInt(process.env.POST_MATCH_REPORT_LOOKBACK_HOURS || '24', 10),
+  finishedBootstrapLookbackDays: parseInt(
+    process.env.FINISHED_BOOTSTRAP_LOOKBACK_DAYS || '90',
+    10,
+  ),
+  finishedBootstrapBatchSize: parseInt(process.env.FINISHED_BOOTSTRAP_BATCH_SIZE || '40', 10),
+  finishedBootstrapMaxRounds: parseInt(process.env.FINISHED_BOOTSTRAP_MAX_ROUNDS || '50', 10),
+  finishedBootstrapDelayMs: parseInt(process.env.FINISHED_BOOTSTRAP_DELAY_MS || '800', 10),
+  /** v2：OLS 战力/自建概率（默认关） */
+  enableOls: process.env.ENABLE_OLS === 'true',
+  /** v2：predictionMarkets 合成块（默认关） */
+  enablePredictionMarkets: process.env.ENABLE_PREDICTION_MARKETS === 'true',
+  /** v2：MatchAfRawBundle 写入与 detail-v2 读路径 */
+  enableAfRawBundle: process.env.ENABLE_AF_RAW_BUNDLE !== 'false',
+  /**
+   * intel-full / auto-intel 是否仍写 MatchPrediction（默认关；预测读 MatchAfRawBundle）。
+   * AUTO_INTEL_CRON_MODE=prediction 在 false 时不执行。
+   */
+  enablePipelineLegacyPrediction:
+    process.env.ENABLE_PIPELINE_LEGACY_PREDICTION === 'true',
+  /** v2：syncSingleMatchFull 是否双写 MatchFacts（默认关） */
+  enableAfFactsDualWrite: process.env.ENABLE_AF_FACTS_DUAL_WRITE === 'true',
+  /** 世界杯五档 Cron（默认关，避免 dev 爆 AF 配额） */
+  enableWcCron: process.env.ENABLE_WC_CRON === 'true',
+  localizationLlmDraftMaxPerRun: parseInt(
+    process.env.LOCALIZATION_LLM_DRAFT_MAX_PER_RUN || '50',
+    10,
+  ),
+  enableIngestLocalizationBackfill:
+    process.env.ENABLE_INGEST_L10N_BACKFILL === 'true',
+  enableAfSyncCron: process.env.ENABLE_AF_SYNC_CRON === 'true',
+  afSyncLeagues: (process.env.AF_SYNC_LEAGUES || '39,140,135,78,61,2,3')
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n)),
+  afSyncSeason: parseInt(process.env.AF_SYNC_SEASON || '2025', 10),
+  /** B4：球队/球员档案 AF 同步（transfers/trophies/sidelined） */
+  enableAfCatalogSync: process.env.ENABLE_AF_CATALOG_SYNC === 'true',
+  /** B5：LIVE 场次拉取 /odds/live 写入 MatchOddsLiveSnapshot */
+  enableAfOddsLiveSync: process.env.ENABLE_AF_ODDS_LIVE_SYNC === 'true',
+  afOddsLiveLeagues: (process.env.AF_ODDS_LIVE_LEAGUES || process.env.AF_SYNC_LEAGUES || '39,140,135,78,61,2,3')
+    .split(',')
+    .map((s) => parseInt(s.trim(), 10))
+    .filter((n) => Number.isFinite(n)),
+  afOddsLiveIntervalSec: parseInt(process.env.AF_ODDS_LIVE_INTERVAL_SEC || '120', 10),
+  afOddsLiveMaxSnapshotsPerMatch: parseInt(
+    process.env.AF_ODDS_LIVE_MAX_SNAPSHOTS || '120',
+    10,
+  ),
+  finishedFreeAll: process.env.FINISHED_FREE_ALL !== 'false',
+  enablePreMatchIntelLong: process.env.ENABLE_PRE_MATCH_INTEL_LONG === 'true',
+  enablePostMatchTacticalLong: process.env.ENABLE_POST_MATCH_TACTICAL_LONG === 'true',
+  enableTacticsSandboxV2: process.env.ENABLE_TACTICS_SANDBOX_V2 !== 'false',
+  llmLongFormMaxChars: parseInt(process.env.LLM_LONG_FORM_MAX_CHARS || '6000', 10),
+  llmLongFormTemperature: parseFloat(process.env.LLM_LONG_FORM_TEMPERATURE || '0.3'),
   enableLiveNarrativeCron:
     process.env.ENABLE_LIVE_NARRATIVE_CRON !== 'false' &&
     process.env.ENABLE_CRON_SYNC === 'true',
@@ -206,6 +294,29 @@ export default () => ({
   autoIntelDelayMs: parseInt(process.env.AUTO_INTEL_DELAY_MS || '2500', 10),
   /** 仅当 AUTO_INTEL_CRON_MODE=full：true 时在管线末尾也跑 AI 报告草稿（成本高，默认 false） */
   autoIntelFullIncludeAiReport: process.env.AUTO_INTEL_FULL_INCLUDE_AI_REPORT === 'true',
+  /** 情报管线与 generateForMatch 默认：af | model | auto（生产推荐 af，禁止 ELO 回退） */
+  predictionProvider: (process.env.PREDICTION_PROVIDER || 'af').toLowerCase(),
+  /** none = AF 缺失时不回退 model/ELO */
+  wcPredictionFallback: (process.env.WC_PREDICTION_FALLBACK || 'none').toLowerCase(),
+  /** true 时 AF 预测写入后 DeepSeek 仅润色 explanation / narrativeCn */
+  enablePredictionDeepseekEnrich:
+    process.env.ENABLE_PREDICTION_DEEPSEEK_ENRICH === 'true',
+  /** 每 6h 对近窗缺预测场次跑 AF 优先批量（lookahead 默认 48h） */
+  enableAfPredictionsNearWindowCron:
+    process.env.ENABLE_AF_PREDICTIONS_NEAR_WINDOW_CRON === 'true' &&
+    process.env.ENABLE_CRON_SYNC === 'true',
+  afPredictionsNearWindowLookaheadHours: parseInt(
+    process.env.AF_PREDICTIONS_NEAR_WINDOW_LOOKAHEAD_HOURS || '48',
+    10,
+  ),
+  afPredictionsNearWindowMaxPerTick: parseInt(
+    process.env.AF_PREDICTIONS_NEAR_WINDOW_MAX_PER_TICK || '12',
+    10,
+  ),
+  afPredictionsNearWindowDelayMs: parseInt(
+    process.env.AF_PREDICTIONS_NEAR_WINDOW_DELAY_MS || '2000',
+    10,
+  ),
 
   /**
    * 与 ENABLE_CRON_SYNC 同时为 true：定时为窗口内场次生成 AI 报告草稿（无 DRAFT/PUBLISHED 时），避免逐场点后台。

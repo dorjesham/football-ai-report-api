@@ -1,14 +1,15 @@
 import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { AiReportType, MatchStatus, ReportStatus } from '@prisma/client';
+import { MatchStatus } from '@prisma/client';
 import { DEFAULT_AI_DISCLAIMER } from '../common/constants/disclaimer.constant';
 import { sanitizeAiReportText } from '../common/utils/content-safety';
 import { PrismaService } from '../prisma/prisma.service';
-import { DeepseekService } from './deepseek.service';
+import { DeepseekService } from '../deepseek/deepseek.service';
 import { buildPostMatchStructured } from './post-match-analysis.builder';
 import {
   polishedToFreeSummary,
   structuredToPolishPrompt,
 } from './structured-report-polish.util';
+import { upsertPostMatchDraft } from './ai-report-draft-persistence.util';
 
 const POLISH_SYSTEM =
   '你是足球赛后复盘文案编辑。你只能改写输入 JSON 中 sections 各字段的中文表述，使语句更流畅。' +
@@ -52,23 +53,19 @@ export class PostMatchReportService {
     const freeRaw = polishedToFreeSummary(polished.sections, 'post-match-analysis-v1');
     const sum = sanitizeAiReportText(freeRaw);
 
-    const report = await this.prisma.aiReport.create({
-      data: {
-        matchId,
-        reportType: AiReportType.POST_MATCH,
-        predictionId: prediction?.id ?? null,
-        oddsSnapshotId: prediction?.oddsSnapshotId ?? null,
-        structuredContentJson: structured as object,
-        freeSummary: sum.text,
-        dashboardSummary: polished.sections.recap?.slice(0, 500) ?? null,
-        disclaimer: polished.disclaimer || DEFAULT_AI_DISCLAIMER,
-        status: ReportStatus.DRAFT,
-        rawInput: { structured } as object,
-        rawOutput: polished as object,
-        contentWarnings: sum.warnings.length ? sum.warnings : undefined,
-      },
+    const { report, reused } = await upsertPostMatchDraft(this.prisma, {
+      matchId,
+      predictionId: prediction?.id ?? null,
+      oddsSnapshotId: prediction?.oddsSnapshotId ?? null,
+      structuredContentJson: structured as object,
+      freeSummary: sum.text,
+      dashboardSummary: polished.sections.recap?.slice(0, 500) ?? null,
+      disclaimer: polished.disclaimer || DEFAULT_AI_DISCLAIMER,
+      rawInput: { structured } as object,
+      rawOutput: polished as object,
+      contentWarnings: sum.warnings.length ? sum.warnings : undefined,
     });
 
-    return report;
+    return { ...report, reused };
   }
 }

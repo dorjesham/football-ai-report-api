@@ -9,8 +9,8 @@ export type TeamStatsMapped = {
   recentForm: string | null;
   goalsForAvg: number | null;
   goalsAgainstAvg: number | null;
-  attackRating: number;
-  defenseRating: number;
+  attackRating: number | null;
+  defenseRating: number | null;
 };
 
 export type PlayerStatsMapped = {
@@ -67,8 +67,8 @@ export function mapTeamStatistics(statistics: Record<string, unknown> | null): T
       recentForm: null,
       goalsForAvg: null,
       goalsAgainstAvg: null,
-      attackRating: 50,
-      defenseRating: 50,
+      attackRating: null,
+      defenseRating: null,
     };
   }
   const form =
@@ -88,9 +88,9 @@ export function mapTeamStatistics(statistics: Record<string, unknown> | null): T
   const gfAvg = played > 0 && gfTotal != null ? gfTotal / played : null;
   const gaAvg = played > 0 && gaTotal != null ? gaTotal / played : null;
   const attackRating =
-    gfAvg != null ? clamp(Math.round(40 + gfAvg * 18), 25, 95) : 50;
+    gfAvg != null ? clamp(Math.round(40 + gfAvg * 18), 25, 95) : null;
   const defenseRating =
-    gaAvg != null ? clamp(Math.round(95 - gaAvg * 18), 25, 95) : 50;
+    gaAvg != null ? clamp(Math.round(95 - gaAvg * 18), 25, 95) : null;
   return {
     recentForm: form,
     goalsForAvg: gfAvg,
@@ -195,6 +195,7 @@ export function shrinkOddsMarkets(raw: Record<string, unknown>): Record<string, 
 
 /** 从 shrink 后 markets 提取 1X2 隐含概率摘要（intel teaser） */
 export function extractOdds1x2Teaser(marketsJson: unknown): {
+  marketName: string | null;
   home: number | null;
   draw: number | null;
   away: number | null;
@@ -225,12 +226,144 @@ export function extractOdds1x2Teaser(marketsJson: unknown): {
     }
     if (home != null || draw != null || away != null) {
       const sum = (home ?? 0) + (draw ?? 0) + (away ?? 0) || 1;
+      const marketName = typeof mr?.name === 'string' ? mr.name : null;
       return {
+        marketName,
         home: home != null ? Math.round((home / sum) * 1000) / 10 : null,
         draw: draw != null ? Math.round((draw / sum) * 1000) / 10 : null,
         away: away != null ? Math.round((away / sum) * 1000) / 10 : null,
       };
     }
+  }
+  return null;
+}
+
+/** 从 shrink 后 markets 提取 1X2 十进制赔率 */
+export function extractOdds1x2Decimals(marketsJson: unknown): {
+  home: number | null;
+  draw: number | null;
+  away: number | null;
+} | null {
+  const root = asRecord(marketsJson);
+  const snaps = Array.isArray(root?.snapshots) ? root.snapshots : [];
+  const first = asRecord(snaps[0]);
+  const books = Array.isArray(first?.bookmakers) ? first.bookmakers : [];
+  const bm0 = asRecord(books[0]);
+  const markets = Array.isArray(bm0?.markets) ? bm0.markets : [];
+  for (const m of markets) {
+    const mr = asRecord(m);
+    const name = String(mr?.name ?? '').toLowerCase();
+    if (!name.includes('match winner') && name !== '1x2' && !name.includes('winner')) continue;
+    const vals = Array.isArray(mr?.values) ? mr.values : [];
+    let home: number | null = null;
+    let draw: number | null = null;
+    let away: number | null = null;
+    for (const v of vals) {
+      const vr = asRecord(v);
+      const label = String(vr?.value ?? '').toLowerCase();
+      const odd = num(vr?.odd);
+      if (odd == null || odd <= 1) continue;
+      if (label === 'home') home = odd;
+      else if (label === 'draw') draw = odd;
+      else if (label === 'away') away = odd;
+    }
+    if (home != null || draw != null || away != null) {
+      return { home, draw, away };
+    }
+  }
+  return null;
+}
+
+function findMarketOdds(
+  marketsJson: unknown,
+  nameHints: string[],
+): { label: string; odd: number }[] {
+  const root = asRecord(marketsJson);
+  const snaps = Array.isArray(root?.snapshots) ? root.snapshots : [];
+  const first = asRecord(snaps[0]);
+  const books = Array.isArray(first?.bookmakers) ? first.bookmakers : [];
+  for (const bm of books) {
+    const b = asRecord(bm);
+    const markets = Array.isArray(b?.markets) ? b.markets : [];
+    for (const m of markets) {
+      const mr = asRecord(m);
+      const name = String(mr?.name ?? '').toLowerCase();
+      if (!nameHints.some((h) => name.includes(h))) continue;
+      const vals = Array.isArray(mr?.values) ? mr.values : [];
+      const out: { label: string; odd: number }[] = [];
+      for (const v of vals) {
+        const vr = asRecord(v);
+        const odd = num(vr?.odd);
+        if (odd == null || odd <= 1) continue;
+        out.push({ label: String(vr?.value ?? ''), odd });
+      }
+      if (out.length) return out;
+    }
+  }
+  return [];
+}
+
+/** 亚洲让球盘十进制赔率（主/客） */
+export function extractAsianHandicapDecimals(marketsJson: unknown): {
+  line: number | null;
+  home: number | null;
+  away: number | null;
+} | null {
+  const vals = findMarketOdds(marketsJson, [
+    'asian handicap',
+    'handicap',
+    'ah',
+  ]);
+  if (!vals.length) return null;
+  let line: number | null = null;
+  let home: number | null = null;
+  let away: number | null = null;
+  for (const v of vals) {
+    const label = v.label.toLowerCase();
+    const m = label.match(/(-?\d+(?:\.\d+)?)/);
+    if (m && line == null) line = Number(m[1]);
+    if (label.includes('home') || label.includes('主')) home = v.odd;
+    if (label.includes('away') || label.includes('客')) away = v.odd;
+  }
+  if (vals.length >= 2 && home == null && away == null) {
+    home = vals[0]?.odd ?? null;
+    away = vals[1]?.odd ?? null;
+  }
+  if (home == null && away == null) return null;
+  return { line, home, away };
+}
+
+/** 从 AF lineups 响应提取阵型 */
+export function extractFormationFromAfLineups(
+  lineupsJson: unknown,
+  teamApiId: number,
+): string | null {
+  const rows = Array.isArray(lineupsJson) ? lineupsJson : [];
+  for (const row of rows) {
+    const rec = asRecord(row);
+    const team = asRecord(rec?.team);
+    if (Number(team?.id) !== teamApiId) continue;
+    const formation = rec?.formation;
+    if (typeof formation === 'string' && formation.trim()) return formation.trim();
+  }
+  return null;
+}
+
+/** 尝试匹配球员任意进球赔率 */
+export function findPlayerAnytimeGoalOdd(
+  marketsJson: unknown,
+  playerName: string,
+): number | null {
+  const needle = playerName.trim().toLowerCase();
+  if (!needle) return null;
+  const vals = findMarketOdds(marketsJson, [
+    'anytime goal',
+    'goal scorer',
+    'player to score',
+    'first goal',
+  ]);
+  for (const v of vals) {
+    if (v.label.toLowerCase().includes(needle)) return v.odd;
   }
   return null;
 }

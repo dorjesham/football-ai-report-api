@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+import { Controller, Param, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
 import { AdminGuard } from '../common/guards/admin.guard';
@@ -15,10 +15,5 @@ export class TacticsController {
   @Post('matches/:id/tactics/generate')
   gen(@Param('id') id: string) {
     return this.svc.generate(id);
-  }
-
-  @Get('matches/:id/tactics')
-  list(@Param('id') id: string) {
-    return this.svc.list(id);
   }
 }

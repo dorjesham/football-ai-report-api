@@ -15,7 +15,7 @@ export function teamLooksLikeNationalSide(team: {
   externalId?: string | null;
 }): boolean {
   if (team.wcGroup != null && String(team.wcGroup).trim() !== '') return true;
-  if (team.externalId?.startsWith('wc26-')) return true;
+  if (team.externalId?.startsWith('af-t-')) return true;
   return false;
 }
 

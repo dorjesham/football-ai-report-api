@@ -1,0 +1,37 @@
+[
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "278",
+    "nameEn": "Kylian Mbappé",
+    "nameCn": "基利安·姆巴佩",
+    "shortNameCn": "姆巴佩"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "154",
+    "nameEn": "Lionel Messi",
+    "nameCn": "莱昂内尔·梅西",
+    "shortNameCn": "梅西"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "874",
+    "nameEn": "Cristiano Ronaldo",
+    "nameCn": "克里斯蒂亚诺·罗纳尔多",
+    "shortNameCn": "C罗"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "1100",
+    "nameEn": "Erling Haaland",
+    "nameCn": "埃尔林·哈兰德",
+    "shortNameCn": "哈兰德"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "762",
+    "nameEn": "Harry Kane",
+    "nameCn": "哈里·凯恩",
+    "shortNameCn": "凯恩"
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "39",
+    "code": "PL",
+    "nameEn": "Premier League",
+    "nameCn": "英超",
+    "shortNameCn": "英超"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "140",
+    "code": "PD",
+    "nameEn": "La Liga",
+    "nameCn": "西甲",
+    "shortNameCn": "西甲"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "135",
+    "code": "SA",
+    "nameEn": "Serie A",
+    "nameCn": "意甲",
+    "shortNameCn": "意甲"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "78",
+    "code": "BL1",
+    "nameEn": "Bundesliga",
+    "nameCn": "德甲",
+    "shortNameCn": "德甲"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "61",
+    "code": "FL1",
+    "nameEn": "Ligue 1",
+    "nameCn": "法甲",
+    "shortNameCn": "法甲"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "2",
+    "code": "CL",
+    "nameEn": "UEFA Champions League",
+    "nameCn": "欧冠",
+    "shortNameCn": "欧冠"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "3",
+    "code": "EL",
+    "nameEn": "UEFA Europa League",
+    "nameCn": "欧联",
+    "shortNameCn": "欧联"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "848",
+    "code": "UECL",
+    "nameEn": "UEFA Europa Conference League",
+    "nameCn": "欧协联",
+    "shortNameCn": "欧协联"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "1",
+    "code": "WC",
+    "nameEn": "World Cup",
+    "nameCn": "世界杯",
+    "shortNameCn": "世界杯"
+  }
+]

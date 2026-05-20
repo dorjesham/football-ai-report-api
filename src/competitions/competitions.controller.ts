@@ -1,4 +1,5 @@
 import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { MatchStatus } from '@prisma/client';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Public } from '../common/decorators/public.decorator';
 import { AdminOnly } from '../common/decorators/admin-only.decorator';
@@ -19,6 +20,32 @@ export class CompetitionsController {
     @Query('seasonId') seasonId?: string,
   ) {
     return this.competitions.findAll({ tournamentId, seasonId });
+  }
+
+  @Public()
+  @Get('match-counts')
+  @ApiOperation({
+    summary: '按杯赛实例统计场次数量（侧边栏联赛计数）',
+    description: '可选 from/to ISO、status、tournamentId、seasonId。',
+  })
+  matchCounts(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('status') status?: string,
+    @Query('tournamentId') tournamentId?: string,
+    @Query('seasonId') seasonId?: string,
+  ) {
+    const st =
+      status && (Object.values(MatchStatus) as string[]).includes(status) ?
+        (status as MatchStatus)
+      : undefined;
+    return this.competitions.matchCounts({
+      from: from ? new Date(from) : undefined,
+      to: to ? new Date(to) : undefined,
+      status: st,
+      tournamentId,
+      seasonId,
+    });
   }
 
   /** 须写在 `worldcup2026-teams` 与 `:id` 之前，避免被泛化路由吞掉 */

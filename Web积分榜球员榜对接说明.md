@@ -1,3 +1,5 @@
+> **内容已合并至 [Web前端对接文档-完整版.md](./Web前端对接文档-完整版.md)**（§6 积分榜 / 球员榜）。下文保留备查。
+
 # Web 积分榜与球员榜对接说明
 
 > **日期**：2026-05-16  
@@ -92,8 +94,17 @@ GET /leagues/PL/standings?season=2025&source=api_football
 ### 3.1 榜单
 
 ```http
-GET /rankings/players?competitionId=seed-comp-pl&metric=fantasyPrice&limit=20
+GET /rankings/players?competitionId=seed-comp-pl&metric=fantasyPrice&limit=20&source=auto
 ```
+
+| 参数 | 说明 |
+|------|------|
+| `competitionId` | 种子 cuid（如 `seed-comp-pl`），与 `code` 二选一 |
+| `code` | 联赛 code（`PL` 等），需配合 `season` |
+| `season` | 默认 `2025` |
+| `source` | **`auto`**（DB 空且带联赛时回退 AF topscorers，**服务端 BFF**）\| `db` \| `api_football` |
+| `metric` | `powerRating` \| `fantasyPrice` \| `fbrefMinutes` |
+| `limit` | 默认 30，最大 100 |
 
 | `metric` | 展示建议 |
 |----------|----------|
@@ -101,7 +112,9 @@ GET /rankings/players?competitionId=seed-comp-pl&metric=fantasyPrice&limit=20
 | `powerRating` | 战力 |
 | `fbrefMinutes` | 出场时间（需 FBref 入库） |
 
-每项含：`id`, `nameCn`, `nameEn`, `position`, `avatarUrl`, `fantasyPrice`, `powerRating`, **`marketValue`**, **`marketValueCurrency`**（默认 `EUR`）, `team`。
+**列表项**（兼容旧字段）：`rank`, `playerId`（= `id`）, `id`, `nameCn`, `nameEn`, `position`, `avatarUrl`, 嵌套 **`player`**（`nameCn`, `nameEn`, `avatarUrl`, `position`, `teamName`, `teamLogo`）, `goals`, `assists`, `minutes`, `age`（profile 能取则取）, `fantasyPrice`, `powerRating`, **`marketValue`**, **`marketValueCurrency`**, `team`。
+
+响应含 **`source`**：`db` \| `api_football`。生产 **勿** 浏览器直连 `/football-feed/players/topscorers`。
 
 不传 `competitionId` 时按库内该赛事出现过的球队聚合球员（可能较杂，建议传 `competitionId`）。
 
@@ -111,7 +124,7 @@ GET /rankings/players?competitionId=seed-comp-pl&metric=fantasyPrice&limit=20
 GET /players/:id/summary
 ```
 
-含 `avatarUrl`、`marketValue`、`marketValueCurrency`、`fantasyPrice`、`powerRating` 等。
+含 `avatarUrl`、`marketValue`、`marketValueCurrency`、`fantasyPrice`、`powerRating`、**`seasonStats`**（进球/助攻/出场/评分等）、可选 **`radarHints`**。
 
 ### 3.3 数据来源（运维）
 
@@ -131,7 +144,9 @@ API=https://oaifjhzmpswi.sealosbja.site
 
 curl -sS "$API/leagues/standings?codes=PL&season=2025&source=api_football" | jq '.success, .data.leagues[0].rows | length'
 
-curl -sS "$API/rankings/players?competitionId=seed-comp-pl&metric=powerRating&limit=5" | jq '.data.items[0] | {nameCn, avatarUrl, marketValue}'
+curl -sS "$API/rankings/players?competitionId=seed-comp-pl&metric=powerRating&limit=5&source=auto" | jq '.data.source, .data.items[0] | {rank, playerId, player, goals, marketValue}'
+
+curl -sS "$API/competitions/match-counts?status=SCHEDULED" | jq '.data.items[0]'
 ```
 
 部署后若 `leagues` 返回 404，说明 API 尚未发布含 `LeaguesModule` 的版本。

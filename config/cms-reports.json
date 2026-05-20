@@ -1,0 +1,32 @@
+[
+  {
+    "id": "demo-el-clasico",
+    "title": "国家德比 · 战术复盘样例",
+    "summary": "运营配置专题：压迫节奏、边路对位与关键球员状态（非真实订单数据）。",
+    "type": "match",
+    "league": "西甲",
+    "tags": ["专题", "战术"],
+    "pages": 8,
+    "confidence": 72,
+    "isPremium": true,
+    "publishedAt": "2026-05-01T00:00:00.000Z",
+    "category": "featured",
+    "preview": [
+      { "section": "阵型", "detail": "主队 4-3-3 高位逼抢 vs 客队 4-2-3-1 反击站位。" },
+      { "section": "看点", "detail": "边路一对一与中场二次球争夺为胜负手。" }
+    ]
+  },
+  {
+    "id": "demo-wc-group",
+    "title": "世界杯小组赛 · 出线形势观察",
+    "summary": "运营配置赛季专题：积分形势与末轮对阵压力。",
+    "type": "season",
+    "league": "世界杯",
+    "tags": ["世界杯"],
+    "pages": 6,
+    "isPremium": false,
+    "publishedAt": "2026-04-15T00:00:00.000Z",
+    "category": "worldcup",
+    "preview": [{ "section": "形势", "detail": "各组积分密度与净胜球敏感度简析。" }]
+  }
+]

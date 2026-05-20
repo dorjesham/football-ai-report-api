@@ -1,19 +1,25 @@
-import { extractAfScoreExtended } from './af-fixture-match-fields.util';
+import {
+  extractAfLeagueRoundFields,
+  extractAfLiveClock,
+} from './af-fixture-match-fields.util';
 
-describe('extractAfScoreExtended', () => {
-  it('parses halftime and fulltime from AF score block', () => {
-    const raw = {
-      score: {
-        halftime: { home: 1, away: 0 },
-        fulltime: { home: 2, away: 1 },
-        extratime: { home: null, away: null },
-        penalty: { home: null, away: null },
-      },
-    };
-    const s = extractAfScoreExtended(raw);
-    expect(s.htHome).toBe(1);
-    expect(s.htAway).toBe(0);
-    expect(s.ftHome).toBe(2);
-    expect(s.ftAway).toBe(1);
+describe('extractAfLeagueRoundFields', () => {
+  it('parses regular season round', () => {
+    const out = extractAfLeagueRoundFields({
+      league: { round: 'Regular Season - 12' },
+    });
+    expect(out.round).toBe('Regular Season - 12');
+    expect(out.matchday).toBe(12);
+  });
+});
+
+describe('extractAfLiveClock', () => {
+  it('reads elapsed from fixture status', () => {
+    const out = extractAfLiveClock({
+      fixture: { status: { short: '2H', elapsed: 67, extra: 2 } },
+    });
+    expect(out.elapsed).toBe(67);
+    expect(out.extra).toBe(2);
+    expect(out.periodShort).toBe('2H');
   });
 });

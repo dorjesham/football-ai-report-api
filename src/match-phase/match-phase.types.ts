@@ -1,3 +1,4 @@
+import type { MatchDetailPreUnlockedUi } from './match-detail-pre-unlocked.types';
 import type { MatchLiveResponse } from '../match-live/match-live.service';
 import type {
   MatchIntelHeader,
@@ -39,16 +40,35 @@ export type MatchPhaseMatchShell = {
   teams: { home: MatchIntelTeamBlock; away: MatchIntelTeamBlock };
 };
 
+export type MatchPhaseInjuryItem = {
+  playerName: string;
+  type: string | null;
+  reason: string | null;
+  teamSide: 'home' | 'away';
+};
+
 export type MatchPhasePreFacts = {
   teamSnapshots: {
     home: MatchIntelTeamSnapshot | null;
     away: MatchIntelTeamSnapshot | null;
   };
   playerSnapshotCount: number;
+  homeForm: string | null;
+  awayForm: string | null;
+  h2h: {
+    lastMeetingsCount: number | null;
+    homeWins: number | null;
+    draws: number | null;
+    awayWins: number | null;
+    summary: string | null;
+  } | null;
+  homeInjuries: MatchPhaseInjuryItem[];
+  awayInjuries: MatchPhaseInjuryItem[];
   dataAvailability: {
     teamSnapshots: 'present' | 'partial' | 'missing';
     prediction: 'present' | 'missing';
     preMatchReport: 'present' | 'missing';
+    injuries: 'present' | 'partial' | 'missing';
   };
 };
 
@@ -62,10 +82,12 @@ export type MatchPhasePostFacts = {
   ftHome: number | null;
   ftAway: number | null;
   eventsCount: number;
+  events: MatchLiveResponse['events'];
   keyMetrics: MatchLiveResponse['keyMetrics'];
   dataAvailability: {
     events: 'present' | 'partial' | 'missing';
     teamStats: 'present' | 'partial' | 'missing';
+    narrative: 'present' | 'missing';
   };
 };
 
@@ -88,6 +110,13 @@ export type MatchPhaseModel = {
   } | null;
 };
 
+export type MatchPhaseLongFormBlock = {
+  markdown: string;
+  sections?: Record<string, string>;
+  locked?: boolean;
+  teaser?: string;
+};
+
 export type MatchPhaseNarrative = {
   reportType: string;
   reportId: string;
@@ -96,14 +125,21 @@ export type MatchPhaseNarrative = {
   dashboardSummary: string | null;
   disclaimer: string;
   structuredSummary?: PostMatchStructuredV1 | null;
+  preMatchIntelLong?: MatchPhaseLongFormBlock | null;
+  tacticalLongForm?: MatchPhaseLongFormBlock | null;
 };
 
 export type MatchPhaseResponseV1 = {
   schema: typeof MATCH_PHASE_SCHEMA_V1;
+  /** v2：请改用 GET /matches/:id/detail-v2 */
+  deprecated?: boolean;
+  deprecatedMessage?: string;
   phase: MatchPhaseKind;
   meta: MatchPhaseMeta;
   match: MatchPhaseMatchShell;
   facts: MatchPhasePreFacts | MatchPhaseLiveFacts | MatchPhasePostFacts;
   model: MatchPhaseModel;
   narrative: MatchPhaseNarrative | null;
+  /** 仅 `phase=pre` 且已解锁时返回 */
+  ui?: MatchDetailPreUnlockedUi;
 };

@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import { Injectable } from '@nestjs/common';
 
 export type CmsToolItem = {
@@ -125,11 +127,22 @@ export class CmsService {
     return { items: this.defaultTools };
   }
 
+  private loadJsonFile<T>(name: string, fallback: T): T {
+    try {
+      const file = join(process.cwd(), 'config', name);
+      if (existsSync(file)) {
+        return JSON.parse(readFileSync(file, 'utf8')) as T;
+      }
+    } catch {
+      /* use fallback */
+    }
+    return fallback;
+  }
+
   listMaterials(category?: string): { items: CmsMaterialItem[] } {
     const c = category?.trim().toLowerCase();
-    const items = c ?
-        this.defaultMaterials.filter((m) => m.category === c)
-      : this.defaultMaterials;
+    const all = this.loadJsonFile<CmsMaterialItem[]>('cms-materials.json', this.defaultMaterials);
+    const items = c ? all.filter((m) => m.category === c) : all;
     return { items };
   }
 
@@ -137,7 +150,7 @@ export class CmsService {
     const cat = opts?.category?.trim().toLowerCase();
     const typ = opts?.type?.trim().toLowerCase() as CmsReportItem['type'] | undefined;
     const allowedTypes = new Set(['match', 'season', 'team', 'player']);
-    let items = [...this.defaultReports];
+    let items = [...this.loadJsonFile<CmsReportItem[]>('cms-reports.json', this.defaultReports)];
     if (cat) items = items.filter((r) => r.category?.toLowerCase() === cat);
     if (typ && allowedTypes.has(typ)) items = items.filter((r) => r.type === typ);
     return { items };

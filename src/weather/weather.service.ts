@@ -2,7 +2,10 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { ConfigService } from '@nestjs/config';
 import { DataQuality, DataSourceType } from '@prisma/client';
 import axios, { isAxiosError } from 'axios';
+import { sha256StableJson } from '../common/utils/stable-content-hash.util';
+import { MatchIntelFreshnessService } from '../match-intel/match-intel-freshness.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { LocalizationSeedLoader } from '../localization/localization-seed.loader';
 import {
   formatAxiosQWeatherFailure,
   qweatherApiKeyHeaders,
@@ -13,6 +16,8 @@ export class WeatherService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
+    private readonly intelFreshness: MatchIntelFreshnessService,
+    private readonly seedLoader: LocalizationSeedLoader,
   ) {}
 
   async syncForMatch(matchId: string) {
@@ -27,7 +32,15 @@ export class WeatherService {
       throw new BadRequestException('QWeather API Key 未配置');
     }
 
-    const city = match.city || match.country || 'Beijing';
+    const cityRaw = match.city || match.country || 'Beijing';
+    const citySeed = this.seedLoader.getCitySeed(cityRaw);
+    if (citySeed?.nameCn && !match.cityCn) {
+      await this.prisma.match.update({
+        where: { id: matchId },
+        data: { cityCn: citySeed.nameCn },
+      });
+    }
+    const city = match.cityCn || citySeed?.nameCn || cityRaw;
     const isChinese = /[\u4e00-\u9fff]/.test(city);
     const headers = qweatherApiKeyHeaders(key);
 
@@ -65,26 +78,40 @@ export class WeatherService {
         throw new Error(`和风实况返回 code=${wx.code}`);
       }
       const now = wx?.now;
-      return this.prisma.weatherSnapshot.upsert({
+      const temperature = now?.temp ? parseFloat(String(now.temp)) : null;
+      const condition = (now?.text as string | undefined) ?? null;
+      const humidity = now?.humidity ? parseFloat(String(now.humidity)) : null;
+      const windSpeed = now?.windSpeed ? parseFloat(String(now.windSpeed)) : null;
+      const contentHash = sha256StableJson({
+        temperature,
+        condition,
+        humidity,
+        windSpeed,
+      });
+      const row = await this.prisma.weatherSnapshot.upsert({
         where: { matchId },
         create: {
           matchId,
-          temperature: now?.temp ? parseFloat(String(now.temp)) : undefined,
-          condition: now?.text as string | undefined,
-          humidity: now?.humidity ? parseFloat(String(now.humidity)) : undefined,
-          windSpeed: now?.windSpeed ? parseFloat(String(now.windSpeed)) : undefined,
+          temperature: temperature ?? undefined,
+          condition: condition ?? undefined,
+          humidity: humidity ?? undefined,
+          windSpeed: windSpeed ?? undefined,
           visibility: now?.vis ? parseFloat(String(now.vis)) : undefined,
+          contentHash,
           dataQuality: DataQuality.PUBLIC_DATA,
           dataSource: DataSourceType.QWEATHER,
         },
         update: {
-          temperature: now?.temp ? parseFloat(String(now.temp)) : undefined,
-          condition: now?.text as string | undefined,
-          humidity: now?.humidity ? parseFloat(String(now.humidity)) : undefined,
-          windSpeed: now?.windSpeed ? parseFloat(String(now.windSpeed)) : undefined,
+          temperature: temperature ?? undefined,
+          condition: condition ?? undefined,
+          humidity: humidity ?? undefined,
+          windSpeed: windSpeed ?? undefined,
           visibility: now?.vis ? parseFloat(String(now.vis)) : undefined,
+          contentHash,
         },
       });
+      await this.intelFreshness.refreshIntelContentHash(matchId);
+      return row;
     } catch (e) {
       let detail = e instanceof Error ? e.message : String(e);
       if (isAxiosError(e) && e.response?.status) {

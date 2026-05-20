@@ -91,13 +91,12 @@ export class MeController {
 
   @RequiresVerifiedPhone()
   @Patch('preferences')
-  @ApiOperation({ summary: '浅合并偏好字段（顶层 key 写入 data 对象）' })
-  patchPreferences(@CurrentUser() user: RequestUser, @Body() body: Record<string, unknown>) {
-    const safe: Record<string, unknown> = { ...body };
-    delete safe['__proto__'];
-    delete safe['constructor'];
-    delete safe['prototype'];
-    return this.me.patchPreferences(user.id, safe);
+  @ApiOperation({
+    summary: '浅合并偏好字段（顶层 key 写入 data 对象）',
+    description: '支持 followedLeagues（展示名）、followedCompetitionIds（cuid）。',
+  })
+  patchPreferences(@CurrentUser() user: RequestUser, @Body() body: import('./dto/preferences.dto').PatchPreferencesDto) {
+    return this.me.patchPreferences(user.id, body as Record<string, unknown>);
   }
 
   @Get('social-posters')

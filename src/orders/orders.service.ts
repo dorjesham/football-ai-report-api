@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from 'fs';
+import { join } from 'path';
 import {
   BadRequestException,
   Injectable,
@@ -56,6 +58,7 @@ export class OrdersService {
 
   /** V2 价格表（分）：供小程序展示，与下单金额一致 */
   pricingCatalog() {
+    const features = this.loadPricingFeatures();
     return {
       version: 2 as const,
       currency: 'CNY',
@@ -68,6 +71,38 @@ export class OrdersService {
         quarterCents: this.config.get<number>('membershipProQuarterCents') ?? 12800,
         yearCents: this.config.get<number>('membershipProYearCents') ?? 36500,
       },
+      features,
+    };
+  }
+
+  private loadPricingFeatures(): { free: string[]; pro: string[] } {
+    const envJson = this.config.get<string>('pricingFeaturesJson')?.trim();
+    if (envJson) {
+      try {
+        const p = JSON.parse(envJson) as { free?: string[]; pro?: string[] };
+        return {
+          free: Array.isArray(p.free) ? p.free : [],
+          pro: Array.isArray(p.pro) ? p.pro : [],
+        };
+      } catch {
+        /* fall through */
+      }
+    }
+    try {
+      const file = join(process.cwd(), 'config', 'pricing-features.json');
+      if (existsSync(file)) {
+        const p = JSON.parse(readFileSync(file, 'utf8')) as { free?: string[]; pro?: string[] };
+        return {
+          free: Array.isArray(p.free) ? p.free : [],
+          pro: Array.isArray(p.pro) ? p.pro : [],
+        };
+      }
+    } catch {
+      /* ignore */
+    }
+    return {
+      free: ['浏览赛程', '基础分析 Teaser'],
+      pro: ['情报全文', '海报生成', '优先数据刷新'],
     };
   }
 

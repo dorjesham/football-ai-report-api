@@ -3,21 +3,22 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  DataQuality,
-  DataSourceType,
-  Prisma,
-} from '@prisma/client';
+import { DataSourceType, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { shrinkJsonForWcProfile } from '../common/utils/wc2026-af-heritage-zh.util';
 import {
   asRecord,
   extractAfFixtureMatchFields,
+  extractAfLeagueRoundFields,
   extractAfScoreExtended,
   parseAfFixtureIdFromExternalId,
 } from './af-fixture-match-fields.util';
 import { ApiFootballService } from './api-football.service';
 import { needsAfFactsSync } from './match-af-facts-sync.util';
+import { MatchAfPlayersLiveSyncService } from './match-af-players-live-sync.service';
+import { MatchIntelFreshnessService } from '../match-intel/match-intel-freshness.service';
+import { syncMatchOfficialsFromAfFixture } from './sync-match-officials-from-af.util';
+import { LocalizationPostIngestHook } from '../localization/localization-post-ingest.hook';
 
 export type MatchAfFactsSyncResult = {
   fixtureId: number;
@@ -33,6 +34,9 @@ export class MatchAfFactsSyncService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly api: ApiFootballService,
+    private readonly afPlayers: MatchAfPlayersLiveSyncService,
+    private readonly intelFreshness: MatchIntelFreshnessService,
+    private readonly l10nHook: LocalizationPostIngestHook,
   ) {}
 
   async syncByMatchId(
@@ -104,7 +108,7 @@ export class MatchAfFactsSyncService {
       image: venue?.image,
     };
 
-    const officials =
+    const officialsJson =
       refereeStr ? [{ role: 'Referee', name: refereeStr, source: 'API_FOOTBALL' }] : [];
 
     const fields = extractAfFixtureMatchFields(item);
@@ -113,6 +117,7 @@ export class MatchAfFactsSyncService {
         venue.name.trim()
       : undefined;
 
+    const roundFields = extractAfLeagueRoundFields(item);
     if (fields) {
       const hs =
         fields.homeScore != null ? Math.trunc(fields.homeScore) : null;
@@ -126,6 +131,10 @@ export class MatchAfFactsSyncService {
           homeScore: hs,
           awayScore: as,
           stadium: stadiumFromVenue ?? fields.stadium ?? undefined,
+          round: roundFields.round ?? undefined,
+          matchday: roundFields.matchday ?? undefined,
+          stage: roundFields.stage ?? undefined,
+          groupName: roundFields.groupName ?? undefined,
           dataSource: DataSourceType.API_FOOTBALL,
         },
       });
@@ -134,6 +143,10 @@ export class MatchAfFactsSyncService {
         where: { id: matchId },
         data: {
           stadium: stadiumFromVenue ?? undefined,
+          round: roundFields.round ?? undefined,
+          matchday: roundFields.matchday ?? undefined,
+          stage: roundFields.stage ?? undefined,
+          groupName: roundFields.groupName ?? undefined,
           dataSource: DataSourceType.API_FOOTBALL,
         },
       });
@@ -160,7 +173,7 @@ export class MatchAfFactsSyncService {
         lineups: line.response as Prisma.InputJsonValue,
         events: ev.response as Prisma.InputJsonValue,
         teamStats: stats.response as Prisma.InputJsonValue,
-        officials: officials as unknown as Prisma.InputJsonValue,
+        officials: officialsJson as unknown as Prisma.InputJsonValue,
         venueDetail: venueDetail as Prisma.InputJsonValue,
         rawAfFixture: rawAf,
         primaryProvider: DataSourceType.API_FOOTBALL,
@@ -181,7 +194,7 @@ export class MatchAfFactsSyncService {
         lineups: line.response as Prisma.InputJsonValue,
         events: ev.response as Prisma.InputJsonValue,
         teamStats: stats.response as Prisma.InputJsonValue,
-        officials: officials as unknown as Prisma.InputJsonValue,
+        officials: officialsJson as unknown as Prisma.InputJsonValue,
         venueDetail: venueDetail as Prisma.InputJsonValue,
         rawAfFixture: rawAf,
         primaryProvider: DataSourceType.API_FOOTBALL,
@@ -235,35 +248,37 @@ export class MatchAfFactsSyncService {
             : undefined,
         },
       });
+      const coachRec = asRecord(coach);
+      const coachName =
+        typeof coachRec?.name === 'string' ? coachRec.name.trim()
+        : typeof coachRec?.firstname === 'string' ?
+          `${coachRec.firstname} ${coachRec.lastname ?? ''}`.trim()
+        : null;
+      if (coachName) {
+        await this.l10nHook.onCoachSeen({ nameEn: coachName });
+      }
     }
 
-    if (refereeStr) {
-      const ref = await this.prisma.referee.upsert({
-        where: { externalId: `af-ref-${fid}` },
-        create: {
-          externalId: `af-ref-${fid}`,
-          nameCn: refereeStr,
-          nameEn: refereeStr,
-          dataSource: DataSourceType.API_FOOTBALL,
-        },
-        update: { nameCn: refereeStr, nameEn: refereeStr },
-      });
-      await this.prisma.refereeSnapshot.upsert({
-        where: { matchId },
-        create: {
-          matchId,
-          refereeId: ref.id,
-          notes: `主裁判字段来自 API-Football fixture ${fid}（姓名级公开数据）。`,
-          dataQuality: DataQuality.PUBLIC_DATA,
-          dataSource: DataSourceType.API_FOOTBALL,
-        },
-        update: {
-          refereeId: ref.id,
-          notes: `主裁判字段来自 API-Football fixture ${fid}。`,
-          dataSource: DataSourceType.API_FOOTBALL,
-        },
-      });
+    const syncOfficials = await syncMatchOfficialsFromAfFixture(
+      this.prisma,
+      matchId,
+      fid,
+      item,
+    );
+    if (syncOfficials.referee) {
+      await this.l10nHook.onRefereeSeen(syncOfficials.referee);
     }
+    const matchRow = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      select: { id: true, city: true, venueName: true },
+    });
+    if (matchRow) {
+      await this.l10nHook.onMatchUpsert(matchRow);
+    }
+
+    void this.afPlayers
+      .syncPlayersByMatchId(matchId, { force: true, minIntervalSec: 0, delayMs: 400 })
+      .catch(() => undefined);
 
     const detail = {
       fixtureId: fid,
@@ -279,6 +294,8 @@ export class MatchAfFactsSyncService {
         fixture: summarizeErrors(raw as Record<string, unknown>),
       },
     };
+
+    await this.intelFreshness.refreshIntelContentHash(matchId);
 
     return { fixtureId: fid, detail };
   }

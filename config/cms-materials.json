@@ -1,0 +1,20 @@
+[
+  {
+    "id": "brand-kit",
+    "title": "品牌基础素材包",
+    "category": "brand",
+    "isPremium": false
+  },
+  {
+    "id": "match-card-template",
+    "title": "赛况卡片模板",
+    "category": "template",
+    "isPremium": true
+  },
+  {
+    "id": "wc2026-share",
+    "title": "世界杯 2026 分享图",
+    "category": "worldcup",
+    "isPremium": false
+  }
+]

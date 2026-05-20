@@ -11,7 +11,9 @@ export type LiveEventV1 = {
   minute: number | null;
   extraMinute: number | null;
   type: string;
+  typeCn?: string | null;
   detail: string | null;
+  detailCn?: string | null;
   teamSide: 'home' | 'away' | null;
   teamName: string | null;
   playerName: string | null;
@@ -23,9 +25,19 @@ export type MatchEventsStorageV1 = {
   items: LiveEventV1[];
 };
 
+export type LiveClockJson = {
+  elapsed: number | null;
+  extra: number | null;
+  periodShort: string | null;
+};
+
 export type LiveMetaJson = {
   seq?: number;
   lastHomeScore?: number | null;
   lastAwayScore?: number | null;
   lastPublishAt?: string;
+  clock?: LiveClockJson;
+  lastOfficialsSyncedAt?: string;
+  lastPlayersSyncedAt?: string;
+  lastCommentaryEventIds?: string[];
 };

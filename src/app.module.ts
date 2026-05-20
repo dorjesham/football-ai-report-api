@@ -14,9 +14,13 @@ import { TournamentsModule } from './tournaments/tournaments.module';
 import { SeasonsModule } from './seasons/seasons.module';
 import { CompetitionsModule } from './competitions/competitions.module';
 import { LeaguesModule } from './leagues/leagues.module';
+import { TeamsModule } from './teams/teams.module';
 import { MatchLiveModule } from './match-live/match-live.module';
 import { MatchPhaseModule } from './match-phase/match-phase.module';
 import { MatchesModule } from './matches/matches.module';
+import { MatchDetailBffModule } from './match-detail-bff/match-detail-bff.module';
+import { ApiV2Module } from './api-v2/api-v2.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { FootballDataModule } from './football-data/football-data.module';
 import { PublicSourcesModule } from './public-sources/public-sources.module';
 import { WeatherModule } from './weather/weather.module';
@@ -31,7 +35,9 @@ import { OrdersModule } from './orders/orders.module';
 import { WxPayModule } from './wxpay/wxpay.module';
 import { UnlockModule } from './unlock/unlock.module';
 import { AdminModule } from './admin/admin.module';
-import { AdminViewModule } from './admin-view/admin-view.module';
+import { AdminApiModule } from './admin-api/admin-api.module';
+import { WorldCupAdminModule } from './world-cup-admin/world-cup-admin.module';
+import { DataPipelineModule } from './data-pipeline/data-pipeline.module';
 import { CronModule } from './cron/cron.module';
 import { TeamFollowModule } from './team-follow/team-follow.module';
 import { DataIngestModule } from './data-ingest/data-ingest.module';
@@ -45,6 +51,7 @@ import { InsightsModule } from './insights/insights.module';
 import { CmsModule } from './cms/cms.module';
 import { FeedbackModule } from './feedback/feedback.module';
 import { UserNotificationsModule } from './user-notifications/user-notifications.module';
+import { LocalizationModule } from './localization/localization.module';
 
 @Module({
   imports: [
@@ -67,6 +74,7 @@ import { UserNotificationsModule } from './user-notifications/user-notifications
       ],
     }),
     PrismaModule,
+    LocalizationModule,
     UserNotificationsModule,
     RedisModule,
     HealthModule,
@@ -75,7 +83,11 @@ import { UserNotificationsModule } from './user-notifications/user-notifications
     SeasonsModule,
     CompetitionsModule,
     LeaguesModule,
+    TeamsModule,
     MatchesModule,
+    MatchDetailBffModule,
+    ApiV2Module,
+    MetricsModule,
     MatchPhaseModule,
     MatchLiveModule,
     FootballDataModule,
@@ -92,7 +104,9 @@ import { UserNotificationsModule } from './user-notifications/user-notifications
     WxPayModule,
     UnlockModule,
     AdminModule,
-    AdminViewModule,
+    AdminApiModule,
+    WorldCupAdminModule,
+    DataPipelineModule,
     CronModule,
     TeamFollowModule,
     DataIngestModule,

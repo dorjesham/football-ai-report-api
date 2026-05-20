@@ -20,10 +20,17 @@ import {
   MATCH_INTEL_INCLUDE,
   MatchIntelRow,
 } from './match-intel.mapper';
+import { afBundleToPredictionPreview } from './match-intel-af-bundle.util';
 import { resolveIntelFreeSummaryForDisplay } from './intel-display.util';
 import { MatchIntelUnlockPrice } from './match-intel.types';
 import { computeLiveStatusSyncHint } from './match-status-clock.util';
 import { MatchOddsSnapshotService } from '../api-football/match-odds-snapshot.service';
+import { MatchInjuriesService } from './match-injuries.service';
+import { TacticsService } from '../tactics/tactics.service';
+import { DisplayNameService } from '../localization/display-name.service';
+import { FootballDictionaryService } from '../localization/football-dictionary.service';
+import { LocalizationSeedLoader } from '../localization/localization-seed.loader';
+import { MatchPresentationEnricherService } from '../localization/match-presentation-enricher.service';
 
 @Injectable()
 export class MatchesService {
@@ -34,7 +41,25 @@ export class MatchesService {
     private readonly oddsSnapshots: MatchOddsSnapshotService,
     private readonly redis: RedisService,
     private readonly matchCacheInvalidation: MatchCacheInvalidationService,
+    private readonly matchInjuries: MatchInjuriesService,
+    private readonly tactics: TacticsService,
+    private readonly displayName: DisplayNameService,
+    private readonly footballDict: FootballDictionaryService,
+    private readonly seedLoader: LocalizationSeedLoader,
+    private readonly presentation: MatchPresentationEnricherService,
   ) {}
+
+  private intelL10n() {
+    return {
+      displayName: this.displayName,
+      dict: this.footballDict,
+      seeds: this.seedLoader,
+    };
+  }
+
+  getMatchInjuries(matchId: string) {
+    return this.matchInjuries.forMatch(matchId);
+  }
 
   /**
    * 管理员始终全量；已完赛且已登录（任意角色含 USER）免费开放全量情报，不要求解锁订单；
@@ -70,7 +95,7 @@ export class MatchesService {
     seasonId?: string;
     status?: string;
   }) {
-    const cacheKey = `matches:list:${stableQueryHash(filters as Record<string, unknown>)}`;
+    const cacheKey = `matches:list:v2:${stableQueryHash(filters as Record<string, unknown>)}`;
     const ttl = this.config.get<number>('cacheMatchesListTtlSec') ?? 20;
     const hit = await this.redis.getJson<unknown[]>(cacheKey);
     if (hit) return hit;
@@ -92,7 +117,8 @@ export class MatchesService {
       },
       orderBy: { kickoffTime: 'asc' },
     });
-    const out = rows.map((m) => ({
+    const enriched = await this.presentation.enrichMatchList(rows);
+    const out = enriched.map((m) => ({
       ...m,
       liveStatusSyncHint: computeLiveStatusSyncHint({
         status: m.status,
@@ -169,8 +195,22 @@ export class MatchesService {
         report,
         postMatchReport,
         liveNarrativeReport,
+        showOls: false,
+        showPredictionMarkets: false,
+        afPredictionsFromBundle: await this.loadAfPredictionsForIntel(matchId),
+        l10n: this.intelL10n(),
       }),
     );
+  }
+
+  /** intel 兼容：已解锁时优先展示 bundle 内 AF 预测整包 */
+  private async loadAfPredictionsForIntel(matchId: string): Promise<unknown | null> {
+    if (this.config.get<boolean>('enableAfRawBundle') === false) return null;
+    const bundle = await this.prisma.matchAfRawBundle.findUnique({
+      where: { matchId },
+      select: { predictionsJson: true },
+    });
+    return bundle?.predictionsJson ?? null;
   }
 
   private finalizeMatchIntelResponse(
@@ -270,10 +310,28 @@ export class MatchesService {
         }),
       },
       tournament: match.tournament,
-      competition: match.competition,
+      competition: match.competition
+        ? this.presentation.enrichCompetition({
+            nameCn: match.competition.nameCn,
+            nameEn: match.competition.nameEn,
+            code: match.competition.code,
+            apiSportsLeagueId: match.competition.apiSportsLeagueId ?? null,
+          })
+        : null,
       season: match.season,
-      homeTeam: match.homeTeam,
-      awayTeam: match.awayTeam,
+      homeTeam: this.presentation.enrichTeam({
+        nameCn: match.homeTeam.nameCn,
+        nameEn: match.homeTeam.nameEn ?? match.homeTeam.nameCn,
+        externalId: match.homeTeam.externalId,
+        apiFootballTeamId: match.homeTeam.apiFootballTeamId,
+      }),
+      awayTeam: this.presentation.enrichTeam({
+        nameCn: match.awayTeam.nameCn,
+        nameEn: match.awayTeam.nameEn ?? match.awayTeam.nameCn,
+        externalId: match.awayTeam.externalId,
+        apiFootballTeamId: match.awayTeam.apiFootballTeamId,
+      }),
+      statusCn: this.presentation.statusCn(String(match.status)),
       homeTeamSnapshot,
       awayTeamSnapshot,
       predictionPreview,
@@ -418,11 +476,60 @@ export class MatchesService {
   /**
    * C 端分析页只读聚合：解锁边界与 `GET /matches/:id/intel` 一致；未解锁不返回付费模块正文。
    */
+  async getTacticsBundle(matchId: string, viewer: RequestUser | null) {
+    const match = await this.prisma.match.findUnique({
+      where: { id: matchId },
+      select: { id: true, status: true },
+    });
+    if (!match) throw new NotFoundException('Match not found');
+    const isUnlocked = await this.resolveIntelUnlocked(match, viewer);
+    const { legacy, sandbox } = await this.tactics.list(matchId);
+
+    if (!isUnlocked) {
+      return {
+        matchId,
+        isUnlocked: false,
+        legacy: legacy.slice(0, 2).map((t) => ({
+          id: t.id,
+          title: t.title,
+          scenarioType: t.scenarioType,
+          probability: t.probability,
+        })),
+        sandbox: null,
+        sandboxTeaser: sandbox?.contentJson
+          ? {
+              conclusion:
+                typeof sandbox.contentJson === 'object' &&
+                sandbox.contentJson !== null &&
+                'conclusion' in (sandbox.contentJson as object)
+                  ? String((sandbox.contentJson as { conclusion?: string }).conclusion ?? '').slice(
+                      0,
+                      200,
+                    )
+                  : null,
+              locked: true as const,
+            }
+          : null,
+      };
+    }
+
+    return {
+      matchId,
+      isUnlocked: true,
+      legacy,
+      sandbox: sandbox?.contentJson ?? null,
+      sandboxMeta: sandbox
+        ? { phase: sandbox.phase, schema: sandbox.schema, updatedAt: sandbox.updatedAt }
+        : null,
+    };
+  }
+
   async getAnalysisPreview(matchId: string, viewer: RequestUser | null) {
     const match = await this.prisma.match.findUnique({
       where: { id: matchId },
       include: {
         activePrediction: true,
+        tacticalSandbox: { select: { id: true, contentJson: true } },
         tacticalScenarios: {
           take: 8,
           orderBy: { probability: 'desc' },
@@ -479,6 +586,27 @@ export class MatchesService {
           scenarioType: t.scenarioType,
         }));
 
+    const mapIntelPlayer = (
+      pl: {
+        id: string;
+        nameCn: string;
+        nameEn: string;
+        position: string | null;
+        avatarUrl: string | null;
+      },
+      teaser: boolean,
+    ) => {
+      const base = {
+        id: pl.id,
+        nameCn: pl.nameCn,
+        nameEn: teaser ? undefined : pl.nameEn,
+        position: pl.position,
+        avatarUrl: pl.avatarUrl,
+        photoUrl: pl.avatarUrl,
+      };
+      return teaser ? { id: base.id, nameCn: base.nameCn, position: base.position, photoUrl: base.photoUrl } : base;
+    };
+
     const playerIntelItems =
       isUnlocked ?
         match.playerIntelligence.map((pi) => ({
@@ -487,18 +615,14 @@ export class MatchesService {
           startProbability: pi.startProbability,
           riskLevel: pi.riskLevel,
           aiSummary: pi.aiSummary,
-          player: pi.player,
+          player: mapIntelPlayer(pi.player, false),
         }))
       : match.playerIntelligence.slice(0, 3).map((pi) => ({
           id: pi.id,
           statusTag: pi.statusTag,
           riskLevel: pi.riskLevel,
           locked: true as const,
-          player: {
-            id: pi.player.id,
-            nameCn: pi.player.nameCn,
-            position: pi.player.position,
-          },
+          player: mapIntelPlayer(pi.player, true),
         }));
 
     const headToHeadPayload =
@@ -515,9 +639,42 @@ export class MatchesService {
           }
       : null;
 
+    const afBundlePred = await this.loadAfPredictionsForIntel(matchId);
+    const afPreview =
+      afBundlePred ? afBundleToPredictionPreview(afBundlePred) : null;
+
+    const summary =
+      (afPreview ?
+        `官方倾向：主胜 ${Math.round(afPreview.homeWinProbability * 100)}% / 平 ${Math.round(afPreview.drawProbability * 100)}% / 客胜 ${Math.round(afPreview.awayWinProbability * 100)}%`
+      : match.activePrediction?.explanation?.trim().slice(0, 320)) ||
+      (headToHeadPayload && 'summary' in headToHeadPayload ?
+        String(headToHeadPayload.summary || '').slice(0, 320)
+      : '') ||
+      null;
+
+    const predictionBlock =
+      afPreview ?
+        {
+          upsetIndex: afPreview.upsetIndex,
+          confidence: afPreview.confidence,
+          homeWinProbability: afPreview.homeWinProbability,
+          awayWinProbability: afPreview.awayWinProbability,
+          source: 'api-football' as const,
+        }
+      : match.activePrediction ?
+        {
+          upsetIndex: match.activePrediction.upsetIndex,
+          confidence: match.activePrediction.confidence,
+          homeWinProbability: match.activePrediction.homeWinProbability,
+          awayWinProbability: match.activePrediction.awayWinProbability,
+        }
+      : null;
+
     return {
       meta: {
         contractVersion: 'analysis-preview-v1',
+        deprecated: true,
+        replacement: `/matches/${match.id}/detail-v2`,
         fieldBoundary:
           'Full paid modules: GET /matches/:id/intel; phase pages: pre-match/live/post-match; do not call Admin tactics/fantasy routes.',
       },
@@ -525,17 +682,21 @@ export class MatchesService {
       status: match.status,
       kickoffTime: match.kickoffTime,
       isUnlocked,
-      prediction: match.activePrediction
-        ? {
-            upsetIndex: match.activePrediction.upsetIndex,
-            confidence: match.activePrediction.confidence,
-            homeWinProbability: match.activePrediction.homeWinProbability,
-            awayWinProbability: match.activePrediction.awayWinProbability,
-          }
-        : null,
+      prediction: predictionBlock,
       tactics: {
         count: match.tacticalScenarios.length,
         items: tacticsItems,
+        sandboxAvailable: !!match.tacticalSandbox,
+        teaserTitle:
+          match.tacticalScenarios[0]?.title ??
+          (match.tacticalSandbox?.contentJson &&
+          typeof match.tacticalSandbox.contentJson === 'object' &&
+          'conclusion' in (match.tacticalSandbox.contentJson as object)
+            ? String((match.tacticalSandbox.contentJson as { conclusion?: string }).conclusion).slice(
+                0,
+                60,
+              )
+            : null),
       },
       fantasy: match.fantasyAdvice
         ? isUnlocked ?
@@ -553,6 +714,7 @@ export class MatchesService {
         items: playerIntelItems,
       },
       playerIntelligenceCount: match._count.playerIntelligence,
+      summary: summary || undefined,
     };
   }
 

@@ -6,10 +6,11 @@ import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
 import express, { type Request, type Response } from 'express';
+import { existsSync } from 'fs';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
-import { adminViewPostOriginMiddleware } from './common/middleware/admin-view-post-origin.middleware';
+import { mountAdminSpa } from './config/mount-admin-spa';
 import { resolveCorsOrigin } from './config/cors.util';
 import { resolveListenPortNumber } from './config/listen-port.util';
 
@@ -30,7 +31,6 @@ async function bootstrap() {
     credentials: true,
   });
   app.use(cookieParser());
-  app.use(adminViewPostOriginMiddleware());
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -40,8 +40,16 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  app.setViewEngine('ejs');
+  const adminSpaDir = join(__dirname, '..', 'admin-web', 'dist');
+  const adminSpaEnabled = existsSync(adminSpaDir);
+  if (adminSpaEnabled) {
+    mountAdminSpa(app, adminSpaDir);
+  } else {
+    Logger.warn(
+      `Admin SPA dist missing (${adminSpaDir}); run npm run build:admin`,
+      'Bootstrap',
+    );
+  }
 
   const enableSwagger =
     nodeEnv !== 'production' || config.get<boolean>('enableSwaggerDocs') === true;
@@ -64,6 +72,7 @@ async function bootstrap() {
   }
 
   const port = resolveListenPortNumber();
+  await app.init();
   await app.listen(port, '0.0.0.0');
   Logger.log(
     `HTTP listening on 0.0.0.0:${port} (NODE_ENV=${nodeEnv}); align Ingress/Service targetPort with this port.`,

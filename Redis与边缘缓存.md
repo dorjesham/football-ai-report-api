@@ -21,8 +21,19 @@
 | `tournaments:code:<code>` | 单个赛事 |
 | `tournaments:comps:<code>` | 某赛事下竞赛 |
 | `tournaments:matches:<code>` | 某赛事下比赛列表 |
+| `matches:live:<matchId>` | 比赛 live BFF |
+| `rankings:topscorers:<code>:<season>:<metric>` | 射手榜 AF 预热/回退 |
+| `leagues:standings:<code>:<season>` | 积分榜 AF 预热 |
+| `injuries:match:<matchId>` | 单场伤停 BFF |
+| `af:quota:YYYY-MM-DD` | API-Football **日配额计数**（仅 Cron/Admin 写上游时递增） |
 
 实际键名带 `REDIS_KEY_PREFIX`（默认 `football:`）。
+
+### API-Football 日配额
+
+- 环境变量 `API_FOOTBALL_DAILY_QUOTA`（默认 7200）。
+- 每次经 `ApiFootballService` 发上游 GET 前 `INCR` 当日键；超限返回 503，Cron 任务在 tick 开头检查 `remaining` 并跳过。
+- 观测：`GET /admin/api-football/quota`、`GET /data-ingest/api-football/cost-estimate`。
 
 ## 失效
 

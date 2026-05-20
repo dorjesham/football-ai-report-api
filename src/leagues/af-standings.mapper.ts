@@ -15,6 +15,11 @@ export type NormalizedStandingRow = {
   points: number;
 };
 
+export type NormalizedStandingsGroup = {
+  groupName: string;
+  rows: NormalizedStandingRow[];
+};
+
 function num(v: unknown, fallback = 0): number {
   const n = Number(v);
   return Number.isFinite(n) ? n : fallback;
@@ -48,26 +53,66 @@ function mapOneRow(raw: Record<string, unknown>): NormalizedStandingRow | null {
   };
 }
 
-/** 将 API-Football `/standings` 的 `response` 规范化为 flat rows（多组杯赛取第一组积分榜） */
-export function normalizeApiFootballStandingsResponse(
-  response: unknown[],
-): NormalizedStandingRow[] {
+function groupLabelFromTier(
+  tier: unknown[],
+  tierIndex: number,
+  sampleRow: Record<string, unknown> | null,
+): string {
+  const fromRow =
+    (typeof sampleRow?.group === 'string' && sampleRow.group.trim()) ||
+    (typeof sampleRow?.groupName === 'string' && sampleRow.groupName.trim()) ||
+    '';
+  if (fromRow) return fromRow;
+  if (tier.length > 0 && tierIndex > 0) return `Group ${String.fromCharCode(65 + tierIndex)}`;
+  return '';
+}
+
+function mapTier(tier: unknown[], tierIndex: number): NormalizedStandingRow[] {
   const rows: NormalizedStandingRow[] = [];
+  for (const item of tier) {
+    const rec = asRecord(item);
+    if (!rec) continue;
+    const mapped = mapOneRow(rec);
+    if (mapped) rows.push(mapped);
+  }
+  return rows.sort((a, b) => a.rank - b.rank);
+}
+
+/** 多组杯赛（世界杯等）按 groupName 拆分；联赛单表 groupName 为 '' */
+export function normalizeApiFootballStandingsGroups(
+  response: unknown[],
+): NormalizedStandingsGroup[] {
+  const groups: NormalizedStandingsGroup[] = [];
   for (const groupWrap of response) {
     const gRec = asRecord(groupWrap);
     const league = asRecord(gRec?.league);
     const standings = league?.standings;
     if (!Array.isArray(standings)) continue;
-    for (const tier of standings) {
-      if (!Array.isArray(tier)) continue;
-      for (const item of tier) {
-        const rec = asRecord(item);
-        if (!rec) continue;
-        const mapped = mapOneRow(rec);
-        if (mapped) rows.push(mapped);
-      }
-      if (rows.length > 0) return rows.sort((a, b) => a.rank - b.rank);
+    for (let ti = 0; ti < standings.length; ti++) {
+      const tier = standings[ti];
+      if (!Array.isArray(tier) || tier.length === 0) continue;
+      const rows = mapTier(tier, ti);
+      if (!rows.length) continue;
+      const groupName = groupLabelFromTier(tier, ti, asRecord(tier[0]));
+      groups.push({
+        groupName,
+        rows,
+      });
     }
   }
-  return rows.sort((a, b) => a.rank - b.rank);
+  if (groups.length === 0) return [];
+  if (groups.length === 1 && !groups[0]!.groupName) {
+    return [{ groupName: '', rows: groups[0]!.rows }];
+  }
+  return groups;
+}
+
+/** 扁平化：多组时合并（联赛 API 单表兼容） */
+export function normalizeApiFootballStandingsResponse(
+  response: unknown[],
+): NormalizedStandingRow[] {
+  const groups = normalizeApiFootballStandingsGroups(response);
+  if (!groups.length) return [];
+  if (groups.length === 1) return groups[0]!.rows;
+  return groups.flatMap((g) => g.rows).sort((a, b) => a.rank - b.rank);
 }

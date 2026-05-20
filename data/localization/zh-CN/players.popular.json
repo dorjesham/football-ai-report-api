@@ -1,0 +1,23 @@
+[
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "278",
+    "nameEn": "Kylian Mbappé",
+    "nameCn": "基利安·姆巴佩",
+    "shortNameCn": "姆巴佩"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "154",
+    "nameEn": "Erling Haaland",
+    "nameCn": "埃尔林·哈兰德",
+    "shortNameCn": "哈兰德"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "874",
+    "nameEn": "Mohamed Salah",
+    "nameCn": "穆罕默德·萨拉赫",
+    "shortNameCn": "萨拉赫"
+  }
+]

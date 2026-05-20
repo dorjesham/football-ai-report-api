@@ -6,6 +6,10 @@ import axios, {
   isAxiosError,
 } from 'axios';
 import { PrismaService } from '../prisma/prisma.service';
+import {
+  ApiFootballQuotaExceededError,
+  ApiFootballQuotaService,
+} from './api-football-quota.service';
 
 /** API-Sports 常在 HTTP 200 下返回 errors / results，需单独检查 */
 function summarizeApiSportsErrors(body: Record<string, unknown>): {
@@ -24,24 +28,56 @@ function summarizeApiSportsErrors(body: Record<string, unknown>): {
   return { errorsText: errorsText.slice(0, 800), results };
 }
 
+/** v3 /fixtures：多数联赛一次返回全季；传 `page` 会触发 errors.page */
+export function buildFixturesQueryParams(params: {
+  league: number;
+  season: number;
+  page?: number;
+}): Record<string, number> {
+  const query: Record<string, number> = {
+    league: params.league,
+    season: params.season,
+  };
+  if (params.page != null && params.page >= 1) {
+    query.page = params.page;
+  }
+  return query;
+}
+
+function apiSportsErrorsMentionPage(errorsText: string): boolean {
+  return /page/i.test(errorsText);
+}
+
 /** 只读代理允许转发的上游 path（不含 query） */
 const FOOTBALL_API_PASS_THROUGH_PATHS = new Set([
   '/fixtures',
   '/fixtures/lineups',
   '/fixtures/statistics',
   '/fixtures/events',
+  '/fixtures/players',
   '/fixtures/headtohead',
   '/players',
   '/players/profiles',
   '/players/squads',
   '/players/topscorers',
+  '/players/topassists',
+  '/players/topyellowcards',
+  '/players/topredcards',
   '/players/seasons',
+  '/fixtures/rounds',
+  '/transfers',
+  '/trophies',
+  '/sidelined',
+  '/odds/live',
+  '/odds/bookmakers',
+  '/odds/bets',
   '/teams',
   '/teams/statistics',
   '/injuries',
   '/predictions',
   '/odds',
   '/standings',
+  '/coachs',
 ]);
 
 @Injectable()
@@ -51,6 +87,7 @@ export class ApiFootballService {
   constructor(
     private readonly config: ConfigService,
     private readonly prisma: PrismaService,
+    private readonly quota: ApiFootballQuotaService,
   ) {}
 
   client(): AxiosInstance {
@@ -76,6 +113,11 @@ export class ApiFootballService {
     path: string,
     config?: { params?: Record<string, string | number | undefined> },
   ): Promise<AxiosResponse<T>> {
+    const ok = await this.quota.tryConsume(1);
+    if (!ok) {
+      const snap = await this.quota.snapshot();
+      throw new ApiFootballQuotaExceededError(snap.used, snap.limit);
+    }
     const maxAttempts = 6;
     let lastErr: unknown;
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -122,7 +164,7 @@ export class ApiFootballService {
     });
   }
 
-  /** GET /fixtures 单页 */
+  /** GET /fixtures 单页（默认不传 page；仅显式 page>=2 时带上以兼容旧分页） */
   async getFixturesPage(params: {
     league: number;
     season: number;
@@ -137,22 +179,35 @@ export class ApiFootballService {
     errorsText?: string;
   }> {
     const http = this.client();
-    const { data, status } = await this.getWith429Retry(http, '/fixtures', {
-      params: {
+    let query = buildFixturesQueryParams(params);
+    let { data, status } = await this.getWith429Retry<unknown>(http, '/fixtures', {
+      params: query,
+    });
+    let body = data as Record<string, unknown>;
+    let meta = summarizeApiSportsErrors(body);
+    if (
+      meta.errorsText &&
+      apiSportsErrorsMentionPage(meta.errorsText) &&
+      query.page != null
+    ) {
+      query = buildFixturesQueryParams({
         league: params.league,
         season: params.season,
-        page: params.page ?? 1,
-      },
-    });
-    const body = data as Record<string, unknown>;
+      });
+      ({ data, status } = await this.getWith429Retry<unknown>(http, '/fixtures', {
+        params: query,
+      }));
+      body = data as Record<string, unknown>;
+      meta = summarizeApiSportsErrors(body);
+    }
     const response = Array.isArray(body.response) ? body.response : [];
-    const meta = summarizeApiSportsErrors(body);
+    const pageLabel = query.page != null ? String(query.page) : 'none';
     await this.log(
       '/fixtures',
       'GET',
       status,
       !meta.errorsText,
-      `league=${params.league} season=${params.season} page=${params.page ?? 1} rows=${response.length}${
+      `league=${params.league} season=${params.season} page=${pageLabel} rows=${response.length}${
         meta.results != null ? ` results=${meta.results}` : ''
       }${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
     );
@@ -382,6 +437,44 @@ export class ApiFootballService {
     }
   }
 
+  /** GET /fixtures/players?fixture= — 本场球员技术统计 */
+  async getFixturePlayers(fixtureId: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/fixtures/players',
+        { params: { fixture: fixtureId } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/fixtures/players',
+        'GET',
+        status,
+        !meta.errorsText,
+        `fixture=${fixtureId} players=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log(
+        '/fixtures/players',
+        'GET',
+        statusCode,
+        false,
+        `fixture=${fixtureId} ${msg}`,
+      );
+      throw e;
+    }
+  }
+
   /** GET /teams?league=&season= — 联赛球队列表（单页，通常一页足够） */
   async getTeamsInLeague(league: number, season: number): Promise<{
     status: number;
@@ -512,6 +605,44 @@ export class ApiFootballService {
     }
   }
 
+  /** GET /predictions?fixture=（不传 page） */
+  async getPredictions(fixtureId: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+    errorsText: string | null;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/predictions',
+        { params: { fixture: fixtureId } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/predictions',
+        'GET',
+        status,
+        !meta.errorsText && arr.length > 0,
+        `fixture=${fixtureId} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return {
+        status,
+        response: arr,
+        raw: body,
+        errorsText: meta.errorsText,
+      };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/predictions', 'GET', statusCode, false, `fixture=${fixtureId} ${msg}`);
+      throw e;
+    }
+  }
+
   /** GET /standings?league=&season= */
   async getStandings(league: number, season: number): Promise<{
     status: number;
@@ -540,6 +671,218 @@ export class ApiFootballService {
       const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
       const msg = e instanceof Error ? e.message : String(e);
       await this.log('/standings', 'GET', statusCode, false, `league=${league} ${msg}`);
+      throw e;
+    }
+  }
+
+  /** GET /players/topassists?league=&season= */
+  async getTopAssists(league: number, season: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/players/topassists',
+        { params: { league, season } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/players/topassists',
+        'GET',
+        status,
+        !meta.errorsText,
+        `league=${league} season=${season} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/players/topassists', 'GET', statusCode, false, `league=${league} ${msg}`);
+      throw e;
+    }
+  }
+
+  /** GET /players/topscorers?league=&season= */
+  async getTopscorers(league: number, season: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/players/topscorers',
+        { params: { league, season } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/players/topscorers',
+        'GET',
+        status,
+        !meta.errorsText,
+        `league=${league} season=${season} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/players/topscorers', 'GET', statusCode, false, `league=${league} ${msg}`);
+      throw e;
+    }
+  }
+
+  private async fetchArrayEndpoint(
+    path: string,
+    params: Record<string, string | number>,
+    logLabel: string,
+  ): Promise<{ status: number; response: unknown[]; raw: Record<string, unknown> }> {
+    const http = this.client();
+    const { data, status } = await this.getWith429Retry<Record<string, unknown>>(http, path, {
+      params,
+    });
+    const body = data ?? {};
+    const arr = Array.isArray(body.response) ? body.response : [];
+    const meta = summarizeApiSportsErrors(body);
+    await this.log(
+      path,
+      'GET',
+      status,
+      !meta.errorsText,
+      `${logLabel} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+    );
+    return { status, response: arr, raw: body };
+  }
+
+  async getTopYellowCards(league: number, season: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/players/topyellowcards',
+        { league, season },
+        `league=${league} season=${season}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/players/topyellowcards', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getTopRedCards(league: number, season: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/players/topredcards',
+        { league, season },
+        `league=${league} season=${season}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/players/topredcards', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getFixtureRounds(league: number, season: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/fixtures/rounds',
+        { league, season },
+        `league=${league} season=${season}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/fixtures/rounds', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getTransfers(teamId: number, season: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/transfers',
+        { team: teamId, season },
+        `team=${teamId} season=${season}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/transfers', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getTrophies(params: { team?: number; player?: number }) {
+    const q: Record<string, number> = {};
+    if (params.team != null) q.team = params.team;
+    if (params.player != null) q.player = params.player;
+    try {
+      return await this.fetchArrayEndpoint('/trophies', q, JSON.stringify(q));
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/trophies', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getSidelined(playerId: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/sidelined',
+        { player: playerId },
+        `player=${playerId}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/sidelined', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getOddsLive(fixtureId: number) {
+    try {
+      return await this.fetchArrayEndpoint(
+        '/odds/live',
+        { fixture: fixtureId },
+        `fixture=${fixtureId}`,
+      );
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/odds/live', 'GET', statusCode, false, `fixture=${fixtureId} ${msg}`);
+      throw e;
+    }
+  }
+
+  async getOddsBookmakers() {
+    try {
+      return await this.fetchArrayEndpoint('/odds/bookmakers', {}, 'bookmakers');
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/odds/bookmakers', 'GET', statusCode, false, msg);
+      throw e;
+    }
+  }
+
+  async getOddsBets() {
+    try {
+      return await this.fetchArrayEndpoint('/odds/bets', {}, 'bets');
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/odds/bets', 'GET', statusCode, false, msg);
       throw e;
     }
   }
@@ -614,6 +957,114 @@ export class ApiFootballService {
       const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
       const msg = e instanceof Error ? e.message : String(e);
       await this.log('/odds', 'GET', statusCode, false, `fixture=${fixtureId} ${msg}`);
+      throw e;
+    }
+  }
+
+  /** GET /coachs?team= */
+  async getCoachs(teamId: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/coachs',
+        { params: { team: teamId } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/coachs',
+        'GET',
+        status,
+        !meta.errorsText,
+        `team=${teamId} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log('/coachs', 'GET', statusCode, false, `team=${teamId} ${msg}`);
+      throw e;
+    }
+  }
+
+  /** GET /players/squads?team= */
+  async getPlayerSquads(teamId: number): Promise<{
+    status: number;
+    response: unknown[];
+    raw: Record<string, unknown>;
+  }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/players/squads',
+        { params: { team: teamId } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/players/squads',
+        'GET',
+        status,
+        !meta.errorsText,
+        `team=${teamId} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log(
+        '/players/squads',
+        'GET',
+        statusCode,
+        false,
+        `team=${teamId} ${msg}`,
+      );
+      throw e;
+    }
+  }
+
+  /** GET /fixtures/headtohead — 双方历史交锋 */
+  async getHeadToHead(
+    homeTeamId: number,
+    awayTeamId: number,
+    last = 5,
+  ): Promise<{ status: number; response: unknown[]; raw: Record<string, unknown> }> {
+    const http = this.client();
+    try {
+      const { data, status } = await this.getWith429Retry<Record<string, unknown>>(
+        http,
+        '/fixtures/headtohead',
+        { params: { h2h: `${homeTeamId}-${awayTeamId}`, last: Math.min(20, Math.max(1, last)) } },
+      );
+      const body = data ?? {};
+      const arr = Array.isArray(body.response) ? body.response : [];
+      const meta = summarizeApiSportsErrors(body);
+      await this.log(
+        '/fixtures/headtohead',
+        'GET',
+        status,
+        !meta.errorsText,
+        `h2h=${homeTeamId}-${awayTeamId} rows=${arr.length}${meta.errorsText ? ` errors=${meta.errorsText}` : ''}`,
+      );
+      return { status, response: arr, raw: body };
+    } catch (e) {
+      const statusCode = isAxiosError(e) ? e.response?.status ?? null : null;
+      const msg = e instanceof Error ? e.message : String(e);
+      await this.log(
+        '/fixtures/headtohead',
+        'GET',
+        statusCode,
+        false,
+        `h2h=${homeTeamId}-${awayTeamId} ${msg}`,
+      );
       throw e;
     }
   }

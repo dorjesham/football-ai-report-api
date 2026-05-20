@@ -67,6 +67,16 @@ export class MatchesController {
   }
 
   @Public()
+  @Get(':id/injuries')
+  @ApiOperation({
+    summary: '本场伤停（BFF，api-sports）',
+    description: '浏览器勿直连 /football-feed/injuries；需场次 externalId 为 af-f-*。',
+  })
+  matchInjuries(@Param('id') id: string) {
+    return this.matches.getMatchInjuries(id);
+  }
+
+  @Public()
   @Get(':id/analysis-preview')
   @ApiOperation({
     summary: '分析模块只读聚合（analysis-preview-v1）',
@@ -79,6 +89,20 @@ export class MatchesController {
   ) {
     const viewer = await this.auth.resolveUserFromAuthHeader(authorization);
     return this.matches.getAnalysisPreview(id, viewer);
+  }
+
+  @Public()
+  @Get(':id/tactics')
+  @ApiOperation({
+    summary: '战术推演沙盘（v2 + 剧本卡片）',
+    description: '解锁后返回完整 sandbox JSON；未解锁返回剧本摘要与沙盘 teaser。',
+  })
+  async tacticsBundle(
+    @Param('id') id: string,
+    @Headers('authorization') authorization?: string,
+  ) {
+    const viewer = await this.auth.resolveUserFromAuthHeader(authorization);
+    return this.matches.getTacticsBundle(id, viewer);
   }
 
   @Public()

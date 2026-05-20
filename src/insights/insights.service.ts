@@ -50,4 +50,69 @@ export class InsightsService {
       })),
     };
   }
+
+  /** 世界杯冠军预测 v1：启发式，非投注建议 */
+  async championPrediction(competitionId: string) {
+    const comp = await this.prisma.competition.findUnique({
+      where: { id: competitionId },
+      select: { id: true, code: true, nameCn: true },
+    });
+    if (!comp) {
+      return { available: false as const, reason: 'competition_not_found' };
+    }
+    const teams = await this.prisma.team.findMany({
+      where: {
+        OR: [
+          { externalId: { startsWith: 'af-t-' } },
+          { homeMatches: { some: { competitionId } } },
+          { awayMatches: { some: { competitionId } } },
+        ],
+      },
+      select: {
+        id: true,
+        nameCn: true,
+        logoUrl: true,
+        powerRating: true,
+        wc2026Profile: true,
+      },
+      take: 48,
+    });
+    if (teams.length < 8) {
+      return {
+        available: false as const,
+        reason: 'insufficient_wc_teams',
+        competitionId,
+      };
+    }
+    const scored = teams
+      .map((t) => ({
+        teamId: t.id,
+        nameCn: t.nameCn,
+        logoUrl: t.logoUrl,
+        score: t.powerRating ?? 50,
+      }))
+      .sort((a, b) => b.score - a.score);
+    const top = scored.slice(0, 8);
+    const leader = top[0];
+    return {
+      available: true as const,
+      competitionId,
+      disclaimer:
+        '本内容为基于战力与种子数据的启发式展示，不构成投注建议或官方预测。',
+      leader: leader
+        ? {
+            teamId: leader.teamId,
+            nameCn: leader.nameCn,
+            winProbabilityHint: Math.min(35, Math.round(12 + leader.score / 5)),
+          }
+        : null,
+      contenders: top.map((t, i) => ({
+        rank: i + 1,
+        teamId: t.teamId,
+        nameCn: t.nameCn,
+        logoUrl: t.logoUrl,
+        score: t.score,
+      })),
+    };
+  }
 }

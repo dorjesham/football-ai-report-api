@@ -5,14 +5,16 @@ const LOCK_MINUTES_BEFORE_KICKOFF = 5;
 
 export type InputsHashPayload = {
   modelVersion: string;
-  teamSnapshotUpdatedAt: { home: string | null; away: string | null };
-  oddsSnapshotId: string | null;
-  afPreMatchCursors: {
+  teamSnapshotUpdatedAt?: { home: string | null; away: string | null };
+  oddsSnapshotId?: string | null;
+  afPreMatchCursors?: {
     snapshot24At: string | null;
     snapshot1At: string | null;
     odds24At: string | null;
     odds1At: string | null;
   };
+  afFixtureId?: number;
+  afRawHash?: string;
 };
 
 function stableStringify(obj: unknown): string {

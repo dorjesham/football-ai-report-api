@@ -1,0 +1,100 @@
+[
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "9",
+    "nameEn": "Argentina",
+    "nameCn": "阿根廷",
+    "shortNameCn": "阿根廷"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "6",
+    "nameEn": "Brazil",
+    "nameCn": "巴西",
+    "shortNameCn": "巴西"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "2",
+    "nameEn": "France",
+    "nameCn": "法国",
+    "shortNameCn": "法国"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "1",
+    "nameEn": "Belgium",
+    "nameCn": "比利时",
+    "shortNameCn": "比利时"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "10",
+    "nameEn": "England",
+    "nameCn": "英格兰",
+    "shortNameCn": "英格兰"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "25",
+    "nameEn": "Germany",
+    "nameCn": "德国",
+    "shortNameCn": "德国"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "27",
+    "nameEn": "Portugal",
+    "nameCn": "葡萄牙",
+    "shortNameCn": "葡萄牙"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "12",
+    "nameEn": "Spain",
+    "nameCn": "西班牙",
+    "shortNameCn": "西班牙"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "15",
+    "nameEn": "Netherlands",
+    "nameCn": "荷兰",
+    "shortNameCn": "荷兰"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "13",
+    "nameEn": "Senegal",
+    "nameCn": "塞内加尔",
+    "shortNameCn": "塞内加尔"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "26",
+    "nameEn": "USA",
+    "nameCn": "美国",
+    "shortNameCn": "美国"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "16",
+    "nameEn": "Mexico",
+    "nameCn": "墨西哥",
+    "shortNameCn": "墨西哥"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "31",
+    "nameEn": "Japan",
+    "nameCn": "日本",
+    "shortNameCn": "日本"
+  },
+  {
+    "externalSource": "API_FOOTBALL",
+    "externalId": "17",
+    "nameEn": "South Korea",
+    "nameCn": "韩国",
+    "shortNameCn": "韩国"
+  }
+]

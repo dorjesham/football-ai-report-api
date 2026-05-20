@@ -5,10 +5,11 @@ import { PrismaService } from '../prisma/prisma.service';
 import { PredictionService } from '../prediction/prediction.service';
 import { MatchIntelPipelineService } from '../match-intel-pipeline/match-intel-pipeline.service';
 
-export type AutoIntelRunMode = 'prediction' | 'full';
+export type AutoIntelRunMode = 'prediction' | 'af_prediction' | 'full';
 
 export type AutoIntelBatchParams = {
   mode: AutoIntelRunMode;
+  predictionProvider?: 'af' | 'model' | 'auto';
   lookaheadHours: number;
   lookbackHours: number;
   maxMatches: number;
@@ -94,8 +95,14 @@ export class AutoIntelBatchService {
     for (let i = 0; i < matchIds.length; i++) {
       const matchId = matchIds[i]!;
       try {
-        if (params.mode === 'prediction') {
-          await this.prediction.generateForMatch(matchId);
+        if (params.mode === 'prediction' || params.mode === 'af_prediction') {
+          const provider =
+            params.mode === 'af_prediction' ? 'auto' : (
+              params.predictionProvider ??
+              (this.config.get<string>('predictionProvider') as 'af' | 'model' | 'auto') ??
+              'model'
+            );
+          await this.prediction.generateForMatch(matchId, { provider });
         } else {
           await this.pipeline.runFull(matchId, {
             stopOnFailure: false,
@@ -143,6 +150,12 @@ export class AutoIntelBatchService {
     if (modeRaw !== 'prediction' && modeRaw !== 'full') {
       return null;
     }
+    if (
+      modeRaw === 'prediction' &&
+      this.config.get<boolean>('enablePipelineLegacyPrediction') !== true
+    ) {
+      return null;
+    }
     const mode = modeRaw as AutoIntelRunMode;
     const lookaheadHours = this.config.get<number>('autoIntelLookaheadHours') ?? 72;
     const lookbackHours = this.config.get<number>('autoIntelLookbackHours') ?? 12;
@@ -157,6 +170,30 @@ export class AutoIntelBatchService {
       maxMatches,
       delayMs,
       skipAiReport,
+      source: 'cron',
+    });
+  }
+
+  /** 近窗 AF 预测（缺预测场次，AF 优先 + 模型回退） */
+  async runAfPredictionsNearWindowTick(): Promise<AutoIntelBatchResult | null> {
+    if (this.config.get<boolean>('enableCronSync') !== true) return null;
+    if (this.config.get<boolean>('enableAfPredictionsNearWindowCron') !== true) {
+      return null;
+    }
+    if (
+      this.config.get<boolean>('enablePipelineLegacyPrediction') !== true &&
+      this.config.get<boolean>('enableAfRawBundle') !== false
+    ) {
+      return null;
+    }
+    return this.runBatch({
+      mode: 'af_prediction',
+      lookaheadHours:
+        this.config.get<number>('afPredictionsNearWindowLookaheadHours') ?? 48,
+      lookbackHours: this.config.get<number>('autoIntelLookbackHours') ?? 12,
+      maxMatches: this.config.get<number>('afPredictionsNearWindowMaxPerTick') ?? 12,
+      delayMs: this.config.get<number>('afPredictionsNearWindowDelayMs') ?? 2000,
+      skipAiReport: true,
       source: 'cron',
     });
   }

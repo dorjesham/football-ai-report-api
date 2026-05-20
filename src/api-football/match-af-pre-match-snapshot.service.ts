@@ -14,10 +14,21 @@ import {
 import {
   computeFatigueIndex,
   computeInjuryImpact,
+  extractFormationFromAfLineups,
   mapPlayerSeasonStats,
   mapStandingsRow,
   mapTeamStatistics,
 } from './af-pre-match-mapper.util';
+import { sha256StableJson } from '../common/utils/stable-content-hash.util';
+import {
+  mapTeamRecentFixtures,
+  mergePreMatchUiFacts,
+} from './af-recent-fixtures.mapper';
+import {
+  normalizeInjuriesResponse,
+  splitInjuriesBySide,
+} from '../matches/af-injuries.mapper';
+import { MatchIntelFreshnessService } from '../match-intel/match-intel-freshness.service';
 import { ApiFootballService } from './api-football.service';
 
 export type PreMatchSnapshotPhase = 'T24' | 'T1';
@@ -35,6 +46,7 @@ export class MatchAfPreMatchSnapshotService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly api: ApiFootballService,
+    private readonly intelFreshness: MatchIntelFreshnessService,
   ) {}
 
   async syncByMatchId(
@@ -106,6 +118,19 @@ export class MatchAfPreMatchSnapshotService {
     if (homeApiId == null) warnings.push('主队无 af-t-* externalId');
     if (awayApiId == null) warnings.push('客队无 af-t-* externalId');
 
+    const factsRow = await this.prisma.matchFacts.findUnique({
+      where: { matchId },
+      select: { lineups: true },
+    });
+    const homeFormation =
+      homeApiId != null ?
+        extractFormationFromAfLineups(factsRow?.lineups, homeApiId)
+      : null;
+    const awayFormation =
+      awayApiId != null ?
+        extractFormationFromAfLineups(factsRow?.lineups, awayApiId)
+      : null;
+
     const standingsPack = await this.api.getStandings(leagueId, season);
     if (delay > 0) await this.api.sleep(delay);
 
@@ -165,33 +190,47 @@ export class MatchAfPreMatchSnapshotService {
       stats: ReturnType<typeof mapTeamStatistics>,
       injuries: unknown[],
       recentFx: unknown[],
+      formation: string | null,
     ) => {
+      const snapPayload = {
+        leagueRank: standings.leagueRank,
+        recentForm: stats.recentForm,
+        attackRating: stats.attackRating,
+        defenseRating: stats.defenseRating,
+        goalsForAvg: stats.goalsForAvg,
+        goalsAgainstAvg: stats.goalsAgainstAvg,
+      };
+      const contentHash = sha256StableJson(snapPayload);
       await this.prisma.teamMatchSnapshot.upsert({
         where: { matchId_teamId: { matchId, teamId } },
         create: {
           matchId,
           teamId,
           isHome,
+          formation: formation ?? undefined,
           leagueRank: standings.leagueRank ?? undefined,
           points: standings.points ?? undefined,
           recentForm: stats.recentForm ?? undefined,
           goalsForAvg: stats.goalsForAvg ?? undefined,
           goalsAgainstAvg: stats.goalsAgainstAvg ?? undefined,
-          attackRating: stats.attackRating,
-          defenseRating: stats.defenseRating,
+          attackRating: stats.attackRating ?? undefined,
+          defenseRating: stats.defenseRating ?? undefined,
+          contentHash,
           injuryImpact: computeInjuryImpact(injuries),
           fatigueIndex: computeFatigueIndex(recentFx),
           dataQuality: DataQuality.PUBLIC_DATA,
           dataSource: DataSourceType.API_FOOTBALL,
         },
         update: {
+          formation: formation ?? undefined,
           leagueRank: standings.leagueRank ?? undefined,
           points: standings.points ?? undefined,
           recentForm: stats.recentForm ?? undefined,
           goalsForAvg: stats.goalsForAvg ?? undefined,
           goalsAgainstAvg: stats.goalsAgainstAvg ?? undefined,
-          attackRating: stats.attackRating,
-          defenseRating: stats.defenseRating,
+          attackRating: stats.attackRating ?? undefined,
+          defenseRating: stats.defenseRating ?? undefined,
+          contentHash,
           injuryImpact: computeInjuryImpact(injuries),
           fatigueIndex: computeFatigueIndex(recentFx),
           dataQuality: DataQuality.PUBLIC_DATA,
@@ -200,8 +239,87 @@ export class MatchAfPreMatchSnapshotService {
       });
     };
 
-    await upsertTeam(match.homeTeamId, true, homeStandings, homeStats, homeInjuries, homeRecent.response);
-    await upsertTeam(match.awayTeamId, false, awayStandings, awayStats, awayInjuries, awayRecent.response);
+    await upsertTeam(
+      match.homeTeamId,
+      true,
+      homeStandings,
+      homeStats,
+      homeInjuries,
+      homeRecent.response,
+      homeFormation,
+    );
+    await upsertTeam(
+      match.awayTeamId,
+      false,
+      awayStandings,
+      awayStats,
+      awayInjuries,
+      awayRecent.response,
+      awayFormation,
+    );
+
+    const homeFormMatches =
+      homeApiId != null ?
+        mapTeamRecentFixtures(
+          homeRecent.response,
+          homeApiId,
+          match.homeTeam.nameCn,
+          5,
+        )
+      : [];
+    const awayFormMatches =
+      awayApiId != null ?
+        mapTeamRecentFixtures(
+          awayRecent.response,
+          awayApiId,
+          match.awayTeam.nameCn,
+          5,
+        )
+      : [];
+
+    const injuryRows = normalizeInjuriesResponse(allInjuries);
+    const { homeInjuries: injHome, awayInjuries: injAway } = splitInjuriesBySide(
+      injuryRows,
+      homeApiId,
+      awayApiId,
+    );
+
+    const existingFacts = await this.prisma.matchFacts.findUnique({
+      where: { matchId },
+      select: { supplementaryFacts: true },
+    });
+    const supplementaryFacts = mergePreMatchUiFacts(
+      existingFacts?.supplementaryFacts,
+      {
+        recentForm: {
+          home: { form: homeStats.recentForm, matches: homeFormMatches },
+          away: { form: awayStats.recentForm, matches: awayFormMatches },
+        },
+      },
+    );
+
+    await this.prisma.matchFacts.upsert({
+      where: { matchId },
+      create: {
+        matchId,
+        supplementaryFacts: supplementaryFacts as Prisma.InputJsonValue,
+        injuriesJson: {
+          homeInjuries: injHome,
+          awayInjuries: injAway,
+          items: [...injHome, ...injAway],
+        } as Prisma.InputJsonValue,
+        primaryProvider: DataSourceType.API_FOOTBALL,
+      },
+      update: {
+        supplementaryFacts: supplementaryFacts as Prisma.InputJsonValue,
+        injuriesJson: {
+          homeInjuries: injHome,
+          awayInjuries: injAway,
+          items: [...injHome, ...injAway],
+        } as Prisma.InputJsonValue,
+        lastSyncedAt: new Date(),
+      },
+    });
 
     let playerCount = 0;
     for (const side of [
@@ -274,6 +392,8 @@ export class MatchAfPreMatchSnapshotService {
     if (Object.keys(matchUpdate).length > 0) {
       await this.prisma.match.update({ where: { id: matchId }, data: matchUpdate });
     }
+
+    await this.intelFreshness.refreshIntelContentHash(matchId);
 
     return {
       fixtureId,

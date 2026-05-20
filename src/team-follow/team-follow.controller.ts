@@ -20,7 +20,7 @@ export class TeamFollowController {
   }
 
   @Post('team-follows')
-  @ApiOperation({ summary: '关注一支 wc26- 国家队' })
+  @ApiOperation({ summary: '关注一支 af-t-* 世界杯国家队' })
   follow(@CurrentUser() user: RequestUser, @Body() dto: FollowTeamDto) {
     return this.teamFollow.follow(user.id, dto.teamId);
   }

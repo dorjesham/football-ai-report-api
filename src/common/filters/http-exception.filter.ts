@@ -4,12 +4,20 @@ import {
   ArgumentsHost,
   HttpException,
   HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { AdminSpaNotFoundFilter } from '../../config/admin-spa-not-found.filter';
+
+const adminSpaNotFound = new AdminSpaNotFoundFilter();
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
+    if (exception instanceof NotFoundException) {
+      return adminSpaNotFound.catch(exception, host);
+    }
+
     const ctx = host.switchToHttp();
     const res = ctx.getResponse<Response>();
 

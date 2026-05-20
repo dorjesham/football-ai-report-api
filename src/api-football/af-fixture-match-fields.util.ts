@@ -42,6 +42,9 @@ export function extractAfFixtureMatchFields(rawItem: unknown): {
   homeScore: number | null;
   awayScore: number | null;
   stadium: string | null;
+  city: string | null;
+  venueName: string | null;
+  venueApiFootballId: number | null;
 } | null {
   const item = asRecord(rawItem);
   if (!item) return null;
@@ -69,7 +72,77 @@ export function extractAfFixtureMatchFields(rawItem: unknown): {
     typeof venue?.name === 'string' && venue.name.trim() ?
       venue.name.trim()
     : null;
-  return { kickoffTime: kick, status: st, homeScore, awayScore, stadium };
+  const city =
+    typeof venue?.city === 'string' && venue.city.trim() ?
+      venue.city.trim()
+    : null;
+  const venueId = Number(venue?.id);
+  const venueApiFootballId = Number.isFinite(venueId) ? venueId : null;
+  return {
+    kickoffTime: kick,
+    status: st,
+    homeScore,
+    awayScore,
+    stadium,
+    city,
+    venueName: stadium,
+    venueApiFootballId,
+  };
+}
+
+/** 从 AF fixture 项解析联赛轮次 / 杯赛阶段 */
+export function extractAfLeagueRoundFields(rawItem: unknown): {
+  round: string | null;
+  matchday: number | null;
+  stage: string | null;
+  groupName: string | null;
+} {
+  const item = asRecord(rawItem);
+  const league = asRecord(item?.league);
+  const roundRaw =
+    typeof league?.round === 'string' && league.round.trim() ?
+      league.round.trim()
+    : null;
+  let matchday: number | null = null;
+  if (roundRaw) {
+    const md = /(?:matchday|round|regular season)\s*[-:]?\s*(\d+)/i.exec(roundRaw);
+    if (md) matchday = parseInt(md[1]!, 10);
+    else {
+      const n = parseInt(roundRaw.replace(/\D/g, ''), 10);
+      if (Number.isFinite(n) && n > 0 && n < 60) matchday = n;
+    }
+  }
+  const stage =
+    typeof league?.name === 'string' && /final|semi|quarter|play-off|playoff/i.test(roundRaw ?? '') ?
+      roundRaw
+    : null;
+  const groupName =
+    roundRaw && /group\s+[a-z]/i.test(roundRaw) ? roundRaw : null;
+  return { round: roundRaw, matchday, stage, groupName };
+}
+
+/** API-Football 官方比赛时钟（fixture.status） */
+export function extractAfLiveClock(rawItem: unknown): {
+  elapsed: number | null;
+  extra: number | null;
+  periodShort: string | null;
+} {
+  const item = asRecord(rawItem);
+  const fixture = asRecord(item?.fixture);
+  const status = asRecord(fixture?.status);
+  const elapsed =
+    typeof status?.elapsed === 'number' && Number.isFinite(status.elapsed) ?
+      Math.trunc(status.elapsed)
+    : null;
+  const extra =
+    typeof status?.extra === 'number' && Number.isFinite(status.extra) ?
+      Math.trunc(status.extra)
+    : null;
+  const periodShort =
+    typeof status?.short === 'string' && status.short.trim() ?
+      status.short.trim()
+    : null;
+  return { elapsed, extra, periodShort };
 }
 
 function pickScoreSide(

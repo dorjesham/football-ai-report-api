@@ -300,7 +300,7 @@ GET /insights/reports?...
 | 项 | 内容 |
 |----|------|
 | **现状** | 写死 `['英超', '欧冠', '西甲', '意甲']` |
-| **可选** | 复用 `GET/PATCH /me/preferences` 的 `followedLeagues` / `followedCompetitionIds`，或独立字段 |
+| **已交付** | `GET/PATCH /me/preferences`：`followedLeagues[]`、`followedCompetitionIds[]`（GET 空库时补全 `[]`） |
 
 ---
 
@@ -309,7 +309,7 @@ GET /insights/reports?...
 | 项 | 内容 |
 |----|------|
 | **现状** | [`featureComparison`](src/data/featureComparison.ts) 静态表；价目来自 `GET /orders/pricing` |
-| **可选** | 价目接口扩展 `features[]`，或 `GET /cms/membership-plans` |
+| **已交付** | `GET /orders/pricing` 与 `GET /cms/membership-plans` 含 `features: { free, pro }`（`config/pricing-features.json`） |
 
 ---
 
@@ -321,7 +321,7 @@ GET /insights/reports?...
 |----|------|
 | **前端** | [`useMatchLiveStream.ts`](src/hooks/useMatchLiveStream.ts) 使用 `EventSource` |
 | **问题** | 浏览器 **无法** 带 `Authorization` 头；若流需登录，需 Cookie 会话、query token（需安全评估）或公开只读流 |
-| **需求** | 文档明确 Web/H5 的鉴权方式与重连参数 `lastSeq` 行为 |
+| **已文档化** | 公开只读流；首包 `type: snapshot`（完整 `match-live-v1`），后续 `type: live_patch` 仅 `{ matchId, seq, at }`；重连 `?lastSeq=`。见 [API接口对接文档-完整版.md](./API接口对接文档-完整版.md) §2.8 |
 
 ---
 
@@ -331,7 +331,7 @@ GET /insights/reports?...
 |----|------|
 | **文档** | §4：`@Public()`，生产建议 **BFF/服务端代理**，勿在前端暴露 Key |
 | **前端** | 仍直连 `/football-feed/players/topscorers` 等 |
-| **需求** | 长期是否改为仅后端聚合接口（`rankings`、`matches` 等），feed 不对浏览器开放 |
+| **已部分交付** | `GET /rankings/players?source=auto`、伤停 `GET /matches/:id/injuries` 等为 BFF；topscorers 勿再浏览器直连 feed |
 
 ---
 

@@ -533,6 +533,18 @@ export class ApiFootballPreMatchSnapshotBatchDto {
   @ApiPropertyOptional()
   @IsOptional()
   force?: boolean;
+
+  @ApiPropertyOptional({ description: '未来 N 天内开球（默认 10）' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(1)
+  @Max(30)
+  lookaheadDays?: number;
+
+  @ApiPropertyOptional({ description: '仅处理缺快照或缺预测详情的场次' })
+  @IsOptional()
+  onlyMissingDetail?: boolean;
 }
 
 export class ApiFootballOddsCaptureBatchDto {
